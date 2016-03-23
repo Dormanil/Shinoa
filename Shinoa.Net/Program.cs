@@ -88,6 +88,8 @@ namespace Shinoa.Net
                     module.Init();
                     DiscordClient.MessageReceived += module.MessageReceived;
                 }
+
+                Logging.InitLoggingToChannel();
             });
 
             while (true) Console.ReadKey();

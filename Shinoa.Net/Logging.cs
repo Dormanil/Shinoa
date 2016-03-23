@@ -9,9 +9,12 @@ namespace Shinoa.Net
 {
     class Logging
     {
+        static Channel LoggingChannel;
+
         public static void Log(string message)
         {
             Console.WriteLine(message);
+            if (LoggingChannel != null) LoggingChannel.SendMessage(message);
         }
 
         public static void LogMessage(Message message)
@@ -24,6 +27,14 @@ namespace Shinoa.Net
             {
                 Log($"[PM] {message.User.Name}: {message.Text}");
             }
+        }
+
+        public static void InitLoggingToChannel()
+        {
+            var loggingChannelId = ShinoaNet.Config["logging_channel_id"];
+            LoggingChannel = ShinoaNet.DiscordClient.GetChannel(ulong.Parse(loggingChannelId));
+
+            LoggingChannel.SendMessage("Logging initialized.");
         }
     }
 }
