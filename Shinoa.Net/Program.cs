@@ -12,10 +12,15 @@ namespace Shinoa.Net
     class ShinoaNet
     {
         public static string AppName = "Shinoa.Net";
-        public static string VersionId = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        public static string VersionId = "0.0";
 
         public static dynamic Config;
         public static DiscordClient DiscordClient;
+
+        static Module.IModule[] ActiveModules = 
+        {
+            new Module.StaticModule()
+        };
 
         static void Main(string[] args)
         {
@@ -60,9 +65,15 @@ namespace Shinoa.Net
                 {
                     if (e.Message.RawText.Contains($"<@{DiscordClient.CurrentUser.Id}>"))
                     {
+                        // Someone mentioned the bot.
                         Console.WriteLine($"[{e.Server.Name} -> #{e.Channel.Name}] {e.Message.User.Name}: {e.Message.Text}");
                     }                    
                 };
+
+                foreach(var module in ActiveModules)
+                {
+                    DiscordClient.MessageReceived += module.MessageReceived;
+                }
             });
 
             while (true) Console.ReadKey();
