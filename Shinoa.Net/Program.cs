@@ -11,15 +11,19 @@ namespace Shinoa.Net
 {
     class ShinoaNet
     {
+        public static DateTime StartTime = DateTime.Now;
+
         public static string AppName = "Shinoa.Net";
         public static string VersionId = "0.0";
 
         public static dynamic Config;
         public static DiscordClient DiscordClient;
 
-        static Module.IModule[] ActiveModules = 
+        public static Module.IModule[] ActiveModules = 
         {
-            new Module.StaticModule()
+            new Module.StaticModule(),
+            new Module.AdminModule(),
+            new Module.ChatterModule()
         };
 
         static void Main(string[] args)
@@ -72,6 +76,9 @@ namespace Shinoa.Net
 
                 foreach(var module in ActiveModules)
                 {
+                    Console.WriteLine($"Binding module {module.GetType().Name}.");
+
+                    module.Init();
                     DiscordClient.MessageReceived += module.MessageReceived;
                 }
             });
