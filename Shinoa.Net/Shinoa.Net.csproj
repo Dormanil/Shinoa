@@ -59,6 +59,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -80,7 +81,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Convenience.cs" />
+    <Compile Include="Logging.cs" />
     <Compile Include="Module\AdminModule.cs" />
+    <Compile Include="Module\AnilistModule.cs" />
+    <Compile Include="Module\AnimeNotificationsModule.cs" />
     <Compile Include="Module\ChatterModule.cs" />
     <Compile Include="Module\IModule.cs" />
     <Compile Include="Module\StaticModule.cs" />
