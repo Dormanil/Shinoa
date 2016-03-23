@@ -54,6 +54,8 @@ namespace Shinoa.Net.Module
 
                 //Console.WriteLine(responseObject);
 
+                Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] @{e.User.Name} requested anime '{animeTitle}'.");
+
                 try
                 {
                     dynamic firstResult = responseObject[0];
@@ -90,7 +92,7 @@ namespace Shinoa.Net.Module
                 catch (Exception ex)
                 {
                     e.Channel.SendMessage("Anime not found.");
-                    Logging.Log(ex.ToString());
+                    //Logging.Log(ex.ToString());
                 }
             }
         }

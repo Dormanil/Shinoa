@@ -9,12 +9,18 @@ namespace Shinoa.Net
 {
     class Logging
     {
+<<<<<<< HEAD
         static Channel LoggingChannel;
 
         public static void Log(string message)
         {
             Console.WriteLine(message);
             if (LoggingChannel != null) LoggingChannel.SendMessage(message);
+=======
+        public static void Log(string message)
+        {
+            Console.WriteLine(message);
+>>>>>>> ba40b8e69a3fd8c8cbc14cbf412f1cea700f0ad0
         }
 
         public static void LogMessage(Message message)
@@ -28,6 +34,7 @@ namespace Shinoa.Net
                 Log($"[PM] {message.User.Name}: {message.Text}");
             }
         }
+<<<<<<< HEAD
 
         public static void InitLoggingToChannel()
         {
@@ -36,5 +43,7 @@ namespace Shinoa.Net
 
             LoggingChannel.SendMessage("Logging initialized.");
         }
+=======
+>>>>>>> ba40b8e69a3fd8c8cbc14cbf412f1cea700f0ad0
     }
 }
