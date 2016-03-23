@@ -22,13 +22,19 @@ namespace Shinoa.Net.Module
 
         public void Init()
         {
+            foreach (var channelId in ShinoaNet.Config["anime_notification_channels"])
+            {
+                var channel = ShinoaNet.DiscordClient.GetChannel(ulong.Parse(channelId));
+                BoundChannels.Add(channel);
+
+                Logging.Log($"Bound anime notifications to [{channel.Server.Name} -> #{channel.Name}]");
+            }
+
             bool initialRun = true;
             UpdateTimer.Elapsed += (s, e) =>
             {
                 if (BoundChannels.Count > 0)
                 {
-                    //Logging.Log("Checking HorribleSubs RSS.");
-
                     var reader = XmlReader.Create(FeedUrl);
                     var feed = SyndicationFeed.Load(reader);
                     reader.Close();
