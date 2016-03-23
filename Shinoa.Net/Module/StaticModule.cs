@@ -24,6 +24,8 @@ namespace Shinoa.Net.Module
                 {
                     if (cleanMessage.Contains(staticMessage["trigger"]))
                     {
+                        Logging.LogMessage(e.Message);
+
                         e.Channel.SendMessage($"<@{e.User.Id}> {staticMessage["reply"]}");
                         break;
                     }

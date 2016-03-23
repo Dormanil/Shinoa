@@ -23,6 +23,8 @@ namespace Shinoa.Net.Module
 
                     if (cleanMessage.Equals("stats"))
                     {
+                        Logging.LogMessage(e.Message);
+
                         var computerName = Environment.MachineName;
                         var userName = Environment.UserName;
                         var uptime = (DateTime.Now - ShinoaNet.StartTime);
@@ -34,7 +36,25 @@ namespace Shinoa.Net.Module
                             modulesString += $" - `{module.GetType().Name}`\n";
                         }
 
-                        e.Channel.SendMessage($"**Shinoa.Net v. {ShinoaNet.VersionId}**\nRunning as {userName} @ {computerName}\nUptime: {uptimeString}\n\nActive modules:\n{modulesString}\nhttps://github.com/omegavesko/Shinoa.Net");
+                        e.Channel.SendMessage($"**Shinoa.Net ver. {ShinoaNet.VersionId}**\nRunning as {userName} @ {computerName}\nUptime: {uptimeString}\n\nActive modules:\n{modulesString}");
+                    }
+                    else if (cleanMessage.StartsWith("set game"))
+                    {
+                        Logging.LogMessage(e.Message);
+
+                        var game = Convenience.RemoveMentions(e.Message.RawText).Replace("set game", "").Trim();
+                        ShinoaNet.DiscordClient.SetGame(game);
+
+                        Logging.Log($"Set game to '{game}'.");
+                    }
+                    else if (cleanMessage.StartsWith("bind anime notifications"))
+                    {
+                        Logging.LogMessage(e.Message);
+
+                        AnimeNotificationsModule.BoundChannels.Add(e.Channel);
+
+                        Logging.Log($"Bound anime notifications to {e.Server.Name} -> #{e.Channel.Name}.");
+                        e.Channel.SendMessage($"Bound anime notifications to #{e.Channel.Name}.");
                     }
                 }
             }            

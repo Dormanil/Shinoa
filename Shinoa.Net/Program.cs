@@ -23,7 +23,9 @@ namespace Shinoa.Net
         {
             new Module.StaticModule(),
             new Module.AdminModule(),
-            new Module.ChatterModule()
+            new Module.ChatterModule(),
+            new Module.AnimeNotificationsModule(),
+            new Module.AnilistModule()
         };
 
         static void Main(string[] args)
@@ -34,11 +36,11 @@ namespace Shinoa.Net
                 ShinoaNet.Config = deserializer.Deserialize(streamReader);
 
                 ShinoaNet.VersionId = Config["version_id"];
-                Console.WriteLine("Successfully loaded configuration.");
+                Logging.Log("Successfully loaded configuration.");
             }
 
             Console.Title = $"{ShinoaNet.AppName} ver. {ShinoaNet.VersionId}";
-            Console.WriteLine($"{ShinoaNet.AppName} ver. {ShinoaNet.VersionId}");
+            Logging.Log($"{ShinoaNet.AppName} ver. {ShinoaNet.VersionId}");
 
             ShinoaNet.DiscordClient = new DiscordClient(x =>
             {
@@ -62,21 +64,26 @@ namespace Shinoa.Net
                     }
                 }
 
-                Console.WriteLine($"Connected to Discord as @{DiscordClient.CurrentUser.Name}.");
-                Console.WriteLine("=====================");
+                Logging.Log($"Connected to Discord as @{DiscordClient.CurrentUser.Name}.");
+                Logging.Log("=====================");
 
                 DiscordClient.MessageReceived += (s, e) =>
                 {
                     if (e.Message.RawText.Contains($"<@{DiscordClient.CurrentUser.Id}>"))
                     {
                         // Someone mentioned the bot.
-                        Console.WriteLine($"[{e.Server.Name} -> #{e.Channel.Name}] {e.Message.User.Name}: {e.Message.Text}");
-                    }                    
+                        //Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] {e.Message.User.Name}: {e.Message.Text}");
+                        //Logging.LogMessage(e.Message);
+                    }       
+                    else if (e.Message.Channel.IsPrivate)
+                    {
+                        Logging.Log($"[PM] {e.User.Name}: {e.Message.Text}");
+                    }
                 };
 
                 foreach(var module in ActiveModules)
                 {
-                    Console.WriteLine($"Binding module {module.GetType().Name}.");
+                    Logging.Log($"Binding module {module.GetType().Name}.");
 
                     module.Init();
                     DiscordClient.MessageReceived += module.MessageReceived;
