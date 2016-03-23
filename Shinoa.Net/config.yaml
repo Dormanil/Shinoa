@@ -1,0 +1,17 @@
+version_id: "0.1"
+
+email: "shinoa@omegavesko.xyz"
+password: "t357159"
+owner_id: 98225142064250880
+
+default_game: "Yuu Simulator 2016"
+
+static_replies:
+    - trigger: "do you love me"
+      reply: "I only love Yuu-chan."
+    - trigger: "want some candy"
+      reply: "AAA SAVE ME <@98225142064250880>"
+    - trigger: "good morning"
+      reply: "おはよう～ :sunny:"	
+    - trigger: "hi"
+      reply: "Hi!"
