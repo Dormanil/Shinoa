@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using System.Text.RegularExpressions;
 
 namespace Shinoa.Net.Module
 {
@@ -63,6 +64,15 @@ namespace Shinoa.Net.Module
                 {
                     e.Channel.SendMessage(@"/o/");
                     Logging.LogMessage(e.Message);
+                }
+                else if (new Regex(@"^i'm (.*)$").IsMatch(Convenience.RemoveMentions(e.Message.Text).Trim().ToLower()) &&
+                        e.Message.Text.Length <= 20)
+                {
+                    var regex = new Regex(@"^I'm (.*)$");
+
+                    var thing = regex.Matches(Convenience.RemoveMentions(e.Message.Text).Trim(new char[] { ' ', '.' }))[0].Groups[1];
+
+                    e.Channel.SendMessage($"Hi {thing}, I'm Shinoa.");
                 }
             }
         }

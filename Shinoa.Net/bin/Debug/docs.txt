@@ -1,0 +1,5 @@
+﻿```
+Anilist:
+    Command: {{Anime Title}}
+	Description: Fetches anime details from anilist.co.
+```

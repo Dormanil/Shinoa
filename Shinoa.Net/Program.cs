@@ -25,7 +25,9 @@ namespace Shinoa.Net
             new Module.AdminModule(),
             new Module.ChatterModule(),
             new Module.AnimeNotificationsModule(),
-            new Module.AnilistModule()
+            new Module.AnilistModule(),
+            new Module.DocsModule(),
+            new Module.FeedModule()
         };
 
         static void Main(string[] args)

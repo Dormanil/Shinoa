@@ -41,58 +41,61 @@ namespace Shinoa.Net.Module
 
         public void MessageReceived(object sender, MessageEventArgs e)
         {
-            var regex = new Regex(@"{{(?<animetitle>.*)}}");
-            if (regex.IsMatch(e.Message.Text))
+            if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
-                var animeTitle = regex.Matches(e.Message.Text)[0].Groups["animetitle"];
-
-                var request = new RestRequest($"anime/search/{animeTitle}");
-                request.AddParameter("access_token", AccessToken);
-
-                var response = RestClient.Execute(request);
-                dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
-
-                //Console.WriteLine(responseObject);
-
-                Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] @{e.User.Name} requested anime '{animeTitle}'.");
-
-                try
+                var regex = new Regex(@"{{(?<animetitle>.*)}}");
+                if (regex.IsMatch(e.Message.Text))
                 {
-                    dynamic firstResult = responseObject[0];
+                    var animeTitle = regex.Matches(e.Message.Text)[0].Groups["animetitle"];
 
-                    var responseMessage = "";
-                    responseMessage += $"Japanese title: **{firstResult["title_japanese"]}**\n";
-                    responseMessage += $"Romanized title: **{firstResult["title_romaji"]}**\n";
-                    responseMessage += $"English title: **{firstResult["title_english"]}**\n";
+                    var request = new RestRequest($"anime/search/{animeTitle}");
+                    request.AddParameter("access_token", AccessToken);
 
-                    if (firstResult["synonyms"].Count > 0)
+                    var response = RestClient.Execute(request);
+                    dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
+
+                    //Console.WriteLine(responseObject);
+
+                    Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] @{e.User.Name} requested anime '{animeTitle}'.");
+
+                    try
                     {
-                        responseMessage += "Synonyms: ";
-                        foreach (var synonym in firstResult["synonyms"])
+                        dynamic firstResult = responseObject[0];
+
+                        var responseMessage = "";
+                        responseMessage += $"Japanese title: **{firstResult["title_japanese"]}**\n";
+                        responseMessage += $"Romanized title: **{firstResult["title_romaji"]}**\n";
+                        responseMessage += $"English title: **{firstResult["title_english"]}**\n";
+
+                        if (firstResult["synonyms"].Count > 0)
                         {
-                            responseMessage += $"{synonym}, ";
+                            responseMessage += "Synonyms: ";
+                            foreach (var synonym in firstResult["synonyms"])
+                            {
+                                responseMessage += $"{synonym}, ";
+                            }
+                            responseMessage = responseMessage.Trim(new char[] { ' ', ',' });
+                            responseMessage += "\n";
                         }
-                        responseMessage = responseMessage.Trim(new char[] {' ', ','});
-                        responseMessage += "\n";
+
+                        responseMessage += $"Airing status: {firstResult["airing_status"]}\n";
+                        responseMessage += $"Average score (0-100): {firstResult["average_score"]}\n";
+                        responseMessage += $"Episode count: {firstResult["total_episodes"]}\n";
+
+                        responseMessage += $"\nhttp://anilist.co/anime/{firstResult["id"]}";
+
+                        e.Channel.SendMessage(responseMessage);
+
+                        WebClient webclient = new WebClient();
+                        webclient.DownloadFile($"{firstResult["image_url_lge"]}", $"{Path.GetTempPath()}anime_cover_{firstResult["id"]}.jpg");
+
+                        e.Channel.SendFile($"{Path.GetTempPath()}anime_cover_{firstResult["id"]}.jpg");
                     }
-
-                    responseMessage += $"Airing status: {firstResult["airing_status"]}\n";
-                    responseMessage += $"Average score (0-100): {firstResult["average_score"]}\n";
-                    responseMessage += $"Episode count: {firstResult["total_episodes"]}\n";
-
-                    responseMessage += $"\nhttp://anilist.co/anime/{firstResult["id"]}";
-
-                    e.Channel.SendMessage(responseMessage);
-
-                    WebClient webclient = new WebClient();
-                    webclient.DownloadFile($"{firstResult["image_url_lge"]}", $"{Path.GetTempPath()}anime_cover_{firstResult["id"]}.jpg");
-
-                    e.Channel.SendFile($"{Path.GetTempPath()}anime_cover_{firstResult["id"]}.jpg");
-                }
-                catch (Exception ex)
-                {
-                    e.Channel.SendMessage("Anime not found.");
-                    //Logging.Log(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        e.Channel.SendMessage("Anime not found.");
+                        //Logging.Log(ex.ToString());
+                    }
                 }
             }
         }
