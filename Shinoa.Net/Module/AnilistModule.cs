@@ -53,12 +53,13 @@ namespace Shinoa.Net.Module
 
                     // Retry until the request successfully goes through.
 
-                    dynamic responseObject = null;
-                    while (responseObject == null)
+                    IRestResponse response = null;
+                    while (response == null)
                     {
-                        var response = RestClient.Execute(request);
-                        responseObject = JsonConvert.DeserializeObject(response.Content);
+                        response = RestClient.Execute(request);                        
                     }
+
+                    dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
 
                     Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] @{e.User.Name} requested anime '{animeTitle}'.");
 
