@@ -21,8 +21,8 @@ namespace Shinoa.Net.Module
         static string ClientSecret;
         static string AccessToken;
 
-        // Refresh the token every 50 minutes (expires at 60).
-        static Timer TokenRefreshTimer = new Timer { Interval = 1000 * 60 * 50 };
+        // Refresh the token every 30 minutes (expires at 60).
+        static Timer TokenRefreshTimer = new Timer { Interval = 1000 * 60 * 30 };
 
         public void Init()
         {
@@ -51,10 +51,14 @@ namespace Shinoa.Net.Module
                     var request = new RestRequest($"anime/search/{animeTitle}");
                     request.AddParameter("access_token", AccessToken);
 
-                    var response = RestClient.Execute(request);
-                    dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
+                    // Retry until the request successfully goes through.
 
-                    //Console.WriteLine(responseObject);
+                    dynamic responseObject = null;
+                    while (responseObject == null)
+                    {
+                        var response = RestClient.Execute(request);
+                        responseObject = JsonConvert.DeserializeObject(response.Content);
+                    }
 
                     Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] @{e.User.Name} requested anime '{animeTitle}'.");
 
@@ -91,10 +95,18 @@ namespace Shinoa.Net.Module
 
                         e.Channel.SendFile($"{Path.GetTempPath()}anime_cover_{firstResult["id"]}.jpg");
                     }
+                    catch (ArgumentException ex)
+                    {
+                        Logging.Log("Anilist request encountered an ArgumentException.");
+                        Logging.Log($"ResponseObject is: {responseObject}");
+
+                        RefreshClientAccessToken();
+
+                    }
                     catch (Exception ex)
                     {
                         e.Channel.SendMessage("Anime not found.");
-                        //Logging.Log(ex.ToString());
+                        Logging.Log(ex.ToString());
                     }
                 }
             }
@@ -102,6 +114,8 @@ namespace Shinoa.Net.Module
 
         void RefreshClientAccessToken()
         {
+            Logging.Log("Updating Anilist access token...");
+
             var request = new RestRequest("auth/access_token", Method.POST);
             request.AddParameter("grant_type", "client_credentials");
             request.AddParameter("client_id", ClientId);
@@ -111,6 +125,8 @@ namespace Shinoa.Net.Module
 
             dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
             AccessToken = responseObject.access_token;
+
+            Logging.Log($"Received new token: {AccessToken}");
         }
     }
 }

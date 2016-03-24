@@ -26,7 +26,7 @@ namespace Shinoa.Net.Module
             override public string ToString()
             {
                 var output = "";
-                output += $"Name: {name}\nFeed URL: {feedUrl}\nBound to channels:";
+                output += $"Name: {name}\nFeed URL: {feedUrl}\nBound to channels:\n";
                 
                 foreach (var channel in boundChannels)
                 {
@@ -41,7 +41,6 @@ namespace Shinoa.Net.Module
         {
             foreach(var feed in ShinoaNet.Config["feeds"])
             {
-                foreach(var item in feed) Console.WriteLine(item);
                 var newFeed = new Feed();
                 newFeed.name = feed["name"];
                 newFeed.feedUrl = feed["feed_url"];
@@ -50,6 +49,8 @@ namespace Shinoa.Net.Module
                 {
                     newFeed.boundChannels.Add(ShinoaNet.DiscordClient.GetChannel(ulong.Parse(channel)));
                 }
+
+                Logging.Log(newFeed.ToString());
 
                 activeFeeds.Add(newFeed);
             }
