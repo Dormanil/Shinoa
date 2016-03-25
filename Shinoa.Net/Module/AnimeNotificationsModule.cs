@@ -27,7 +27,7 @@ namespace Shinoa.Net.Module
                 var channel = ShinoaNet.DiscordClient.GetChannel(ulong.Parse(channelId));
                 BoundChannels.Add(channel);
 
-                Logging.Log($"Bound anime notifications to [{channel.Server.Name} -> #{channel.Name}]");
+                Logging.Log($"> Bound anime notifications to [{channel.Server.Name} -> #{channel.Name}]");
             }
 
             bool initialRun = true;
@@ -59,12 +59,13 @@ namespace Shinoa.Net.Module
                         }
 
                         if (!alreadyProcessed)
-                        { 
-                            Logging.Log($"Found new episode: {showTitle} ep. {episodeNumber}");
+                        {                             
                             itemQueue.Enqueue(showTitle);
 
                             if (!initialRun)
                             {
+                                Logging.Log($"Found new episode: {showTitle} ep. {episodeNumber}");
+
                                 foreach (var channel in BoundChannels)
                                 {
                                     channel.SendMessage($"New Episode: `{showTitle}` ep. {episodeNumber}");

@@ -39,65 +39,69 @@ namespace Shinoa.Net.Module
 
         public void Init()
         {
-            foreach(var feed in ShinoaNet.Config["feeds"])
+            if (ShinoaNet.Config["feeds"] != null)
             {
-                var newFeed = new Feed();
-                newFeed.name = feed["name"];
-                newFeed.feedUrl = feed["feed_url"];
-
-                foreach (var channel in feed["channels"])
+                foreach (var feed in ShinoaNet.Config["feeds"])
                 {
-                    newFeed.boundChannels.Add(ShinoaNet.DiscordClient.GetChannel(ulong.Parse(channel)));
+                    var newFeed = new Feed();
+                    newFeed.name = feed["name"];
+                    newFeed.feedUrl = feed["feed_url"];
+
+                    foreach (var channel in feed["channels"])
+                    {
+                        newFeed.boundChannels.Add(ShinoaNet.DiscordClient.GetChannel(ulong.Parse(channel)));
+                    }
+
+                    Logging.Log($"> Loaded feed '{newFeed.name}' (bound to {newFeed.boundChannels.Count} channels).");
+
+                    activeFeeds.Add(newFeed);
                 }
 
-                Logging.Log(newFeed.ToString());
-
-                activeFeeds.Add(newFeed);
-            }
-
-            bool initialRun = true;
-            UpdateTimer.Elapsed += (s, e) =>
-            {
-                foreach (var currentFeed in activeFeeds)
+                bool initialRun = true;
+                UpdateTimer.Elapsed += (s, e) =>
                 {
-                    var reader = XmlReader.Create(currentFeed.feedUrl);
-                    var feed = SyndicationFeed.Load(reader);
-                    reader.Close();
-
-                    foreach (var item in feed.Items.Take(5))
+                    foreach (var currentFeed in activeFeeds)
                     {
-                        var entryTitle = item.Title.Text;
+                        var reader = XmlReader.Create(currentFeed.feedUrl);
+                        var feed = SyndicationFeed.Load(reader);
+                        reader.Close();
 
-                        bool alreadyProcessed = false;
-                        foreach (var queueItem in ItemQueue)
+                        foreach (var item in feed.Items.Take(5))
                         {
-                            if (queueItem.Equals(entryTitle))
-                            {
-                                alreadyProcessed = true;
-                                break;
-                            }
-                        }
+                            var entryTitle = item.Title.Text;
 
-                        if (!alreadyProcessed)
-                        {
-                            Logging.Log($"New feed item in feed '{currentFeed.name}': {entryTitle}");
-                            ItemQueue.Enqueue(entryTitle);
-
-                            if (!initialRun)
+                            bool alreadyProcessed = false;
+                            foreach (var queueItem in ItemQueue)
                             {
-                                foreach (var channel in currentFeed.boundChannels)
+                                if (queueItem.Equals(entryTitle))
                                 {
-                                    channel.SendMessage($"** -- New feed item -- **\n{entryTitle}\n{item.Links[0].GetAbsoluteUri().ToString()}");
+                                    alreadyProcessed = true;
+                                    break;
+                                }
+                            }
+
+                            if (!alreadyProcessed)
+                            {
+                                ItemQueue.Enqueue(entryTitle);
+
+                                if (!initialRun)
+                                {
+                                    Logging.Log($"New feed item in feed '{currentFeed.name}': {entryTitle}");
+
+                                    foreach (var channel in currentFeed.boundChannels)
+                                    {
+                                        channel.SendMessage($"**{entryTitle}**\n{item.Links[0].GetAbsoluteUri().ToString()}");
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                if (initialRun) initialRun = false;
-            };
+                    if (initialRun) initialRun = false;
+                };
 
-            UpdateTimer.Start();
+                UpdateTimer.Start();
+            }
         }
 
         public void MessageReceived(object sender, MessageEventArgs e)

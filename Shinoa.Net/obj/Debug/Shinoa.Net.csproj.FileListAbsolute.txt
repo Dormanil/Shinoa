@@ -24,3 +24,7 @@ D:\Development\NET\Shinoa.Net\Shinoa.Net\obj\Debug\Shinoa.Net.exe
 D:\Development\NET\Shinoa.Net\Shinoa.Net\obj\Debug\Shinoa.Net.pdb
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\config.yaml
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\docs.txt
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\HtmlAgilityPack.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\RedditSharp.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\HtmlAgilityPack.pdb
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\HtmlAgilityPack.xml

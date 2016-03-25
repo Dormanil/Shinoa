@@ -19,7 +19,7 @@ namespace Shinoa.Net
         public static dynamic Config;
         public static DiscordClient DiscordClient;
 
-        public static Module.IModule[] ActiveModules = 
+        public static Module.IModule[] ActiveModules =
         {
             new Module.StaticModule(),
             new Module.AdminModule(),
@@ -27,7 +27,8 @@ namespace Shinoa.Net
             new Module.AnimeNotificationsModule(),
             new Module.AnilistModule(),
             new Module.DocsModule(),
-            new Module.FeedModule()
+            new Module.FeedModule(),
+            new Module.RedditModule()
         };
 
         static void Main(string[] args)
