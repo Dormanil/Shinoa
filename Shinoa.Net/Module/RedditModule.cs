@@ -104,7 +104,7 @@ namespace Shinoa.Net.Module
                                 Logging.Log($"New post in subreddit '{subreddit.subreddit.Name}': {post.Title}");
                                 foreach (var channel in subreddit.channels)
                                 {
-                                    channel.SendMessage($"{post.Title}**\nPosted by /u/{post.AuthorName}, {post.CommentCount} comments\n{post.Url}");
+                                    channel.SendMessage($"**{post.Title}** ({post.Domain})\nPosted to /r/{post.SubredditName} by /u/{post.AuthorName}, {post.CommentCount} comments\n\n{post.Shortlink}");
                                 }
                             }
                         }
@@ -119,6 +119,20 @@ namespace Shinoa.Net.Module
 
         public void MessageReceived(object sender, MessageEventArgs e)
         {
+        }
+
+        public string DetailedStats()
+        {
+            var output = "";
+
+            foreach (var subreddit in SubscribedSubreddits)
+            {
+                output += $"/r/{subreddit.subreddit.Name} -> ";
+                output += subreddit.channels.Count > 1 ? $"{subreddit.channels.Count} channels" : $"[{subreddit.channels[0].Server.Name} -> #{subreddit.channels[0].Name}]";
+                output += '\n';
+            }
+
+            return output.Trim();
         }
     }
 }

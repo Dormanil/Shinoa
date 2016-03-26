@@ -10,6 +10,7 @@ using System.Timers;
 using System.Text.RegularExpressions;
 using System.Net;
 using System.IO;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace Shinoa.Net.Module
 {
@@ -104,9 +105,13 @@ namespace Shinoa.Net.Module
                         RefreshClientAccessToken();
 
                     }
-                    catch (Exception ex)
+                    catch(RuntimeBinderException ex)
                     {
                         e.Channel.SendMessage("Anime not found.");
+                    }
+                    catch (Exception ex)
+                    {
+                        e.Channel.SendMessage("Error encountered, anime not found.");
                         Logging.Log(ex.ToString());
                     }
                 }
@@ -128,6 +133,11 @@ namespace Shinoa.Net.Module
             AccessToken = responseObject.access_token;
 
             Logging.Log($"Received new token: {AccessToken}");
+        }
+
+        public string DetailedStats()
+        {
+            return null;
         }
     }
 }

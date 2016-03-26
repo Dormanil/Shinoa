@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using System.IO;
 
 namespace Shinoa.Net.Module
 {
     class AdminModule : IModule
-    {
+    {   
         public void Init()
         {
         }
@@ -31,12 +32,36 @@ namespace Shinoa.Net.Module
                         var uptimeString = $"{uptime.Days} days, {uptime.Hours} hours, {uptime.Minutes} minutes, {uptime.Seconds} seconds.";
 
                         var modulesString = "";
+
                         foreach (var module in ShinoaNet.ActiveModules)
                         {
-                            modulesString += $" - `{module.GetType().Name}`\n";
+                            modulesString += $"{module.GetType().Name}\n";
+
+                            if (module.DetailedStats() != null)
+                            {
+                                var indentedDetailedStats = "";
+
+                                using (StringReader reader = new StringReader(module.DetailedStats()))
+                                {
+                                    string line = string.Empty;
+                                    do
+                                    {
+                                        line = reader.ReadLine();
+                                        if (line != null)
+                                        {
+                                            indentedDetailedStats += "  " + line + '\n';
+                                        }
+
+                                    } while (line != null);
+                                }
+
+                                modulesString += indentedDetailedStats;
+                            }
                         }
 
-                        e.Channel.SendMessage($"**Shinoa.Net ver. {ShinoaNet.VersionId}**\nRunning as {userName} @ {computerName}\nUptime: {uptimeString}\n\nActive modules:\n{modulesString}");
+                        modulesString = modulesString.Trim();
+
+                        e.Channel.SendMessage($"**Shinoa.Net ver. {ShinoaNet.VersionId}**\nRunning as {userName} @ {computerName}\nUptime: {uptimeString}\n\n```\nActive modules:\n\n{modulesString}\n```");
                     }
                     else if (cleanMessage.StartsWith("set game"))
                     {
@@ -58,6 +83,11 @@ namespace Shinoa.Net.Module
                     }
                 }
             }            
+        }
+
+        public string DetailedStats()
+        {
+            return null;
         }
     }
 }

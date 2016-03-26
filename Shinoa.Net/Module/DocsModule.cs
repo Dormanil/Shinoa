@@ -10,6 +10,11 @@ namespace Shinoa.Net.Module
 {
     class DocsModule : IModule
     {
+        public string DetailedStats()
+        {
+            return null;
+        }
+
         public void Init()
         {
         }

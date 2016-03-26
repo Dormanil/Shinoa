@@ -84,5 +84,17 @@ namespace Shinoa.Net.Module
         public void MessageReceived(object sender, MessageEventArgs e)
         {
         }
+
+        public string DetailedStats()
+        {
+            var output = "";
+
+            foreach (var channel in BoundChannels)
+            {
+                output += $"-> [{channel.Server.Name} -> #{channel.Name}]";
+            }
+
+            return output.Trim();
+        }
     }
 }

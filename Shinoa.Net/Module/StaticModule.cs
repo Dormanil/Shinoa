@@ -9,6 +9,11 @@ namespace Shinoa.Net.Module
 {
     class StaticModule : IModule
     {
+        public string DetailedStats()
+        {
+            return null;
+        }
+
         public void Init()
         {
 

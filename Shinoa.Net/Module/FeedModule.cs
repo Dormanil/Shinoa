@@ -107,5 +107,26 @@ namespace Shinoa.Net.Module
         public void MessageReceived(object sender, MessageEventArgs e)
         {
         }
+
+        public string DetailedStats()
+        {
+            if (activeFeeds.Count > 0)
+            {
+                var output = "";
+
+                foreach (var feed in activeFeeds)
+                {
+                    output += $"{feed.name} -> ";
+                    output += feed.boundChannels.Count > 1 ? $"{feed.boundChannels.Count} channels" : $"[{feed.boundChannels[0].Server.Name} -> #{feed.boundChannels[0].Name}]";
+                    output += '\n';
+                }
+
+                return output.Trim();
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 }

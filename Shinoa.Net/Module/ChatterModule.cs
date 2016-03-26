@@ -76,5 +76,10 @@ namespace Shinoa.Net.Module
                 }
             }
         }
+
+        public string DetailedStats()
+        {
+            return null;
+        }
     }
 }

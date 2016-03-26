@@ -10,6 +10,7 @@ namespace Shinoa.Net.Module
     interface IModule
     {
         void Init();
-        void MessageReceived(object sender, MessageEventArgs e);        
+        void MessageReceived(object sender, MessageEventArgs e);
+        string DetailedStats();
     }
 }
