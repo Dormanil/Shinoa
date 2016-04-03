@@ -29,6 +29,7 @@ namespace Shinoa.Net
             new Module.DocsModule(),
             new Module.FeedModule(),
             new Module.RedditModule()
+            //new Module.MALModule()
         };
 
         static void Main(string[] args)
@@ -93,6 +94,15 @@ namespace Shinoa.Net
                 }
 
                 Logging.InitLoggingToChannel();
+
+                //var rAnimeFeedNotifier = new FeedNotifier("https://www.reddit.com/r/all/new/.rss", 15);
+                //rAnimeFeedNotifier.NewItemsFound += (s, e) =>
+                //{
+                //    foreach (var item in e.NewItems)
+                //    {
+                //        Console.WriteLine($"New post: {item.Title.Text}");
+                //    }
+                //};
             });
 
             while (true) Console.ReadKey();

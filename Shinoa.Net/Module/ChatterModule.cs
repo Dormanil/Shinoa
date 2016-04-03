@@ -74,6 +74,13 @@ namespace Shinoa.Net.Module
 
                     e.Channel.SendMessage($"Hi {thing}, I'm Shinoa.");
                 }
+                else if (cleanMessage.Equals("soon"))
+                {
+                    Logging.LogMessage(e.Message);
+
+                    List<object> soonImages = ShinoaNet.Config["soon_images"];
+                    e.Channel.SendMessage((string) soonImages[new Random().Next(soonImages.Count)]);
+                }
             }
         }
 

@@ -120,7 +120,7 @@ namespace Shinoa.Net.Module
 
         void RefreshClientAccessToken()
         {
-            Logging.Log("Updating Anilist access token...");
+            //Logging.Log("Updating Anilist access token...");
 
             var request = new RestRequest("auth/access_token", Method.POST);
             request.AddParameter("grant_type", "client_credentials");
@@ -132,7 +132,7 @@ namespace Shinoa.Net.Module
             dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
             AccessToken = responseObject.access_token;
 
-            Logging.Log($"Received new token: {AccessToken}");
+            //Logging.Log($"Received new token: {AccessToken}");
         }
 
         public string DetailedStats()

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using System.IO;
+using System.Reflection;
 
 namespace Shinoa.Net.Module
 {
@@ -80,6 +81,14 @@ namespace Shinoa.Net.Module
 
                         Logging.Log($"Bound anime notifications to {e.Server.Name} -> #{e.Channel.Name}.");
                         e.Channel.SendMessage($"Bound anime notifications to #{e.Channel.Name}.");
+                    }
+                    else if (cleanMessage.Equals("restart"))
+                    {
+                        // Starts a new instance of the program itself
+                        System.Diagnostics.Process.Start(Assembly.GetExecutingAssembly().Location);
+
+                        // Closes the current process
+                        Environment.Exit(0);
                     }
                 }
             }            

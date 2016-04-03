@@ -64,7 +64,7 @@ namespace Shinoa.Net.Module
 
                             if (!initialRun)
                             {
-                                Logging.Log($"Found new episode: {showTitle} ep. {episodeNumber}");
+                                //Logging.Log($"Found new episode: {showTitle} ep. {episodeNumber}");
 
                                 foreach (var channel in BoundChannels)
                                 {

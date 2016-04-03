@@ -26,13 +26,14 @@ namespace Shinoa.Net.Module
         static RestClient RestClient = new RestClient("https://www.reddit.com/api/v1/");
         static Reddit Reddit;
         Timer UpdateTimer = new Timer { Interval = 1000 * 20 };
+        Timer ClientUpdateTimer = new Timer { Interval = 1000 * 60 * 15 };
 
         Queue<Post> PostQueue = new Queue<Post>(10);
 
-        public void Init()
+        public void UpdateReddit()
         {
             RestClient.Authenticator = new RestSharp.Authenticators.HttpBasicAuthenticator(
-                ShinoaNet.Config["reddit_client_id"], 
+                ShinoaNet.Config["reddit_client_id"],
                 ShinoaNet.Config["reddit_client_secret"]);
 
             var request = new RestRequest("access_token", Method.POST);
@@ -45,9 +46,14 @@ namespace Shinoa.Net.Module
             dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
             string accessToken = responseObject.access_token;
 
-            Logging.Log($"Reddit access token: {accessToken}");
+            //Logging.Log($"Reddit access token: {accessToken}");
 
             Reddit = new Reddit(accessToken: accessToken);
+        }
+
+        public void Init()
+        {
+            UpdateReddit();
 
             foreach (var subreddit in ShinoaNet.Config["reddit"])
             {
@@ -63,20 +69,6 @@ namespace Shinoa.Net.Module
 
                 Logging.Log($"> Loaded subreddit /r/{newSubscribedSubreddit.subreddit.Name} (bound to {newSubscribedSubreddit.channels.Count} channels).");
             }
-
-            //UpdateTimer.Elapsed += (s, e) =>
-            //{
-            //    foreach(var sub in SubscribedSubreddits)
-            //    {
-            //        foreach (var post in sub.subreddit.New.Take(1))
-            //        {
-            //            foreach (var channel in sub.channels)
-            //            {
-            //                channel.SendMessage(post.Title);
-            //            }
-            //        }
-            //    }
-            //};
 
             bool initialRun = true;
             UpdateTimer.Elapsed += (s, e) =>
@@ -101,7 +93,7 @@ namespace Shinoa.Net.Module
 
                             if (!initialRun)
                             {
-                                Logging.Log($"New post in subreddit '{subreddit.subreddit.Name}': {post.Title}");
+                                //Logging.Log($"New post in subreddit '{subreddit.subreddit.Name}': {post.Title}");
                                 foreach (var channel in subreddit.channels)
                                 {
                                     channel.SendMessage($"**{post.Title}** ({post.Domain})\nPosted to /r/{post.SubredditName} by /u/{post.AuthorName}, {post.CommentCount} comments\n\n{post.Shortlink}");
@@ -115,6 +107,13 @@ namespace Shinoa.Net.Module
             };
 
             UpdateTimer.Start();
+
+            ClientUpdateTimer.Elapsed += (s, e) =>
+            {
+                UpdateReddit();
+            };
+
+            ClientUpdateTimer.Start();
         }
 
         public void MessageReceived(object sender, MessageEventArgs e)
