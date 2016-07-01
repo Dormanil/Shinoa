@@ -43,32 +43,35 @@ namespace Shinoa.Net.Module
                     {
                         var entryTitle = item.Title.Text;
 
-                        Regex regex = new Regex(@"^\[.*\] (?<title>.*) - (?<ep>\d+) \[.*$");
+                        Regex regex = new Regex(@"^\[.*\] (?<title>.*) - (?<ep>.*) \[.*$");
                         Match match = regex.Match(entryTitle);
-                        var showTitle = match.Groups["title"].Value;
-                        var episodeNumber = match.Groups["ep"].Value;
-
-                        bool alreadyProcessed = false;
-                        foreach (var queueItem in itemQueue)
+                        if (match.Success)
                         {
-                            if (queueItem.Equals(showTitle))
+                            var showTitle = match.Groups["title"].Value;
+                            var episodeNumber = match.Groups["ep"].Value;
+
+                            bool alreadyProcessed = false;
+                            foreach (var queueItem in itemQueue)
                             {
-                                alreadyProcessed = true;
-                                break;
-                            }
-                        }
-
-                        if (!alreadyProcessed)
-                        {                             
-                            itemQueue.Enqueue(showTitle);
-
-                            if (!initialRun)
-                            {
-                                //Logging.Log($"Found new episode: {showTitle} ep. {episodeNumber}");
-
-                                foreach (var channel in BoundChannels)
+                                if (queueItem.Equals(showTitle))
                                 {
-                                    channel.SendMessage($"New Episode: `{showTitle}` ep. {episodeNumber}");
+                                    alreadyProcessed = true;
+                                    break;
+                                }
+                            }
+
+                            if (!alreadyProcessed)
+                            {
+                                itemQueue.Enqueue(showTitle);
+
+                                if (!initialRun)
+                                {
+                                    //Logging.Log($"Found new episode: {showTitle} ep. {episodeNumber}");
+
+                                    foreach (var channel in BoundChannels)
+                                    {
+                                        channel.SendMessage($"```\nNew Episode: {showTitle} ep. {episodeNumber}\n```");
+                                    }
                                 }
                             }
                         }

@@ -13,7 +13,7 @@ namespace Shinoa.Net
 
         public static void Log(string message)
         {
-            Console.WriteLine(message);
+            PrintWithTime(message);
             if (LoggingChannel != null) LoggingChannel.SendMessage(message);
         }
 
@@ -35,6 +35,11 @@ namespace Shinoa.Net
             LoggingChannel = ShinoaNet.DiscordClient.GetChannel(ulong.Parse(loggingChannelId));
 
             LoggingChannel.SendMessage("Logging initialized.");
+        }
+
+        private static void PrintWithTime(string line)
+        {
+            Console.WriteLine($"[{DateTime.Now.Hour:D2}:{DateTime.Now.Minute:D2}:{DateTime.Now.Second:D2}] {line}");
         }
     }
 }
