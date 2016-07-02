@@ -1,7 +1,11 @@
 ﻿```
-Anilist:
+MAL:
     Usage: !anime <Anime Title>
-	Fetches anime details from anilist.co.
+	Fetches anime details from MyAnimeList.net.
+
+Anilist:
+    Usage: !anilist <Anime Title>
+	Fetches anime details from Anilist.co.
 
 SAO Wikia:
 	Usage: !sao <Query>

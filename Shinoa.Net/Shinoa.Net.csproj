@@ -99,6 +99,7 @@
     <Compile Include="Module\FeedModule.cs" />
     <Compile Include="Module\IModule.cs" />
     <Compile Include="Module\MALModule.cs" />
+    <Compile Include="Module\MALSearchModule.cs" />
     <Compile Include="Module\RedditModule.cs" />
     <Compile Include="Module\SAOWikiModule.cs" />
     <Compile Include="Module\StaticModule.cs" />
