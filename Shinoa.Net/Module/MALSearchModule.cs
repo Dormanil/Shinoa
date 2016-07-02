@@ -67,7 +67,10 @@ namespace Shinoa.Net.Module
                         responseMessage += $"Average score (0-10): {firstResult.Descendants("score").First().Value}\n";
                         responseMessage += $"Episode count: {firstResult.Descendants("episodes").First().Value}\n";
 
-                        responseMessage += $"Aired: {firstResult.Descendants("start_date").First().Value} -> {firstResult.Descendants("end_date").First().Value}\n";
+                        var startDate = firstResult.Descendants("start_date").First().Value;
+                        var endDate = firstResult.Descendants("end_date").First().Value;
+                        if (endDate == "0000-00-00") endDate = "?";
+                        responseMessage += $"Aired: {startDate} -> {endDate}\n";
 
                         responseMessage += $"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}";
 
