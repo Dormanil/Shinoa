@@ -26,9 +26,9 @@ namespace Shinoa.Net
             new Module.ChatterModule(),
             new Module.AnimeNotificationsModule(),
             new Module.AnilistModule(),
-            new Module.DocsModule(),
-            new Module.FeedModule(),
-            new Module.RedditModule()
+            new Module.DocsModule()
+            //new Module.FedModule(),
+            //new Module.RedditModule(),
             //new Module.MALModule()
         };
 
@@ -57,8 +57,8 @@ namespace Shinoa.Net
                 {
                     try
                     {
-                        await DiscordClient.Connect(Config["email"], Config["password"]);
-                        DiscordClient.SetGame(Config["default_game"]);
+                        await DiscordClient.Connect(Config["token"]);
+                        
                         break;
                     }
                     catch (Exception ex)
@@ -67,25 +67,23 @@ namespace Shinoa.Net
                         await Task.Delay(DiscordClient.Config.FailedReconnectDelay);
                     }
                 }
+                
+                await Task.Delay(5000); // Not everything is instantly loaded if using a bot account.
 
                 Logging.Log($"Connected to Discord as @{DiscordClient.CurrentUser.Name}.");
                 Logging.Log("=====================");
 
+                DiscordClient.SetGame(Config["default_game"]);
+
                 DiscordClient.MessageReceived += (s, e) =>
                 {
-                    if (e.Message.RawText.Contains($"<@{DiscordClient.CurrentUser.Id}>"))
-                    {
-                        // Someone mentioned the bot.
-                        //Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] {e.Message.User.Name}: {e.Message.Text}");
-                        //Logging.LogMessage(e.Message);
-                    }       
-                    else if (e.Message.Channel.IsPrivate)
+                    if (e.Message.Channel.IsPrivate)
                     {
                         Logging.Log($"[PM] {e.User.Name}: {e.Message.Text}");
                     }
                 };
 
-                foreach(var module in ActiveModules)
+                foreach (var module in ActiveModules)
                 {
                     Logging.Log($"Binding module {module.GetType().Name}.");
 
@@ -94,15 +92,6 @@ namespace Shinoa.Net
                 }
 
                 Logging.InitLoggingToChannel();
-
-                //var rAnimeFeedNotifier = new FeedNotifier("https://www.reddit.com/r/all/new/.rss", 15);
-                //rAnimeFeedNotifier.NewItemsFound += (s, e) =>
-                //{
-                //    foreach (var item in e.NewItems)
-                //    {
-                //        Console.WriteLine($"New post: {item.Title.Text}");
-                //    }
-                //};
             });
 
             while (true) Console.ReadKey();

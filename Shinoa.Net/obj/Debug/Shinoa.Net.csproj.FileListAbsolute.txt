@@ -10,7 +10,6 @@ D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\RestSharp.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\WebSocket4Net.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\YamlDotNet.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\YamlDotNet.Dynamic.dll
-D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Discord.Net.xml
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Newtonsoft.Json.xml
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Nito.AsyncEx.xml
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Nito.AsyncEx.Concurrent.xml

@@ -44,7 +44,8 @@ namespace Shinoa.Net.Module
         {
             if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
-                var regex = new Regex(@"{{(?<animetitle>.*)}}");
+                // var regex = new Regex(@"{{(?<animetitle>.*)}}");
+                var regex = new Regex(@"!anime (?<animetitle>.*)");
                 if (regex.IsMatch(e.Message.Text))
                 {
                     var animeTitle = regex.Matches(e.Message.Text)[0].Groups["animetitle"];
