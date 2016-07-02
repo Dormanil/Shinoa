@@ -25,7 +25,7 @@ namespace Shinoa.Net.Module
 
         public void Init()
         {
-            RestClient.Authenticator = new HttpBasicAuthenticator("omegavesko", "Tekagistreasure1;");
+            RestClient.Authenticator = new HttpBasicAuthenticator(ShinoaNet.Config["mal_username"], ShinoaNet.Config["mal_password"]);
         }
 
         public void MessageReceived(object sender, MessageEventArgs e)
@@ -49,16 +49,18 @@ namespace Shinoa.Net.Module
 
                     try
                     {
-
                         XElement root = XElement.Parse(response.Content);
 
                         var firstResult = (from el in root.Descendants("entry") select el).First();
-                        // Console.WriteLine(firstResult.ToString());
 
                         var responseMessage = "";
                         responseMessage += $"Title: **{firstResult.Descendants("title").First().Value}**\n";
-                        responseMessage += $"English title: **{firstResult.Descendants("english").First().Value}**\n";
-                        responseMessage += $"Synonyms: {firstResult.Descendants("synonyms").First().Value}\n\n";
+
+                        var englishTitle = firstResult.Descendants("english").First().Value;
+                        if (englishTitle.Length > 0 ) responseMessage += $"English title: **{englishTitle}**\n";
+
+                        var synonyms = firstResult.Descendants("synonyms").First().Value;
+                        if (synonyms.Length > 0) responseMessage += $"Synonyms: {synonyms}\n\n";
 
                         responseMessage += $"Type: {firstResult.Descendants("type").First().Value}\n";
                         responseMessage += $"Status: {firstResult.Descendants("status").First().Value}\n";
@@ -70,12 +72,6 @@ namespace Shinoa.Net.Module
                         responseMessage += $"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}";
 
                         e.Channel.SendMessage(responseMessage);
-
-                        //WebClient webclient = new WebClient();
-                        //string animeId = firstResult.Descendants("image").First().Value;
-
-                        //webclient.DownloadFile($"{animeId}", $"{Path.GetTempPath()}anime_cover_{animeId}.jpg");
-                        //e.Channel.SendFile($"{Path.GetTempPath()}anime_cover_{animeId}.jpg");
                     }
                     catch (Exception ex)
                     {
