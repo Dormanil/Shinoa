@@ -26,10 +26,11 @@ namespace Shinoa.Net
             new Module.ChatterModule(),
             new Module.AnimeNotificationsModule(),
             new Module.AnilistModule(),
-            new Module.DocsModule()
-            //new Module.FedModule(),
+            new Module.DocsModule(),
+            //new Module.FeedModule(),
             //new Module.RedditModule(),
             //new Module.MALModule()
+            new Module.SAOWikiModule()
         };
 
         static void Main(string[] args)
