@@ -30,7 +30,8 @@ namespace Shinoa.Net
             //new Module.FeedModule(),
             //new Module.RedditModule(),
             //new Module.MALModule()
-            new Module.SAOWikiModule()
+            new Module.SAOWikiModule(),
+            new Module.WikipediaModule()
         };
 
         static void Main(string[] args)

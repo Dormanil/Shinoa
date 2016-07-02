@@ -4,16 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using System.Text.RegularExpressions;
 using RestSharp;
-using Microsoft.CSharp.RuntimeBinder;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace Shinoa.Net.Module
 {
-    class SAOWikiModule : IModule
+    class WikipediaModule : IModule
     {
-        static RestClient RestClient = new RestClient("http://swordartonline.wikia.com/api/v1/");
+        static RestClient RestClient = new RestClient("https://en.wikipedia.org/w/api.php");
+
+        public string DetailedStats()
+        {
+            return null;
+        }
 
         public void Init()
         {
@@ -24,14 +29,14 @@ namespace Shinoa.Net.Module
         {
             if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
-                var regex = new Regex(@"^!sao (?<querytext>.*)");
+                var regex = new Regex(@"^!wiki (?<querytext>.*)");
                 if (regex.IsMatch(e.Message.Text))
                 {
                     var queryText = regex.Matches(e.Message.Text)[0].Groups["querytext"];
 
-                    Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] {e.User.Name} searched SAO Wikia for '{queryText}'.");
+                    Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] {e.User.Name} searched Wikipedia for '{queryText}'.");
 
-                    var request = new RestRequest($"Search/List/?query={queryText}");
+                    var request = new RestRequest($"?action=opensearch&search={queryText}");
 
                     // Retry until the request successfully goes through.
 
@@ -45,12 +50,9 @@ namespace Shinoa.Net.Module
 
                     try
                     {
-                        dynamic firstResult = responseObject["items"][0];
+                        string url = responseObject[3][0];
 
-                        var responseMessage = "";
-                        responseMessage += $"{firstResult["url"]}";
-
-                        e.Channel.SendMessage(responseMessage);
+                        e.Channel.SendMessage(url);
                     }
                     catch (ArgumentException ex)
                     {
@@ -69,11 +71,6 @@ namespace Shinoa.Net.Module
                     }
                 }
             }
-        }
-        
-        public string DetailedStats()
-        {
-            return null;
         }
     }
 }

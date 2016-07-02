@@ -102,6 +102,7 @@
     <Compile Include="Module\RedditModule.cs" />
     <Compile Include="Module\SAOWikiModule.cs" />
     <Compile Include="Module\StaticModule.cs" />
+    <Compile Include="Module\WikipediaModule.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

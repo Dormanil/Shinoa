@@ -1,5 +1,13 @@
 ﻿```
 Anilist:
-    Command: {{Anime Title}}
-	Description: Fetches anime details from anilist.co.
+    Usage: !anime <Anime Title>
+	Fetches anime details from anilist.co.
+
+SAO Wikia:
+	Usage: !sao <Query>
+	Searches the SAO Wikia and returns the first result.
+
+Wikipedia:
+	Usage: !wiki <Query>
+	Searches Wikipedia and returns the first result.
 ```
