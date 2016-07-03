@@ -51,6 +51,17 @@ namespace Shinoa.Net.Module
                     var keikakuDooriImages = ShinoaNet.Config["keikaku_doori"];
                     e.Channel.SendMessage((string)keikakuDooriImages[new Random().Next(keikakuDooriImages.Count)]);
                 }
+                else if (new Regex(@"^wake (.*) up$").IsMatch(Convenience.RemoveMentions(e.Message.Text).Trim().ToLower()))
+                {
+                    Logging.LogMessage(e.Message);
+                    
+                    var regex = new Regex(@"(?i)^wake (.*) up$");
+                    
+                    var thing = regex.Matches(Convenience.RemoveMentions(e.Message.Text).Trim(new char[] { ' ', '.' }))[0].Groups[1];
+                    
+                    if (thing.Value == "me") e.Channel.SendMessage("*wakes you up inside*");
+                    else e.Channel.SendMessage($"*wakes {thing} up inside*");
+                }
             }
         }
 
