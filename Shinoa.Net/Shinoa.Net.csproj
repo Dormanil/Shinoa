@@ -98,6 +98,7 @@
     <Compile Include="Module\DocsModule.cs" />
     <Compile Include="Module\FeedModule.cs" />
     <Compile Include="Module\IModule.cs" />
+    <Compile Include="Module\MALMangaSearchModule.cs" />
     <Compile Include="Module\MALModule.cs" />
     <Compile Include="Module\MALSearchModule.cs" />
     <Compile Include="Module\RedditModule.cs" />

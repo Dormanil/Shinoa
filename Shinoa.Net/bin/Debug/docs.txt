@@ -1,7 +1,11 @@
 ﻿```
-MAL:
+MAL (Anime):
     Usage: !anime <Anime Title>
 	Fetches anime details from MyAnimeList.net.
+
+MAL (Manga/LN):
+	Usage: !manga <Manga/LN Title>
+	Fetches manga or light novel details from MyAnimeList.net.
 
 Anilist:
     Usage: !anilist <Anime Title>
