@@ -73,7 +73,7 @@ namespace Shinoa.Net.Module
                         var startDate = firstResult.Descendants("start_date").First().Value;
                         var endDate = firstResult.Descendants("end_date").First().Value;
                         if (endDate == "0000-00-00") endDate = "?";
-                        responseMessage += $"Aired: {startDate} -> {endDate}\n";
+                        responseMessage += $"Published: {startDate} -> {endDate}\n";
 
                         responseMessage += $"\nhttp://myanimelist.net/manga/{firstResult.Descendants("id").First().Value}";
 
