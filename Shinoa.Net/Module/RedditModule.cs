@@ -12,8 +12,8 @@ namespace Shinoa.Net.Module
         class SubscribedSubreddit
         {
             public string subreddit;
-            public List<Channel> channels = new List<Channel>();
-            public string lastPostId;
+            public List<Channel> channels = new List<Channel>();            
+            public Queue<string> lastPostIds = new Queue<string>();
         }
 
         List<SubscribedSubreddit> SubscribedSubreddits = new List<SubscribedSubreddit>();
@@ -58,13 +58,13 @@ namespace Shinoa.Net.Module
 
                     dynamic newestPost = responseObject["data"]["children"][0];
 
-                    if (subreddit.lastPostId == null)
+                    if (subreddit.lastPostIds.Count == 0)
                     {
-                        subreddit.lastPostId = newestPost["data"]["id"];
+                        subreddit.lastPostIds.Enqueue(newestPost["data"]["id"]);
                     }
-                    else if (newestPost["data"]["id"] != subreddit.lastPostId)
+                    else if (!subreddit.lastPostIds.Contains(newestPost["data"]["id"]))
                     {
-                        subreddit.lastPostId = newestPost["data"]["id"];
+                        subreddit.lastPostIds.Enqueue(newestPost["data"]["id"]);
 
                         var channelMessage = "";
 
@@ -77,6 +77,8 @@ namespace Shinoa.Net.Module
                             channel.SendMessage(channelMessage);
                         }
                     }
+
+                    while (subreddit.lastPostIds.Count > 5) subreddit.lastPostIds.Dequeue();
                 }
             };
 
