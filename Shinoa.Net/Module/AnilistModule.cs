@@ -45,7 +45,7 @@ namespace Shinoa.Net.Module
             if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
                 // var regex = new Regex(@"{{(?<animetitle>.*)}}");
-                var regex = new Regex(@"^!anilist (?<animetitle>.*)");
+                var regex = new Regex(@"^" + ShinoaNet.Config["command_prefix"] + @"anilist (?<animetitle>.*)");
                 if (regex.IsMatch(e.Message.Text))
                 {
                     var animeTitle = regex.Matches(e.Message.Text)[0].Groups["animetitle"];
@@ -121,7 +121,7 @@ namespace Shinoa.Net.Module
 
         void RefreshClientAccessToken()
         {
-            Logging.Log("Refreshing Anilist access token...");
+            // Logging.Log("Refreshing Anilist access token...");
 
             var request = new RestRequest("auth/access_token", Method.POST);
             request.AddParameter("grant_type", "client_credentials");
@@ -138,7 +138,7 @@ namespace Shinoa.Net.Module
             dynamic responseObject = JsonConvert.DeserializeObject(response.Content);
             AccessToken = responseObject.access_token;
 
-            Logging.Log($"Refreshed Aniist access token: {AccessToken}");
+            // Logging.Log($"Refreshed Aniist access token: {AccessToken}");
         }
 
         public string DetailedStats()

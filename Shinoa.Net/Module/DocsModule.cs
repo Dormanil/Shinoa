@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Shinoa.Net.Module
 {
@@ -21,15 +22,16 @@ namespace Shinoa.Net.Module
 
         public void MessageReceived(object sender, MessageEventArgs e)
         {
-            if (Convenience.ContainsBotMention(e.Message.RawText))
+            if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
-                if (Convenience.RemoveMentions(e.Message.RawText).Trim().ToLower().Equals("help"))
+                var regex = new Regex(@"^" + ShinoaNet.Config["command_prefix"] + @"help");
+                if (regex.IsMatch(e.Message.Text))
                 {
                     Logging.LogMessage(e.Message);
 
                     using (var streamReader = new StreamReader("docs.txt"))
                     {
-                        e.Channel.SendMessage(streamReader.ReadToEnd());
+                        e.Channel.SendMessage(streamReader.ReadToEnd().Replace("[PREFIX]", ShinoaNet.Config["command_prefix"]));
                     }
                 }
             }

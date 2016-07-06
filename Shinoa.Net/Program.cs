@@ -27,13 +27,13 @@ namespace Shinoa.Net
             new Module.AnimeNotificationsModule(),
             new Module.AnilistModule(),
             new Module.DocsModule(),
-            //new Module.FeedModule(),
-            //new Module.RedditModule(),
+            //new Module.FeedModule(),            
             //new Module.MALModule()
             new Module.SAOWikiModule(),
             new Module.WikipediaModule(),
             new Module.MALSearchModule(),
-            new Module.MALMangaSearchModule()
+            new Module.MALMangaSearchModule(),
+            new Module.RedditModule()
         };
 
         static void Main(string[] args)

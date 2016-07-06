@@ -1,21 +1,21 @@
 ﻿```
 MAL (Anime):
-    Usage: !anime <Anime Title>
+    Usage: [PREFIX]anime <Anime Title>
 	Fetches anime details from MyAnimeList.net.
 
 MAL (Manga/LN):
-	Usage: !manga <Manga/LN Title>
+	Usage: [PREFIX]manga <Manga/LN Title>
 	Fetches manga or light novel details from MyAnimeList.net.
 
 Anilist:
-    Usage: !anilist <Anime Title>
+    Usage: [PREFIX]anilist <Anime Title>
 	Fetches anime details from Anilist.co.
 
 SAO Wikia:
-	Usage: !sao <Query>
+	Usage: [PREFIX]sao <Query>
 	Searches the SAO Wikia and returns the first result.
 
 Wikipedia:
-	Usage: !wiki <Query>
+	Usage: [PREFIX]wiki <Query>
 	Searches Wikipedia and returns the first result.
 ```

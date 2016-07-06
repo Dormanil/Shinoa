@@ -32,7 +32,7 @@ namespace Shinoa.Net.Module
         {
             if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
-                var regex = new Regex(@"^!manga (?<querytext>.*)");
+                var regex = new Regex(@"^" + ShinoaNet.Config["command_prefix"] + @"manga (?<querytext>.*)");
                 if (regex.IsMatch(e.Message.Text))
                 {
                     var queryText = regex.Matches(e.Message.Text)[0].Groups["querytext"];
@@ -82,7 +82,7 @@ namespace Shinoa.Net.Module
                     catch (Exception ex)
                     {
                         e.Channel.SendMessage("Manga not found.");
-                        Logging.Log(ex.ToString());
+                        // Logging.Log(ex.ToString());
                     }
                 }
             }

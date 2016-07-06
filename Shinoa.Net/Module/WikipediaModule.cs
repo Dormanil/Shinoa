@@ -29,7 +29,7 @@ namespace Shinoa.Net.Module
         {
             if (e.User.Id != ShinoaNet.DiscordClient.CurrentUser.Id)
             {
-                var regex = new Regex(@"^!wiki (?<querytext>.*)");
+                var regex = new Regex(@"^" + ShinoaNet.Config["command_prefix"] + @"wiki (?<querytext>.*)");
                 if (regex.IsMatch(e.Message.Text))
                 {
                     var queryText = regex.Matches(e.Message.Text)[0].Groups["querytext"];
