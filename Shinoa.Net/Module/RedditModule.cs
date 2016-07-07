@@ -60,11 +60,11 @@ namespace Shinoa.Net.Module
 
                     if (subreddit.lastPostIds.Count == 0)
                     {
-                        subreddit.lastPostIds.Enqueue(newestPost["data"]["id"]);
+                        subreddit.lastPostIds.Enqueue((string)newestPost["data"]["id"]);
                     }
-                    else if (!subreddit.lastPostIds.Contains(newestPost["data"]["id"]))
+                    else if (!subreddit.lastPostIds.Contains((string) newestPost["data"]["id"]))
                     {
-                        subreddit.lastPostIds.Enqueue(newestPost["data"]["id"]);
+                        subreddit.lastPostIds.Enqueue((string) newestPost["data"]["id"]);
 
                         var channelMessage = "";
 

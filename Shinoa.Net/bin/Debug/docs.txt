@@ -11,6 +11,10 @@ Anilist:
     Usage: [PREFIX]anilist <Anime Title>
 	Fetches anime details from Anilist.co.
 
+Anime Relation Graph:
+	Usage: [PREFIX]animerel <Anime Title>
+	Shows anime relation graph from anidb.net.
+
 SAO Wikia:
 	Usage: [PREFIX]sao <Query>
 	Searches the SAO Wikia and returns the first result.

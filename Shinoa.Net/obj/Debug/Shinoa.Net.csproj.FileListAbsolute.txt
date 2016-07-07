@@ -27,3 +27,17 @@ D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\HtmlAgilityPack.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\RedditSharp.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\HtmlAgilityPack.pdb
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\HtmlAgilityPack.xml
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Resources\anime-titles.dat.gz
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Autofac.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Microsoft.Threading.Tasks.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Microsoft.Threading.Tasks.Extensions.Desktop.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Microsoft.Threading.Tasks.Extensions.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\System.Net.Http.Extensions.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\System.Net.Http.Primitives.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Tweetinvi.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Autofac.xml
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Microsoft.Threading.Tasks.xml
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Microsoft.Threading.Tasks.Extensions.xml
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Microsoft.Threading.Tasks.Extensions.Desktop.xml
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\System.Net.Http.Extensions.xml
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\System.Net.Http.Primitives.xml
