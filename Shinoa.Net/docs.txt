@@ -22,4 +22,8 @@ SAO Wikia:
 Wikipedia:
 	Usage: [PREFIX]wiki <Query>
 	Searches Wikipedia and returns the first result.
+
+Japanese Dictionary:
+	Usage: [PREFIX]jp <Query>
+	Searches Jisho.org and returns the first result.
 ```

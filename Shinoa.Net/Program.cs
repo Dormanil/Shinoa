@@ -35,7 +35,8 @@ namespace Shinoa.Net
             new Module.MALMangaSearchModule(),
             new Module.RedditModule(),
             new Module.AnidbGraphModule(),
-            new Module.TwitterModule()
+            new Module.TwitterModule(),
+            new Module.JishoModule()
         };
 
         static void Main(string[] args)
