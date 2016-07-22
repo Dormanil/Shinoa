@@ -83,6 +83,10 @@
       <HintPath>..\packages\RestSharp.105.2.3\lib\net452\RestSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="SubtitlesParser, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SubtitlesParser.1.4.6\lib\net40-Client\SubtitlesParser.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net" />
@@ -127,6 +131,7 @@
     <Compile Include="Module\AnidbGraphModule.cs" />
     <Compile Include="Module\AnilistModule.cs" />
     <Compile Include="Module\AnimeNotificationsModule.cs" />
+    <Compile Include="Module\BackstrokeModule.cs" />
     <Compile Include="Module\ChatterModule.cs" />
     <Compile Include="Module\DocsModule.cs" />
     <Compile Include="Module\IModule.cs" />
@@ -136,8 +141,10 @@
     <Compile Include="Module\RedditModule.cs" />
     <Compile Include="Module\SAOWikiModule.cs" />
     <Compile Include="Module\StaticModule.cs" />
+    <Compile Include="Module\TranslateModule.cs" />
     <Compile Include="Module\TwitterModule.cs" />
     <Compile Include="Module\WikipediaModule.cs" />
+    <Compile Include="Module\WordFilterModule.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -151,6 +158,9 @@
     </Content>
     <None Include="packages.config" />
     <None Include="Resources\anime-titles.dat.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\backstroke.srt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -16,6 +16,7 @@ namespace Shinoa.Net.Module
             public string username;
             public List<Channel> channels = new List<Channel>();
             public Queue<long> lastTweetIds = new Queue<long>();
+            public bool retweetsEnabled;
         }
 
         List<SubscribedUser> SubscribedUsers = new List<SubscribedUser>();
@@ -35,6 +36,7 @@ namespace Shinoa.Net.Module
             {
                 var newSubscribedUser = new SubscribedUser();
                 newSubscribedUser.username = user["user"];
+                newSubscribedUser.retweetsEnabled = (user["retweets"] == "y");
 
                 foreach (var channel in user["channels"])
                 {
@@ -52,6 +54,8 @@ namespace Shinoa.Net.Module
                 {
                     var tweets = Timeline.GetUserTimeline(user.username);
                     var newestTweet = tweets.ToList()[0];
+
+                    if (newestTweet.IsRetweet && !user.retweetsEnabled) continue;
 
                     if (user.lastTweetIds.Count == 0)
                     {

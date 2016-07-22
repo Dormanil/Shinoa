@@ -27,8 +27,6 @@ namespace Shinoa.Net
             new Module.AnimeNotificationsModule(),
             new Module.AnilistModule(),
             new Module.DocsModule(),
-            //new Module.FeedModule(),            
-            //new Module.MALModule()
             new Module.SAOWikiModule(),
             new Module.WikipediaModule(),
             new Module.MALSearchModule(),
@@ -36,7 +34,10 @@ namespace Shinoa.Net
             new Module.RedditModule(),
             new Module.AnidbGraphModule(),
             new Module.TwitterModule(),
-            new Module.JishoModule()
+            new Module.JishoModule(),
+            new Module.WordFilterModule(),
+            // new Module.TranslateModule()
+            new Module.BackstrokeModule()
         };
 
         static void Main(string[] args)

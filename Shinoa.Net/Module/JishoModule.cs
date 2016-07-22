@@ -75,6 +75,21 @@ namespace Shinoa.Net.Module
                             }
 
                             responseText = responseText.Trim(new char[] { ',', ' ' });
+
+                            if (sense["parts_of_speech"].Count > 0)
+                            {
+                                responseText += " (";
+
+                                foreach (string part in sense["parts_of_speech"])
+                                {
+                                    responseText += $"{part.ToLower()}, ";
+                                }
+
+                                responseText = responseText.Trim(new char[] { ',', ' ' });
+
+                                responseText += ")";
+                            }
+
                             responseText += '\n';
                         }
 
@@ -82,14 +97,9 @@ namespace Shinoa.Net.Module
 
                         e.Channel.SendMessage(responseText);
                     }
-                    catch (RuntimeBinderException ex)
-                    {
-                        e.Channel.SendMessage("No results.");
-                    }
                     catch (Exception ex)
                     {
-                        e.Channel.SendMessage("Error encountered, not found.");
-                        Logging.Log(ex.ToString());
+                        e.Channel.SendMessage("Not found.");
                     }
                 }
             }

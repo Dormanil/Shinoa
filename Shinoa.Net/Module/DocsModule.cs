@@ -31,7 +31,8 @@ namespace Shinoa.Net.Module
 
                     using (var streamReader = new StreamReader("docs.txt"))
                     {
-                        e.Channel.SendMessage(streamReader.ReadToEnd().Replace("[PREFIX]", ShinoaNet.Config["command_prefix"]));
+                        e.User.SendMessage(streamReader.ReadToEnd().Replace("[PREFIX]", ShinoaNet.Config["command_prefix"]));
+                        e.Channel.SendMessage($"<@{e.User.Id}> Sent you a PM.");
                     }
                 }
             }
