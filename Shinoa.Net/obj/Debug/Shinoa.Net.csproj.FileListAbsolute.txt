@@ -43,3 +43,7 @@ D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\System.Net.Http.Extensions.xm
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\System.Net.Http.Primitives.xml
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\SubtitlesParser.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Resources\backstroke.srt
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\WebPublic\index.html
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Unosquare.Labs.EmbedIO.dll
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Unosquare.Labs.EmbedIO.pdb
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Unosquare.Labs.EmbedIO.xml
