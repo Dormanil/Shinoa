@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using System.Text.RegularExpressions;
 using System.Timers;
+using System.IO;
 
 namespace Shinoa.Net.Module
 {
@@ -26,8 +27,8 @@ namespace Shinoa.Net.Module
             }
         }
 
-        static string[] CommandList = { "ban", "kick", "mute", "unmute", "isauthorized" };
-
+        static string[] CommandList = { "ban", "kick", "mute", "unmute", "isauthorized", "ping", "modhelp" };
+        
         static Dictionary<string, int> TimeUnits = new Dictionary<string, int>()
         {
             { "seconds",    1000 },
@@ -93,7 +94,13 @@ namespace Shinoa.Net.Module
                                 }
 
                                 var segments = commandText.Split(new char[] { ' ' });
-                                var userId = ulong.Parse(segments[1].Substring(3, segments[1].Length - 4));
+                                var userIdString = segments[1]
+                                    .Replace("<", "")
+                                    .Replace(">", "")
+                                    .Replace("@", "")
+                                    .Replace("!", "");
+
+                                var userId = ulong.Parse(userIdString);
 
                                 if (commandText.StartsWith("mute"))
                                 {
@@ -129,7 +136,14 @@ namespace Shinoa.Net.Module
                             else if (commandText.StartsWith("ban"))
                             {
                                 var segments = commandText.Split(new char[] { ' ' });
-                                var userId = ulong.Parse(segments[1].Substring(3, segments[1].Length - 4));
+
+                                var userIdString = segments[1]
+                                    .Replace("<", "")
+                                    .Replace(">", "")
+                                    .Replace("@", "")
+                                    .Replace("!", "");
+
+                                var userId = ulong.Parse(userIdString);
 
                                 e.Server.Ban(e.Server.GetUser(userId));
                                 e.Channel.SendMessage("User has been banned.");
@@ -137,7 +151,13 @@ namespace Shinoa.Net.Module
                             else if (commandText.StartsWith("kick"))
                             {
                                 var segments = commandText.Split(new char[] { ' ' });
-                                var userId = ulong.Parse(segments[1].Substring(3, segments[1].Length - 4));
+                                var userIdString = segments[1]
+                                    .Replace("<", "")
+                                    .Replace(">", "")
+                                    .Replace("@", "")
+                                    .Replace("!", "");
+
+                                var userId = ulong.Parse(userIdString);
 
                                 e.Server.GetUser(userId).Kick();
                                 e.Channel.SendMessage("User has been kicked.");
@@ -146,7 +166,21 @@ namespace Shinoa.Net.Module
                             {
                                 e.Channel.SendMessage("You are authorized to use moderation commands.");
                             }
+                            else if (commandText == "ping")
+                            {
+                                e.Channel.SendMessage($"<@{e.User.Id}>, PONG!");
+                            }
+                            else if (commandText == "modhelp")
+                            {
+                                using (var streamReader = new StreamReader("mod_docs.txt"))
+                                {
+                                    e.User.SendMessage(streamReader.ReadToEnd().Replace("[PREFIX]", ShinoaNet.Config["command_prefix"]));
+                                    e.Channel.SendMessage($"<@{e.User.Id}> Sent you a PM.");
+                                }
+                            }
                         }
+
+                        break;
                     }
                     catch (ModerationException ex)
                     {

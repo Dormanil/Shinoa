@@ -156,6 +156,9 @@
     <Compile Include="RestController.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="mod_docs.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="WebPublic\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

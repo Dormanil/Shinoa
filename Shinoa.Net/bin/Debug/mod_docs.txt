@@ -1,0 +1,18 @@
+﻿```
+Mute a user:
+    Usage: [PREFIX]mute @user [number] seconds/minutes/hours
+	Example: [PREFIX]mute @OmegaVesko 20 seconds
+	You can leave out the time, in that case the mute will be indefinite.
+
+Unmute a user:
+    Usage: [PREFIX]unmute @user
+	Example: [PREFIX]unmute @OmegaVesko
+
+Ban a user:
+    Usage: [PREFIX]ban @user
+	Example: [PREFIX]ban @OmegaVesko
+
+Kick a user:
+    Usage: [PREFIX]kick  @user
+	Example: [PREFIX]kick @OmegaVesko
+```
