@@ -1,0 +1,5 @@
+D:\Development\NET\Shinoa.Net\ChatterBotAPI\bin\Debug\ChatterBotAPI.dll
+D:\Development\NET\Shinoa.Net\ChatterBotAPI\bin\Debug\ChatterBotAPI.pdb
+D:\Development\NET\Shinoa.Net\ChatterBotAPI\obj\Debug\ChatterBotAPI.csprojResolveAssemblyReference.cache
+D:\Development\NET\Shinoa.Net\ChatterBotAPI\obj\Debug\ChatterBotAPI.dll
+D:\Development\NET\Shinoa.Net\ChatterBotAPI\obj\Debug\ChatterBotAPI.pdb

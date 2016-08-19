@@ -138,6 +138,7 @@
     <Compile Include="Module\AnimeNotificationsModule.cs" />
     <Compile Include="Module\BackstrokeModule.cs" />
     <Compile Include="Module\ChatterModule.cs" />
+    <Compile Include="Module\CleverbotModule.cs" />
     <Compile Include="Module\DocsModule.cs" />
     <Compile Include="Module\IModule.cs" />
     <Compile Include="Module\JishoModule.cs" />
@@ -149,6 +150,7 @@
     <Compile Include="Module\StaticModule.cs" />
     <Compile Include="Module\TranslateModule.cs" />
     <Compile Include="Module\TwitterModule.cs" />
+    <Compile Include="Module\VndbModule.cs" />
     <Compile Include="Module\WikipediaModule.cs" />
     <Compile Include="Module\WordFilterModule.cs" />
     <Compile Include="Program.cs" />
@@ -179,6 +181,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ChatterBotAPI\ChatterBotAPI.csproj">
+      <Project>{2e624962-f155-432c-a90a-e1ce75dee9ea}</Project>
+      <Name>ChatterBotAPI</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />

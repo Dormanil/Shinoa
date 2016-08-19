@@ -24,7 +24,7 @@ namespace Shinoa.Net
 
         public static Module.IModule[] ActiveModules =
         {
-            new Module.StaticModule(),
+            // new Module.StaticModule(),
             new Module.AdminModule(),
             new Module.ChatterModule(),
             new Module.AnimeNotificationsModule(),
@@ -41,7 +41,8 @@ namespace Shinoa.Net
             // new Module.WordFilterModule(),
             // new Module.TranslateModule()
             new Module.BackstrokeModule(),
-            new Module.ModerationModule()
+            new Module.ModerationModule(),
+            new Module.CleverbotModule()
         };
 
         static void Main(string[] args)

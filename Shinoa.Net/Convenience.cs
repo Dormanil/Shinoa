@@ -17,9 +17,9 @@ namespace Shinoa.Net
             return mentionRegex.Replace(message, "");
         }
 
-        public static bool ContainsBotMention(string message)
+        public static bool ContainsBotMention(Discord.Message message)
         {
-            return message.Contains($"<@{ShinoaNet.DiscordClient.CurrentUser.Id}>");
+            return message.RawText.Contains($"{ShinoaNet.DiscordClient.CurrentUser.Id}>");
         }
     }
 }

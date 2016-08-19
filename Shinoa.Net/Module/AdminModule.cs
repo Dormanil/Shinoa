@@ -19,7 +19,7 @@ namespace Shinoa.Net.Module
         {
             if (e.Message.User.Id.ToString().Equals(ShinoaNet.Config["owner_id"]))
             {
-                if (Convenience.ContainsBotMention(e.Message.RawText) || e.Message.Channel.IsPrivate)
+                if (Convenience.ContainsBotMention(e.Message) || e.Message.Channel.IsPrivate)
                 {
                     var cleanMessage = Convenience.RemoveMentions(e.Message.RawText).Trim().ToLower();
 

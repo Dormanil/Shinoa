@@ -21,7 +21,7 @@ namespace Shinoa.Net.Module
 
         public void MessageReceived(object sender, MessageEventArgs e)
         {  
-            if (Convenience.ContainsBotMention(e.Message.RawText))
+            if (Convenience.ContainsBotMention(e.Message))
             {
                 var cleanMessage = Convenience.RemoveMentions(e.Message.RawText).Trim().ToLower();
 
