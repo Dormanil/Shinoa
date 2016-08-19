@@ -34,6 +34,16 @@ namespace Shinoa.Net.Module
                     e.Channel.SendMessage(@"/o/");
                     Logging.LogMessage(e.Message);
                 }
+                else if (e.Message.Text.Trim().Equals(@"\o"))
+                {
+                    e.Channel.SendMessage(@"o/");
+                    Logging.LogMessage(e.Message);
+                }
+                else if (e.Message.Text.Trim().Equals(@"o/"))
+                {
+                    e.Channel.SendMessage(@"\o");
+                    Logging.LogMessage(e.Message);
+                }
                 //else if (cleanMessage.Equals("soon"))
                 //{
                 //    Logging.LogMessage(e.Message);

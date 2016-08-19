@@ -12,7 +12,7 @@ namespace Shinoa.Net.Module
 {
     class CleverbotModule : IModule
     {
-        static ChatterBotSession CleverbotSession;
+        static Dictionary<ulong, ChatterBotSession> Sessions = new Dictionary<ulong, ChatterBotSession>();
 
         public string DetailedStats()
         {
@@ -21,9 +21,7 @@ namespace Shinoa.Net.Module
 
         public void Init()
         {
-            var factory = new ChatterBotFactory();
-            var bot = factory.Create(ChatterBotType.CLEVERBOT);
-            CleverbotSession = bot.CreateSession();
+
         }
 
         public void MessageReceived(object sender, MessageEventArgs e)
@@ -33,7 +31,20 @@ namespace Shinoa.Net.Module
                 if (Convenience.ContainsBotMention(e.Message))
                 {
                     var cleanMessage = Convenience.RemoveMentions(e.Message.RawText);
-                    e.Channel.SendMessage(CleverbotSession.Think(cleanMessage));
+
+                    if (Sessions.ContainsKey(e.User.Id))
+                    {
+                        e.Channel.SendMessage($"<@{e.User.Id}> {Sessions[e.User.Id].Think(cleanMessage)}");
+                    }
+                    else
+                    {
+                        var factory = new ChatterBotFactory();
+                        var bot = factory.Create(ChatterBotType.CLEVERBOT);
+                        var session = bot.CreateSession();
+
+                        Sessions.Add(e.User.Id, session);
+                        e.Channel.SendMessage($"<@{e.User.Id}> {Sessions[e.User.Id].Think(cleanMessage)}");
+                    }
                 }
             }
         }
