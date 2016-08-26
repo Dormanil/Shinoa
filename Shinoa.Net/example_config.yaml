@@ -1,0 +1,87 @@
+# Arbitrary.
+version_id: "0.4"
+
+# The URL to be used for the HTTP interface.
+web_server_url: "http://localhost:9300"
+
+# The token for the bot account you want to use.
+token: "changeme"
+
+# The ID of the owner, which would normally be your account.
+owner_id: 00000000000000000
+
+# All commands need to be prefixed with what you set here.
+command_prefix: "!"
+
+# Client ID and secret for the Anilist API.
+anilist_client_id: "changeme"
+anilist_client_secret: "changeme"
+
+# MAL username and password, to enable use of the API.
+mal_username: "changeme"
+mal_password: "changeme"
+
+# Key and secret for the Twitter API.
+twitter_key: "changeme"
+twitter_secret: "changeme"
+
+# Arbitrary. Your bot will be 'playing' whatever you put here. Can be an empty string.
+default_game: "changeme"
+
+# The bot will reply to these triggers if they're prefixed with a mention.
+static_replies:
+    - trigger: "changeme"
+      reply: "changeme"
+
+# The channel you want the bot to log actions to.
+logging_channel_id: "000000000000000000"
+
+# New anime episode releases will be posted to this channel.
+anime_notification_channels:
+    - "00000000000000000"
+    
+# A list of subreddits to track. New posts will be sent to all of the listed channels.
+reddit:
+    - subreddit: "/r/all"
+      channels:
+          - "00000000000000000"
+          - "11111111111111111"
+
+# A list of Twitter users to track. New tweets will be sent to all listed channels.
+# 'retweets' can be 'y' or 'n'.
+twitter:
+    - user: "omegavesko"
+      retweets: n
+      channels:
+          - "00000000000000000"
+
+soon_images:
+    - "http://i.imgur.com/3X4VduM.jpg"
+    - "http://i.imgur.com/xHa3LYh.jpg"
+    - "http://i.imgur.com/PnQ4E1E.jpg"
+    - "http://i.imgur.com/oi3aXhh.jpg"
+    - "http://i.imgur.com/b8gfUGB.jpg"
+    - "http://i.imgur.com/hWpdBKb.jpg"
+    - "http://i.imgur.com/TSZtlvR.jpg"
+    - "http://i.imgur.com/IJNP3HE.jpg"
+    - "http://i.imgur.com/n0OCmYn.jpg"
+    - "http://i.imgur.com/j2afcPJ.jpg"
+    - "http://i.imgur.com/OT3IBTH.jpg"
+    - "http://i.imgur.com/bgOiV1x.jpg"
+    - "http://i.imgur.com/tjm752s.jpg"
+    - "http://i.imgur.com/ggrUMdo.jpg"
+    - "http://i.imgur.com/tmN9b3n.jpg"
+
+keikaku_doori:
+    - "http://i.imgur.com/rDPXMSo.jpg"
+    - "http://i.imgur.com/TVxpwn2.png"
+    - "http://i.imgur.com/6mMgM34.gif"
+    - "http://i.imgur.com/tkXENhr.jpg"
+    - "http://i.imgur.com/bh637qe.jpg"
+
+# Used to configure which role has acceess to moderation commands on each server.
+# Muted users will be assigned the role under muted_role_name.
+moderator_config:
+    - server: "00000000000000000" 
+      role: "00000000000000000"
+      muted_role_name: "Muted"
