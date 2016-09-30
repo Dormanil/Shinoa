@@ -42,7 +42,8 @@ namespace Shinoa.Net
             // new Module.TranslateModule()
             new Module.BackstrokeModule(),
             new Module.ModerationModule(),
-            new Module.CleverbotModule()
+            new Module.CleverbotModule(),
+            new Module.WelcomeModule()
         };
 
         static void Main(string[] args)
@@ -80,7 +81,7 @@ namespace Shinoa.Net
                     {
                         try
                         {
-                            await DiscordClient.Connect(Config["token"]);
+                            await DiscordClient.Connect(Config["token"], TokenType.Bot);
 
                             break;
                         }

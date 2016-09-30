@@ -81,6 +81,15 @@ namespace Shinoa.Net.Module
                         {
                             var commandText = regex.Matches(e.Message.RawText)[0].Groups["querytext"].Value;
 
+                            var moderatorUserId = e.User.Id;
+                            if (commandText.StartsWith("mute") ||
+                                commandText.StartsWith("unmute") ||
+                                commandText.StartsWith("ban") ||
+                                commandText.StartsWith("kick"))
+                            {
+                                e.Message.Delete();
+                            }
+
                             if (commandText.StartsWith("mute") || commandText.StartsWith("unmute"))
                             {                                
                                 Role mutedRole = null;
@@ -100,6 +109,12 @@ namespace Shinoa.Net.Module
                                     .Replace("@", "")
                                     .Replace("!", "");
 
+                                string reason = null;
+                                if (Regex.IsMatch(commandText, @"\""(.*)\"""))
+                                {
+                                    reason = Regex.Match(commandText, @"\""(.*)\""").Groups[1].Value;
+                                }
+
                                 var userId = ulong.Parse(userIdString);
 
                                 if (commandText.StartsWith("mute"))
@@ -107,7 +122,17 @@ namespace Shinoa.Net.Module
                                     var userToMute = e.Server.GetUser(userId);
                                     userToMute.AddRoles(mutedRole);
 
-                                    if (segments.Length > 2)
+                                    bool containsTimeUnit = false;
+                                    foreach (var unit in TimeUnits)
+                                    {
+                                        if (unit.Key == segments[3])
+                                        {
+                                            containsTimeUnit = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (containsTimeUnit)
                                     {
                                         var length = int.Parse(segments[2]);
                                         var unit = segments[3];
@@ -118,11 +143,25 @@ namespace Shinoa.Net.Module
                                         unmuteTimer.AutoReset = false;
                                         unmuteTimer.Start();
 
-                                        e.Channel.SendMessage($"Muted user <@{userId}> for {length} {unit}.");
+                                        if (reason == null)
+                                        {
+                                            e.Channel.SendMessage($"<@{moderatorUserId}> muted user <@{userId}> for {length} {unit}.");
+                                        }
+                                        else
+                                        {
+                                            e.Channel.SendMessage($"<@{moderatorUserId}> muted user <@{userId}> for {length} {unit}.\n\nReason: `{reason}`");
+                                        }
                                     }
                                     else
                                     {
-                                        e.Channel.SendMessage($"Muted user <@{userId}>.");
+                                        if (reason == null)
+                                        {
+                                            e.Channel.SendMessage($"<@{moderatorUserId}> muted user <@{userId}>.");
+                                        }
+                                        else
+                                        {
+                                            e.Channel.SendMessage($"<@{moderatorUserId}> muted user <@{userId}>.\n\nReason: `{reason}`");
+                                        }
                                     }
                                 }
                                 else if (commandText.StartsWith("unmute"))
@@ -130,7 +169,7 @@ namespace Shinoa.Net.Module
                                     var userToUnmute = e.Server.GetUser(userId);
                                     userToUnmute.RemoveRoles(mutedRole);
 
-                                    e.Channel.SendMessage($"Unmuted user <@{userId}>.");
+                                    e.Channel.SendMessage($"<@{moderatorUserId}> unmuted user <@{userId}>.");
                                 }
                             }
                             else if (commandText.StartsWith("ban"))
@@ -143,10 +182,17 @@ namespace Shinoa.Net.Module
                                     .Replace("@", "")
                                     .Replace("!", "");
 
+                                string reason = null;
+                                if (Regex.IsMatch(commandText, @"\""(.*)\"""))
+                                {
+                                    reason = Regex.Match(commandText, @"\""(.*)\""").Groups[1].Value;
+                                }
+
                                 var userId = ulong.Parse(userIdString);
+                                var username = e.Channel.Server.GetUser(userId).Name;
 
                                 e.Server.Ban(e.Server.GetUser(userId));
-                                e.Channel.SendMessage("User has been banned.");
+                                e.Channel.SendMessage($"<@{moderatorUserId}> has banned user {username}");
                             }
                             else if (commandText.StartsWith("kick"))
                             {
@@ -157,10 +203,17 @@ namespace Shinoa.Net.Module
                                     .Replace("@", "")
                                     .Replace("!", "");
 
+                                string reason = null;
+                                if (Regex.IsMatch(commandText, @"\""(.*)\"""))
+                                {
+                                    reason = Regex.Match(commandText, @"\""(.*)\""").Groups[1].Value;
+                                }
+
                                 var userId = ulong.Parse(userIdString);
+                                var username = e.Channel.Server.GetUser(userId).Name;
 
                                 e.Server.GetUser(userId).Kick();
-                                e.Channel.SendMessage("User has been kicked.");
+                                e.Channel.SendMessage($"<@{moderatorUserId}> has kicked user {username}");
                             }
                             else if (commandText == "isauthorized")
                             {
