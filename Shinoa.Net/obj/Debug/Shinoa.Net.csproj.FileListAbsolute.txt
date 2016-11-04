@@ -50,3 +50,4 @@ D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\Unosquare.Labs.EmbedIO.xml
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\mod_docs.txt
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\ChatterBotAPI.dll
 D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\ChatterBotAPI.pdb
+D:\Development\NET\Shinoa.Net\Shinoa.Net\bin\Debug\anime_notification_users.yaml

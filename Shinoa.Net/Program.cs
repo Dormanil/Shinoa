@@ -24,7 +24,6 @@ namespace Shinoa.Net
 
         public static Module.IModule[] ActiveModules =
         {
-            // new Module.StaticModule(),
             new Module.AdminModule(),
             new Module.ChatterModule(),
             new Module.AnimeNotificationsModule(),
@@ -38,8 +37,6 @@ namespace Shinoa.Net
             new Module.AnidbGraphModule(),
             new Module.TwitterModule(),
             new Module.JishoModule(),
-            // new Module.WordFilterModule(),
-            // new Module.TranslateModule()
             new Module.BackstrokeModule(),
             new Module.ModerationModule(),
             new Module.CleverbotModule(),
@@ -104,7 +101,10 @@ namespace Shinoa.Net
                     {
                         if (e.Message.Channel.IsPrivate)
                         {
-                            Logging.Log($"[PM] {e.User.Name}: {e.Message.Text}");
+                            if (e.Message.User.Id != DiscordClient.CurrentUser.Id)
+                            {
+                                Logging.Log($"[PM] {e.User.Name}: {e.Message.Text}");
+                            }
                         }
                     };
 
@@ -120,6 +120,15 @@ namespace Shinoa.Net
                 });
 
                 while (true) Console.ReadKey();
+            }
+        }
+
+        public static void WriteConfig()
+        {
+            using (var streamWriter = new StreamWriter("config.yaml", false))
+            {
+                var serializer = new YamlDotNet.Serialization.Serializer();
+                serializer.Serialize(streamWriter, Config);
             }
         }
     }

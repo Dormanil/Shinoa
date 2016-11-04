@@ -123,12 +123,15 @@ namespace Shinoa.Net.Module
                                     userToMute.AddRoles(mutedRole);
 
                                     bool containsTimeUnit = false;
-                                    foreach (var unit in TimeUnits)
+                                    if (segments.Length >= 3)
                                     {
-                                        if (unit.Key == segments[3])
+                                        foreach (var unit in TimeUnits)
                                         {
-                                            containsTimeUnit = true;
-                                            break;
+                                            if (unit.Key == segments[3])
+                                            {
+                                                containsTimeUnit = true;
+                                                break;
+                                            }
                                         }
                                     }
 

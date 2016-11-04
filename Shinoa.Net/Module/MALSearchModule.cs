@@ -16,7 +16,7 @@ namespace Shinoa.Net.Module
 {
     class MALSearchModule : IModule
     {
-        static RestClient RestClient = new RestClient("http://myanimelist.net/api/");
+        static RestClient RestClient = new RestClient("https://myanimelist.net/api/");
 
         public string DetailedStats()
         {
@@ -37,7 +37,8 @@ namespace Shinoa.Net.Module
                 {
                     var queryText = regex.Matches(e.Message.Text)[0].Groups["querytext"];
 
-                    Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] {e.User.Name} searched MAL for '{queryText}'.");
+                    if (e.Server != null) Logging.Log($"[{e.Server.Name} -> #{e.Channel.Name}] {e.User.Name} searched MAL for '{queryText}'.");
+                    else Logging.Log($"[PM] {e.User.Name} searched MAL for '{queryText}'.");
 
                     var request = new RestRequest($"anime/search.xml?q={queryText}");
 
