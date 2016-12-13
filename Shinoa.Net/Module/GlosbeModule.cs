@@ -22,7 +22,7 @@ namespace Shinoa.Net.Module
 
         public void Init()
         {
-            
+
         }
 
         public void MessageReceived(object sender, MessageEventArgs e)
@@ -49,28 +49,33 @@ namespace Shinoa.Net.Module
                         dynamic firstResult = responseObject["tuc"][0];
 
                         var responseText = "";
-
-                        if (firstResult["phrase"]["language"] == "en") responseText += (firstResult["phrase"]["text"] != null ? $"**{firstResult["phrase"]["text"]}**" : "");
-                        if (responseText != string.Empty)
+                        
+                        var count = 0;
+                        foreach (var phrase in responseObject["tuc"])
                         {
-                            responseText += '\n';
-                            foreach (var meaning in firstResult["meanings"])
+                            if (count < 10)
                             {
-                                if(meaning["language"] == "en")
+                                if (phrase["phrase"]["language"] == "en")
                                 {
-                                    responseText += "\u2022";
-                                    responseText += meaning["text"];
-                                    responseText += '\n';
+                                    responseText += $"- {phrase["phrase"]["text"]}\n";
+                                }
+
+                                count++;
+                            }
+                            else
+                            {
+                                if (responseObject["tuc"].Count > 10)
+                                {
+                                    responseText += $"\n... And {responseObject["tuc"].Count - 10} more.";
+                                    break;
                                 }
                             }
-
-                            responseText += $"\nSee more: <https://glosbe.com/de/en/{System.Uri.EscapeUriString(queryText.Value)}>";
-                            e.Channel.SendMessage(responseText);
-                        } else
-                        {
-                            e.Channel.SendMessage("Not found.");
                         }
-                    } catch
+
+                        responseText += $"\nSee more: <https://glosbe.com/de/en/{System.Uri.EscapeUriString(queryText.Value)}>";
+                        e.Channel.SendMessage(responseText);
+                    }
+                    catch
                     {
                         e.Channel.SendMessage("Not found.");
                     }

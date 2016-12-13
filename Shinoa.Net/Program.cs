@@ -37,11 +37,11 @@ namespace Shinoa.Net
             new Module.AnidbGraphModule(),
             new Module.TwitterModule(),
             new Module.JishoModule(),
-            new Module.GlosbeModule(),
             new Module.BackstrokeModule(),
             new Module.ModerationModule(),
             new Module.CleverbotModule(),
-            new Module.WelcomeModule()
+            new Module.WelcomeModule(),
+            new Module.GlosbeModule()
         };
 
         static void Main(string[] args)

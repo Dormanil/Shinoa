@@ -27,6 +27,10 @@ Japanese Dictionary:
 	Usage: [PREFIX]jp <Query>
 	Searches Jisho.org and returns the first result.
 
+German Dictionary:
+	Usage: [PREFIX]de <Query>
+	Searches glosbe.com/de/ and returns the first result.
+
 Backstroke of the West:
 	Usage: [PREFIX]backstroke
 	Returns a random quote from Backstroke of the West.

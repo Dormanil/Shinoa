@@ -140,6 +140,7 @@
     <Compile Include="Module\ChatterModule.cs" />
     <Compile Include="Module\CleverbotModule.cs" />
     <Compile Include="Module\DocsModule.cs" />
+    <Compile Include="Module\GlosbeModule.cs" />
     <Compile Include="Module\IModule.cs" />
     <Compile Include="Module\JishoModule.cs" />
     <Compile Include="Module\MALMangaSearchModule.cs" />
