@@ -56,8 +56,9 @@ namespace Shinoa.Net.Module
                     }
                     catch (ArgumentException ex)
                     {
-                        Logging.Log("SAO Wikia Module request encountered an ArgumentException.");
-                        Logging.Log($"ResponseObject is: {responseObject}");
+                        e.Channel.SendMessage("Search returned no results.");
+                        //Logging.Log("SAO Wikia Module request encountered an ArgumentException.");
+                        //Logging.Log($"ResponseObject is: {responseObject}");
 
                     }
                     catch (RuntimeBinderException ex)

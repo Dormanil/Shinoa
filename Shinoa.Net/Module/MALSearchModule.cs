@@ -11,6 +11,7 @@ using RestSharp.Authenticators;
 using System.Xml.Linq;
 using System.Net;
 using System.IO;
+using System.Timers;
 
 namespace Shinoa.Net.Module
 {
@@ -54,6 +55,39 @@ namespace Shinoa.Net.Module
 
                         var firstResult = (from el in root.Descendants("entry") select el).First();
 
+                        if (firstResult.Descendants("id").First().Value == "5568")
+                        {
+                            if (e.Server.Name.ToLower().Contains("swordartonline") && !e.Channel.Name.ToLower().Contains("nsfw"))
+                            {
+                                dynamic serverConfig = null;
+                                foreach (var currentServerConfig in ShinoaNet.Config["moderator_config"])
+                                {
+                                    if (ulong.Parse(currentServerConfig["server"]) == e.Server.Id) serverConfig = currentServerConfig;
+                                }
+
+                                Role mutedRole = null;
+                                foreach (var role in e.Server.Roles)
+                                {
+                                    if (role.Name == serverConfig["muted_role_name"])
+                                    {
+                                        mutedRole = role;
+                                        break;
+                                    }
+                                }
+
+                                e.Message.User.AddRoles(mutedRole);
+
+                                var unmuteTimer = new Timer();
+                                unmuteTimer.Interval = 1000 * 60 * 20;
+                                unmuteTimer.Elapsed += (ss, ee) => { e.Message.User.RemoveRoles(mutedRole); };
+                                unmuteTimer.AutoReset = false;
+                                unmuteTimer.Start();
+
+                                e.Channel.SendMessage($"Nice try. Muted user <@{e.Message.User.Id}> for 20 minutes.");
+                                return;
+                            }
+                        }
+
                         var responseMessage = "";
                         responseMessage += $"Title: **{firstResult.Descendants("title").First().Value}**\n";
 
@@ -82,7 +116,6 @@ namespace Shinoa.Net.Module
                     catch (Exception ex)
                     {
                         e.Channel.SendMessage("Anime not found.");
-                        // Logging.Log(ex.ToString());
                     }
                 }
             }

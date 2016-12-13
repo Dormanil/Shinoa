@@ -25,17 +25,26 @@ namespace Shinoa.Net.Module
 
             ShinoaNet.DiscordClient.UserJoined += (s, e) =>
             {
-                var send = false;
                 foreach(var server in servers)
                 {
                     if (server.Id == e.Server.Id)
                     {
-                        send = true;
+                        e.Server.DefaultChannel.SendMessage($"Welcome to the server, <@{e.User.Id}>!");
                         break;
                     }
                 }
+            };
 
-                if (send) e.Server.DefaultChannel.SendMessage($"Welcome to the server, <@{e.User.Id}>!");
+            ShinoaNet.DiscordClient.UserLeft += (s, e) =>
+            {
+                foreach (var server in servers)
+                {
+                    if (server.Id == e.Server.Id)
+                    {
+                        e.Server.DefaultChannel.SendMessage($"{e.User.Name} has left the server.");
+                        break;
+                    }
+                }
             };
         }
 

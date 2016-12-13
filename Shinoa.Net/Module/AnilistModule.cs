@@ -100,8 +100,10 @@ namespace Shinoa.Net.Module
                     }
                     catch (ArgumentException ex)
                     {
-                        Logging.Log("Anilist request encountered an ArgumentException.");
-                        Logging.Log($"ResponseObject is: {responseObject}");
+                        //Logging.Log("Anilist request encountered an ArgumentException.");
+                        //Logging.Log($"ResponseObject is: {responseObject}");
+
+                        e.Channel.SendMessage("Anime not found.");
 
                         RefreshClientAccessToken();
 
@@ -113,7 +115,7 @@ namespace Shinoa.Net.Module
                     catch (Exception ex)
                     {
                         e.Channel.SendMessage("Error encountered, anime not found.");
-                        Logging.Log(ex.ToString());
+                        //Logging.Log(ex.ToString());
                     }
                 }
             }

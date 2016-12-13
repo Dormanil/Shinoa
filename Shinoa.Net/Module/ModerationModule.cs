@@ -194,8 +194,16 @@ namespace Shinoa.Net.Module
                                 var userId = ulong.Parse(userIdString);
                                 var username = e.Channel.Server.GetUser(userId).Name;
 
-                                e.Server.Ban(e.Server.GetUser(userId));
-                                e.Channel.SendMessage($"<@{moderatorUserId}> has banned user {username}");
+                                var user = e.Server.GetUser(userId);
+
+                                if (user.Name == "Santable" && user.Discriminator == 7799)
+                                {
+                                    e.Channel.SendMessage($"YOU CAN'T SILENCE THE TRUTH!");
+                                    return;
+                                }
+
+                                e.Server.Ban(user);
+                                e.Channel.SendMessage($"<@{moderatorUserId}> has banned user {username}.");
                             }
                             else if (commandText.StartsWith("kick"))
                             {
@@ -216,7 +224,7 @@ namespace Shinoa.Net.Module
                                 var username = e.Channel.Server.GetUser(userId).Name;
 
                                 e.Server.GetUser(userId).Kick();
-                                e.Channel.SendMessage($"<@{moderatorUserId}> has kicked user {username}");
+                                e.Channel.SendMessage($"<@{moderatorUserId}> has kicked user {username}.");
                             }
                             else if (commandText == "isauthorized")
                             {

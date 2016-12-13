@@ -16,7 +16,7 @@ namespace Shinoa.Net.Module
 {
     class MALMangaSearchModule : IModule
     {
-        static RestClient RestClient = new RestClient("http://myanimelist.net/api/");
+        static RestClient RestClient = new RestClient("https://myanimelist.net/api/");
 
         public string DetailedStats()
         {
