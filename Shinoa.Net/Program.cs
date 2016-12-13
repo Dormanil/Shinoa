@@ -37,6 +37,7 @@ namespace Shinoa.Net
             new Module.AnidbGraphModule(),
             new Module.TwitterModule(),
             new Module.JishoModule(),
+            new Module.GlosbeModule(),
             new Module.BackstrokeModule(),
             new Module.ModerationModule(),
             new Module.CleverbotModule(),
