@@ -33,7 +33,7 @@ namespace Shinoa.Modules
         string GenerateStatsMessage()
         {
             var output = "";
-            output += "== Shinoa ==\n";
+            output += "**Shinoa**\n";
 
             var computerName = Environment.MachineName;
             var uptime = (DateTime.Now - Shinoa.StartTime);
