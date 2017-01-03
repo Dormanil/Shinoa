@@ -1,0 +1,43 @@
+.vertical-center
+{
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.blurred-background
+{
+    background-image: url("../img/landing-bg.png");
+    background-position: center;
+}
+
+.landing-header
+{
+    text-align: center;
+    margin-top: 200px;
+    color: #ffffff;
+    text-shadow: 0 0 10px #000000 ;
+}
+
+.landing-header h1
+{
+    font-size: 90px;
+    margin: 0;
+    padding: 0;
+}
+
+.landing-header h2
+{
+    margin: 0 0 30px 0;
+    padding: 0;
+}
+
+table td:nth-child(1)
+{
+    width: 330px;
+}
+
+.panel .panel-heading
+{
+    font-weight: bold;
+}

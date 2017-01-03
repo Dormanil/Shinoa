@@ -23,6 +23,7 @@ namespace Shinoa
             new Modules.HelpModule(),
             new Modules.ModerationModule(),
             new Modules.JoinPartModule(),
+            new Modules.FunModule(),
             new Modules.MALAnimeModule(),
             new Modules.MALMangaModule(),
             new Modules.JapaneseDictModule(),
@@ -66,8 +67,11 @@ namespace Shinoa
                 }
 
                 await Task.Delay(5000); // Not everything is instantly loaded if using a bot account.
-
+                
+                Logging.Log($"Logged into Discord as {DiscordClient.CurrentUser.Name}#{DiscordClient.CurrentUser.Discriminator}.");
                 Logging.Log("---------------");
+
+                DiscordClient.SetGame(Config["default_game"]);
 
                 foreach(var module in RunningModules)
                 {
@@ -91,6 +95,8 @@ namespace Shinoa
 
                         foreach (var module in RunningModules)
                         {
+                            module.HandleMessage(s, e);
+
                             foreach (KeyValuePair<string, Modules.Abstract.Module.CommandFunction> commandDefinition in module.BoundCommands)
                             {
                                 if (e.Message.Text.StartsWith(Config["command_prefix"] + commandDefinition.Key + " ") ||

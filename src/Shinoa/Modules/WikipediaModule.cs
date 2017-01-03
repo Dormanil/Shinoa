@@ -16,22 +16,24 @@ namespace Shinoa.Modules
             this.BoundCommands.Add("wiki", (e) =>
             {
                 var queryText = GetCommandParametersAsString(e.Message.Text);
+                var responseMessage = e.Channel.SendMessage("Searching...").Result;
+
                 var responseText = HttpGet($"?action=opensearch&search={queryText}");
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
 
                 try
                 {
                     string url = responseObject[3][0];
-                    e.Channel.SendMessage(url);
+                    responseMessage.Edit(url);
                 }
                 catch (ArgumentException)
                 {
-                    e.Channel.SendMessage("Search returned no results.");
+                    responseMessage.Edit("Search returned no results.");
 
                 }
                 catch (RuntimeBinderException)
                 {
-                    e.Channel.SendMessage("Search returned no results.");
+                    responseMessage.Edit("Search returned no results.");
                 }
             });
         }

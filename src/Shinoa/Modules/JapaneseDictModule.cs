@@ -17,8 +17,9 @@ namespace Shinoa.Modules
             {
                 var queryText = GetCommandParametersAsString(e.Message.Text);
 
-                var httpResponseText = HttpGet($"search/words?keyword={queryText}");
+                var responseMessage = e.Channel.SendMessage("Searching...").Result;
 
+                var httpResponseText = HttpGet($"search/words?keyword={queryText}");
                 dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 
                 try
@@ -70,11 +71,11 @@ namespace Shinoa.Modules
 
                     responseText += $"\nSee more: <http://jisho.org/search/{System.Uri.EscapeUriString(queryText)}>";
 
-                    e.Channel.SendMessage(responseText);
+                    responseMessage.Edit(responseText);
                 }
                 catch (Exception)
                 {
-                    e.Channel.SendMessage("Not found.");
+                    responseMessage.Edit("Not found.");
                 }
             });
         }

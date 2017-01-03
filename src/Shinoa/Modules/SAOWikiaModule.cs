@@ -17,6 +17,8 @@ namespace Shinoa.Modules
             this.BoundCommands.Add("saowiki", (e) =>
             {
                 var queryText = GetCommandParametersAsString(e.Message.Text);
+                var responseMessage = e.Channel.SendMessage("Searching...").Result;
+
                 var httpResponseText = HttpGet($"Search/List/?query={queryText}");
 
                 dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
@@ -25,23 +27,23 @@ namespace Shinoa.Modules
                 {
                     dynamic firstResult = responseObject["items"][0];
 
-                    var responseMessage = "";
-                    responseMessage += $"{firstResult["url"]}";
+                    var resultMessage = "";
+                    resultMessage += $"{firstResult["url"]}";
 
-                    e.Channel.SendMessage(responseMessage);
+                    responseMessage.Edit(resultMessage);
                 }
                 catch (ArgumentException)
                 {
-                    e.Channel.SendMessage("Search returned no results.");
+                    responseMessage.Edit("Search returned no results.");
 
                 }
                 catch (RuntimeBinderException)
                 {
-                    e.Channel.SendMessage("Search returned no results.");
+                    responseMessage.Edit("Search returned no results.");
                 }
                 catch (Exception ex)
                 {
-                    e.Channel.SendMessage("Error encountered, article not found.");
+                    responseMessage.Edit("Error encountered, article not found.");
                     Logging.Log(ex.ToString());
                 }
             });

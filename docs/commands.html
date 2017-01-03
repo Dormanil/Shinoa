@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Command List</title>
+    <link href="css/bootstrap.cosmo.min.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Shinoa</a>
+        <ul class="nav navbar-nav">
+            <li><a href="#">Command List</a></li>
+            <li><a href="https://github.com/omegavesko/Shinoa">Source Code</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <h1>Command List</h1>
+    <div class="panel panel-default">
+        <div class="panel-heading">Administration</div>
+        <div class="panel-body">
+            <p>These commands are restricted to the server owner (the user configured in config.yaml).</p>
+        </div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!setavatar &lt;image url&gt;</td>
+                <td>Sets the bot's avatar to the given image. Image will be stretched to fit if it isn't square.</td>
+            </tr>
+            <tr>
+                <td>!stats</td>
+                <td>Shows various information about the bot instance.</td>
+            </tr>
+            <tr>
+                <td>!lua &lt;code&gt;</td>
+                <td>Runs the given Lua code in an interpreter, and returns the result.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Moderation</div>
+        <div class="panel-body">
+            <p>Note: Muting requires your server to have a <b>Muted</b> role that the bot can give to muted users.</p>
+            <p>Unlike previous versions, whether you can use each command is determined by whether you have
+            the specific permission for that action. You don't necessarily need to have a specific 'Moderator' role,
+            as long as you have the permission to do what you want to do.</p>
+        </div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!mute &lt;@user&gt; [x seconds/minutes/hours]</td>
+                <td>Mutes the given user, with an optional timespan. Requires the <b>Mute Members</b> permission.</td>
+            </tr>
+            <tr>
+                <td>!unmute &lt;@user&gt;</td>
+                <td>Unmutes the given user. Requires the <b>Mute Members</b> permission.</td>
+            </tr>
+            <tr>
+                <td>!ban &lt;@user&gt;</td>
+                <td>Bans the given user. Requires the <b>Ban Members</b> permission.</td>
+            </tr>
+            <tr>
+                <td>!kick &lt;@user&gt;</td>
+                <td>Kicks the given user. Requires the <b>Kick Members</b> permission.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Greetings</div>
+        <div class="panel-body">
+            <p>Note: All commands require the <b>Manage Server</b> permission.</p>
+        </div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!greetings enable</td>
+                <td>Enable greeting messages for the server, and bind them to the current channel.</td>
+            </tr>
+            <tr>
+                <td>!greetings disable</td>
+                <td>Disable greeting messages for the server.</td>
+            </tr>
+            <tr>
+                <td>!greetings here</td>
+                <td>If enabled, move the server's greeting messages to the current channel.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Anime Notifications</div>
+        <div class="panel-body">
+            <p>Note: All commands require the <b>Manage Server</b> permission, when used on a server rather than PMing the bot.</p>
+            <p>Anyone can PM the bot to subscribe to anime notifications via PM.</p>
+        </div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!animefeed enable</td>
+                <td>Enable anime notifications for the current channel.</td>
+            </tr>
+            <tr>
+                <td>!animefeed disable</td>
+                <td>Disable anime notifications for the current channel.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Reddit</div>
+        <div class="panel-body">
+            <p>Note: All commands require the <b>Manage Server</b> permission, when used on a server rather than PMing the bot.</p>
+            <p>Anyone can PM the bot to subscribe to reddit posts (from one or multiple subreddits) via PM.</p>
+        </div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!reddit add &lt;subreddit&gt;</td>
+                <td>Bind notifications for a subreddit to the current channel.</td>
+            </tr>
+            <tr>
+                <td>!reddit remove &lt;subreddit&gt;</td>
+                <td>Remove notifications for a subreddit from the current channel.</td>
+            </tr>
+            <tr>
+                <td>!reddit list</td>
+                <td>List all subreddits bound to the current channel.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Twitter</div>
+        <div class="panel-body">
+            <p>Note: All commands require the <b>Manage Server</b> permission, when used on a server rather than PMing the bot.</p>
+            <p>Anyone can PM the bot to subscribe to Twitter posts (from one or multiple users) via PM.</p>
+        </div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!twitter add &lt;username&gt;</td>
+                <td>Bind notifications for a user to the current channel.</td>
+            </tr>
+            <tr>
+                <td>!twitter remove &lt;username&gt;</td>
+                <td>Remove notifications for a user from the current channel.</td>
+            </tr>
+            <tr>
+                <td>!twitter list</td>
+                <td>List all users bound to the current channel.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Anime/Manga/Light Novels</div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!anime &lt;query&gt;</td>
+                <td>Search MyAnimeList for the given anime, and show the first result.</td>
+            </tr>
+            <tr>
+                <td>!manga &lt;query&gt;</td>
+                <td>Search MyAnimeList for the given manga or LN, and show the first result.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Sword Art Online Wiki</div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!saowiki &lt;query&gt;</td>
+                <td>Search the SAO Wikia for the given query, and show the first result.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Japanese Dictionary</div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!jp &lt;query&gt;</td>
+                <td>Search jisho.org for the given query, and show the first result.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Wikipedia</div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!wiki &lt;query&gt;</td>
+                <td>Search Wikipedia for the given query, and show the first result.</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+</body>
+</html>
