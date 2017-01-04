@@ -32,7 +32,8 @@ namespace Shinoa
             new Modules.WikipediaModule(),
             new Modules.RedditModule(),
             new Modules.TwitterModule(),
-            new Modules.AnimeFeedModule()    
+            new Modules.AnimeFeedModule(),
+            new Modules.SauceModule()
         };
 
         public static void Main(string[] args)

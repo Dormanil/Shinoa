@@ -6,6 +6,7 @@
 
   "dependencies": {
     "Discord.Net": "0.9.6",
+    "HtmlAgilityPack.NetCore": "1.5.0.1",
     "Microsoft.NETCore.App": {
       "type": "platform",
       "version": "1.0.1"

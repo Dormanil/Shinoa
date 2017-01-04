@@ -37,5 +37,12 @@ namespace Shinoa.Modules.Abstract
             var content = response.Content;
             return content.ReadAsStringAsync().Result;
         }
+
+        protected string HttpPost(string relativeUrl, HttpContent httpContent)
+        {
+            var response = HttpClient.PostAsync(relativeUrl, httpContent).Result;
+            var content = response.Content;
+            return content.ReadAsStringAsync().Result;
+        }
     }
 }
