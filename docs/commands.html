@@ -22,7 +22,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">Administration</div>
         <div class="panel-body">
-            <p>These commands are restricted to the server owner (the user configured in config.yaml).</p>
+            <p>These commands are restricted to the bot owner (the user configured in config.yaml).</p>
         </div>
         <table class="table">
             <tr>
@@ -34,12 +34,24 @@
                 <td>Sets the bot's avatar to the given image. Image will be stretched to fit if it isn't square.</td>
             </tr>
             <tr>
+                <td>!setplaying &lt;text&gt;</td>
+                <td>Sets the bot's 'playing' status to the given text.</td>
+            </tr>
+            <tr>
                 <td>!stats</td>
                 <td>Shows various information about the bot instance.</td>
             </tr>
             <tr>
                 <td>!lua &lt;code&gt;</td>
                 <td>Runs the given Lua code in an interpreter, and returns the result.</td>
+            </tr>
+            <tr>
+                <td>!announce &lt;message&gt;</td>
+                <td>Sends an announcement to the default channel of every server the bot is connected to.</td>
+            </tr>
+            <tr>
+                <td>!say &lt;server name&gt; &lt;channel name&gt; &lt;message&gt;</td>
+                <td>Sends the given message to the given channel on the given server. The server name can be a partial match.</td>
             </tr>
         </table>
     </div>
@@ -222,6 +234,19 @@
             <tr>
                 <td>!wiki &lt;query&gt;</td>
                 <td>Search Wikipedia for the given query, and show the first result.</td>
+            </tr>
+        </table>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Misc.</div>
+        <table class="table">
+            <tr>
+                <th>Command Syntax</th>
+                <th>Command Description</th>
+            </tr>
+            <tr>
+                <td>!pick &lt;first&gt; <b>or</b> &lt;second&gt; <b>or</b> (...)</td>
+                <td>Picks a random choice from an arbitrary list of choices separated by 'or'.</td>
             </tr>
         </table>
     </div>

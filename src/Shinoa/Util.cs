@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Shinoa
@@ -23,6 +24,14 @@ namespace Shinoa
                 .Replace("!", "");
 
             return ulong.Parse(idString);
+        }
+
+        public static string RemoveMentions(string message)
+        {
+            var mentionRegexPattern = @"<@.*>";
+            var mentionRegex = new Regex(mentionRegexPattern);
+
+            return mentionRegex.Replace(message, "");
         }
     }
 }

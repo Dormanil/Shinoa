@@ -22,5 +22,15 @@ namespace Shinoa.Modules
                     e.Channel.SendMessage(@"/o/");
             }
         }
+
+        public override void Init()
+        {
+            this.BoundCommands.Add("pick", (e) =>
+            {
+                var choices = GetCommandParametersAsString(e.Message.Text).Split(new string[] { "or " }, StringSplitOptions.RemoveEmptyEntries);
+                var choice = choices[new Random().Next(choices.Length)].Trim();
+                e.Channel.SendMessage($"<@{e.User.Id}> I choose '{choice}'.");
+            });
+        }
     }
 }

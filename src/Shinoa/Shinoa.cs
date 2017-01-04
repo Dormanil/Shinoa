@@ -11,6 +11,7 @@ namespace Shinoa
     public class Shinoa
     {
         public static DateTime StartTime = DateTime.Now;
+        public static string Version = "2.0";
 
         public static dynamic Config;
         public static DiscordClient DiscordClient;
@@ -114,7 +115,7 @@ namespace Shinoa
                                         Logging.Log(ex.ToString());
                                     }
 
-                                    break;
+                                    return;
                                 }
                             }
                         }
