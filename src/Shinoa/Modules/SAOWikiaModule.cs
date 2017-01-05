@@ -14,10 +14,10 @@ namespace Shinoa.Modules
         {
             this.BaseUrl = "http://swordartonline.wikia.com/api/v1/";
 
-            this.BoundCommands.Add("saowiki", (e) =>
+            this.BoundCommands.Add("saowiki", (c) =>
             {
-                var queryText = GetCommandParametersAsString(e.Message.Text);
-                var responseMessage = e.Channel.SendMessage("Searching...").Result;
+                var queryText = GetCommandParametersAsString(c.Message.Content);
+                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
                 var httpResponseText = HttpGet($"Search/List/?query={queryText}");
 
@@ -30,20 +30,20 @@ namespace Shinoa.Modules
                     var resultMessage = "";
                     resultMessage += $"{firstResult["url"]}";
 
-                    responseMessage.Edit(resultMessage);
+                    responseMessage.ModifyAsync(p => p.Content = resultMessage);
                 }
                 catch (ArgumentException)
                 {
-                    responseMessage.Edit("Search returned no results.");
+                    responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
 
                 }
                 catch (RuntimeBinderException)
                 {
-                    responseMessage.Edit("Search returned no results.");
+                    responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
                 }
                 catch (Exception ex)
                 {
-                    responseMessage.Edit("Error encountered, article not found.");
+                    responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
                     Logging.Log(ex.ToString());
                 }
             });

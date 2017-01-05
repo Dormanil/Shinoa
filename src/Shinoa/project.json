@@ -3,9 +3,9 @@
   "buildOptions": {
     "emitEntryPoint": true
   },
-
   "dependencies": {
-    "Discord.Net": "0.9.6",
+    "Discord.Net": "1.0.0-rc-00544",
+    "Discord.Net.Rest": "1.0.0-rc-00544",
     "HtmlAgilityPack.NetCore": "1.5.0.1",
     "Microsoft.NETCore.App": {
       "type": "platform",
@@ -17,7 +17,6 @@
     "TweetinviAPI": "1.2.0",
     "YamlDotNet": "4.0.0"
   },
-
   "frameworks": {
     "netcoreapp1.0": {
       "imports": [
@@ -25,5 +24,8 @@
         "portable-net45+win8"
       ]
     }
+  },
+  "configurations": {
+    "Alpha": {}
   }
 }

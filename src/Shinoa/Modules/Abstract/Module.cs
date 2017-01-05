@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace Shinoa.Modules.Abstract
 {
     public abstract class Module
     {
-        public delegate void CommandFunction(MessageEventArgs e);
+        public delegate void CommandFunction(CommandContext context);
         public Dictionary<string, CommandFunction> BoundCommands = new Dictionary<string, CommandFunction>();
 
         protected static string[] GetCommandParameters(string message)
@@ -36,7 +37,7 @@ namespace Shinoa.Modules.Abstract
             return;
         }
 
-        public virtual void HandleMessage(object sender, MessageEventArgs e)
+        public virtual void HandleMessage(CommandContext context)
         {
             return;
         }

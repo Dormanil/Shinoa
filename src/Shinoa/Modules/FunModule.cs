@@ -3,33 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 
 namespace Shinoa.Modules
 {
     public class FunModule : Abstract.Module
     {
-        public override void HandleMessage(object sender, MessageEventArgs e)
+        public override void HandleMessage(CommandContext context)
         {
-            if (e.User.Id != Shinoa.DiscordClient.CurrentUser.Id)
+            if (context.User.Id != Shinoa.DiscordClient.CurrentUser.Id)
             {
-                if (e.Message.Text == @"o/")
-                    e.Channel.SendMessage(@"\o");
-                else if (e.Message.Text == @"\o")
-                    e.Channel.SendMessage(@"o/");
-                else if (e.Message.Text == @"/o/")
-                    e.Channel.SendMessage(@"\o\");
-                else if (e.Message.Text == @"\o\")
-                    e.Channel.SendMessage(@"/o/");
+                if (context.Message.Content == @"o/")
+                    context.Channel.SendMessageAsync(@"\o");
+                else if (context.Message.Content == @"\o")
+                    context.Channel.SendMessageAsync(@"o/");
+                else if (context.Message.Content == @"/o/")
+                    context.Channel.SendMessageAsync(@"\o\");
+                else if (context.Message.Content == @"\o\")
+                    context.Channel.SendMessageAsync(@"/o/");
             }
         }
 
         public override void Init()
         {
-            this.BoundCommands.Add("pick", (e) =>
+            this.BoundCommands.Add("pick", (c) =>
             {
-                var choices = GetCommandParametersAsString(e.Message.Text).Split(new string[] { " or " }, StringSplitOptions.RemoveEmptyEntries);
+                var choices = GetCommandParametersAsString(c.Message.Content).Split(new string[] { " or " }, StringSplitOptions.RemoveEmptyEntries);
                 var choice = choices[new Random().Next(choices.Length)].Trim();
-                e.Channel.SendMessage($"<@{e.User.Id}> I choose '{choice}'.");
+                c.Channel.SendMessageAsync($"<@{c.User.Id}> I choose '{choice}'.");
             });
         }
     }

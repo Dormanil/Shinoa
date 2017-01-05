@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,23 +9,23 @@ namespace Shinoa
 {
     public class Logging
     {
-        static Channel LoggingChannel;
+        static ITextChannel LoggingChannel;
 
         public static void Log(string message)
         {
             PrintWithTime(message);
-            if (LoggingChannel != null) LoggingChannel.SendMessage(message);
+            if (LoggingChannel != null) LoggingChannel.SendMessageAsync(message);
         }
 
-        public static void LogMessage(Message message)
+        public static void LogMessage(CommandContext context)
         {
-            if (!message.Channel.IsPrivate)
+            if (!context.IsPrivate)
             {
-                Log($"[{message.Server.Name} -> #{message.Channel.Name}] {message.User.Name}: {message.Text}");
+                Log($"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content.ToString()}");
             }
             else
             {
-                Log($"[PM] {message.User.Name}: {message.Text}");
+                Log($"[PM] {context.User.Username}: {context.Message.Content.ToString()}");
             }
         }
 
@@ -33,7 +34,7 @@ namespace Shinoa
             var loggingChannelId = Shinoa.Config["logging_channel_id"];
             LoggingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(loggingChannelId));
 
-            LoggingChannel.SendMessage("Logging initialized.");
+            LoggingChannel.SendMessageAsync("Logging initialized.");
         }
 
         private static void PrintWithTime(string line)

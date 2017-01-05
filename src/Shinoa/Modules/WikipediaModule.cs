@@ -13,10 +13,10 @@ namespace Shinoa.Modules
         {
             this.BaseUrl = "https://en.wikipedia.org/w/api.php";
 
-            this.BoundCommands.Add("wiki", (e) =>
+            this.BoundCommands.Add("wiki", (c) =>
             {
-                var queryText = GetCommandParametersAsString(e.Message.Text);
-                var responseMessage = e.Channel.SendMessage("Searching...").Result;
+                var queryText = GetCommandParametersAsString(c.Message.Content);
+                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
                 var responseText = HttpGet($"?action=opensearch&search={queryText}");
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
@@ -24,16 +24,16 @@ namespace Shinoa.Modules
                 try
                 {
                     string url = responseObject[3][0];
-                    responseMessage.Edit(url);
+                    responseMessage.ModifyAsync(p => p.Content = url);
                 }
                 catch (ArgumentException)
                 {
-                    responseMessage.Edit("Search returned no results.");
+                    responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
 
                 }
                 catch (RuntimeBinderException)
                 {
-                    responseMessage.Edit("Search returned no results.");
+                    responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
                 }
             });
         }

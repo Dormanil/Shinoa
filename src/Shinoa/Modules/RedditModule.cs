@@ -4,11 +4,12 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Shinoa.Modules
 {
-    public class RedditModule : Abstract.HttpClientModule
+    public class RedditModule : Abstract.HttpClientModule, Abstract.IUpdateLoop
     {
         int UPDATE_INTERVAL = 20 * 1000;
 
@@ -24,7 +25,7 @@ namespace Shinoa.Modules
         class SubscribedSubreddit
         {
             public string subreddit;
-            public List<Channel> channels = new List<Channel>();
+            public List<ITextChannel> channels = new List<ITextChannel>();
             public Queue<string> lastPostIds = new Queue<string>();
         }
 
@@ -32,47 +33,61 @@ namespace Shinoa.Modules
 
         public override void Init()
         {
+            
+
             Shinoa.DatabaseConnection.CreateTable<RedditBinding>();
             this.BaseUrl = "https://www.reddit.com/";
 
             foreach (var boundSubreddit in Shinoa.DatabaseConnection.Table<RedditBinding>())
             {
                 var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId));
-                var channelName = channel.Name;
-                var serverName = channel.IsPrivate ? "[PM]" : channel.Server.Name;
 
-                Logging.Log($"  /r/{boundSubreddit.SubredditName} -> [{serverName} -> #{channelName}]");
+                if (channel is IPrivateChannel)
+                {
+                    var privateChannel = channel as IPrivateChannel;
+                    var channelName = privateChannel.Name;
+
+                    Logging.Log($"  /r/{boundSubreddit.SubredditName} -> [[PM] -> {channelName}]");
+                }
+                else if (channel is IGuildChannel)
+                {
+                    var guildChannel = channel as IGuildChannel;
+                    var channelName = guildChannel.Name;
+                    var guildName = guildChannel.Guild.Name;
+
+                    Logging.Log($"  /r/{boundSubreddit.SubredditName} -> [{guildName} -> #{channelName}]");
+                }
             }
 
-            this.BoundCommands.Add("reddit", (e) =>
+            this.BoundCommands.Add("reddit", (c) =>
             {
-                if (e.Channel.IsPrivate || e.User.ServerPermissions.ManageServer)
+                if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
                 {
-                    var channelIdString = e.Channel.Id.ToString();
+                    var channelIdString = c.Channel.Id.ToString();
 
-                    if (GetCommandParameters(e.Message.Text)[0] == "add")
+                    if (GetCommandParameters(c.Message.Content)[0] == "add")
                     {
-                        var subredditName = GetCommandParameters(e.Message.Text)[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
+                        var subredditName = GetCommandParameters(c.Message.Content)[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
 
                         if (Shinoa.DatabaseConnection.Table<RedditBinding>()
                             .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).Count() == 0)
                         {
                             Shinoa.DatabaseConnection.Insert(new RedditBinding()
                             {
-                                ChannelId = e.Channel.Id.ToString(),
+                                ChannelId = c.Channel.Id.ToString(),
                                 SubredditName = subredditName
                             });
 
-                            e.Channel.SendMessage($"Notifications for /r/{subredditName} have been bound to this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{c.Channel.Name}).");
                         }
                         else
                         {
-                            e.Channel.SendMessage($"Notifications for /r/{subredditName} are already bound to this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{c.Channel.Name}).");
                         }
                     }
-                    else if (GetCommandParameters(e.Message.Text)[0] == "remove")
+                    else if (GetCommandParameters(c.Message.Content)[0] == "remove")
                     {
-                        var subredditName = GetCommandParameters(e.Message.Text)[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
+                        var subredditName = GetCommandParameters(c.Message.Content)[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
 
                         if (Shinoa.DatabaseConnection.Table<RedditBinding>()
                             .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).Count() == 1)
@@ -82,87 +97,82 @@ namespace Shinoa.Modules
 
                             Shinoa.DatabaseConnection.Delete(new RedditBinding() { Id = currentEntry.Id });
 
-                            e.Channel.SendMessage($"Notifications for /r/{subredditName} have been unbound from this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{c.Channel.Name}).");
                         }
                         else
                         {
-                            e.Channel.SendMessage($"Notifications for /r/{subredditName} are not currently bound to this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{c.Channel.Name}).");
                         }
                     }
-                    else if (GetCommandParameters(e.Message.Text)[0] == "list")
+                    else if (GetCommandParameters(c.Message.Content)[0] == "list")
                     {
                         var response = "Subreddits currently bound to this channel:\n";
                         foreach (var binding in  Shinoa.DatabaseConnection.Table<RedditBinding>()
                             .Where(item => item.ChannelId == channelIdString))
                         {
-                            response += $"- {binding.SubredditName}\n";
+                            response += $"- /r/{binding.SubredditName}\n";
                         }
 
-                        e.Channel.SendMessage(response.Trim());
+                        c.Channel.SendMessageAsync(response.Trim());
                     }
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Manage Server");
+                    c.Channel.SendPermissionErrorAsync("Manage Server");
                 }
             });
-
-            this.UpdateLoop();
         }
 
-        async Task UpdateLoop()
+        public async Task UpdateLoop()
         {
-            while (true)
+
+            foreach (var subreddit in SubscribedSubreddits) subreddit.channels.Clear();
+            foreach (var boundSubreddit in Shinoa.DatabaseConnection.Table<RedditBinding>())
             {
-                foreach (var subreddit in SubscribedSubreddits) subreddit.channels.Clear();
-                foreach (var boundSubreddit in Shinoa.DatabaseConnection.Table<RedditBinding>())
+                if (SubscribedSubreddits.Any(item => item.subreddit == boundSubreddit.SubredditName))
                 {
-                    if (SubscribedSubreddits.Any(item => item.subreddit == boundSubreddit.SubredditName))
-                    {
-                        SubscribedSubreddits.Find(item => item.subreddit == boundSubreddit.SubredditName).channels.Add(
-                            Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId)));
-                    }
-                    else
-                    {
-                        var newSubscribedSubreddit = new SubscribedSubreddit();
-                        newSubscribedSubreddit.subreddit = boundSubreddit.SubredditName;
-                        newSubscribedSubreddit.channels.Add(Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId)));
-                        this.SubscribedSubreddits.Add(newSubscribedSubreddit);
-                    }
+                    SubscribedSubreddits.Find(item => item.subreddit == boundSubreddit.SubredditName).channels.Add(
+                        Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId)) as ITextChannel);
                 }
-
-                foreach (var subreddit in SubscribedSubreddits)
+                else
                 {
-                    var responseText = HttpGet($"r/{subreddit.subreddit}/new/.json");
-                    dynamic responseObject = JsonConvert.DeserializeObject(responseText);
-
-                    dynamic newestPost = responseObject["data"]["children"][0];
-
-                    if (subreddit.lastPostIds.Count == 0)
-                    {
-                        subreddit.lastPostIds.Enqueue((string)newestPost["data"]["id"]);
-                    }
-                    else if (!subreddit.lastPostIds.Contains((string)newestPost["data"]["id"]))
-                    {
-                        subreddit.lastPostIds.Enqueue((string)newestPost["data"]["id"]);
-
-                        var channelMessage = "";
-
-                        channelMessage += $"**{System.Net.WebUtility.HtmlDecode((string)newestPost["data"]["title"])}** `({newestPost["data"]["domain"]})`\n";
-                        channelMessage += $"Posted to `/r/{subreddit.subreddit}` by `/u/{newestPost["data"]["author"]}`\n";
-                        channelMessage += $"<http://redd.it/{newestPost["data"]["id"]}>\n";
-
-                        foreach (var channel in subreddit.channels)
-                        {
-                            await channel.SendMessage(channelMessage);
-                        }
-                    }
-
-                    while (subreddit.lastPostIds.Count > 5) subreddit.lastPostIds.Dequeue();
+                    var newSubscribedSubreddit = new SubscribedSubreddit();
+                    newSubscribedSubreddit.subreddit = boundSubreddit.SubredditName;
+                    newSubscribedSubreddit.channels.Add(Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId)) as ITextChannel);
+                    this.SubscribedSubreddits.Add(newSubscribedSubreddit);
                 }
-
-                await Task.Delay(UPDATE_INTERVAL);
             }
+
+            foreach (var subreddit in SubscribedSubreddits)
+            {
+                var responseText = HttpGet($"r/{subreddit.subreddit}/new/.json");
+                dynamic responseObject = JsonConvert.DeserializeObject(responseText);
+
+                dynamic newestPost = responseObject["data"]["children"][0];
+
+                if (subreddit.lastPostIds.Count == 0)
+                {
+                    subreddit.lastPostIds.Enqueue((string)newestPost["data"]["id"]);
+                }
+                else if (!subreddit.lastPostIds.Contains((string)newestPost["data"]["id"]))
+                {
+                    subreddit.lastPostIds.Enqueue((string)newestPost["data"]["id"]);
+
+                    var channelMessage = "";
+
+                    channelMessage += $"**{System.Net.WebUtility.HtmlDecode((string)newestPost["data"]["title"])}** `({newestPost["data"]["domain"]})`\n";
+                    channelMessage += $"Posted to `/r/{subreddit.subreddit}` by `/u/{newestPost["data"]["author"]}`\n";
+                    channelMessage += $"<http://redd.it/{newestPost["data"]["id"]}>\n";
+
+                    foreach (var channel in subreddit.channels)
+                    {
+                        await channel.SendMessageAsync(channelMessage);
+                    }
+                }
+
+                while (subreddit.lastPostIds.Count > 5) subreddit.lastPostIds.Dequeue();
+            }                
+            
         }
 
         public override string DetailedStats
@@ -173,10 +183,22 @@ namespace Shinoa.Modules
                 foreach (var boundSubreddit in Shinoa.DatabaseConnection.Table<RedditBinding>())
                 {
                     var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId));
-                    var channelName = channel.Name;
-                    var serverName = channel.IsPrivate ? "[PM]" : channel.Server.Name;
 
-                    response += $"/r/{boundSubreddit.SubredditName} -> [{serverName} -> #{channelName}]\n";
+                    if (channel is IPrivateChannel)
+                    {
+                        var privateChannel = channel as IPrivateChannel;
+                        var channelName = privateChannel.Name;
+
+                        response += $"/r/{boundSubreddit.SubredditName} -> [[PM] -> {channelName}]\n";
+                    }
+                    else if (channel is IGuildChannel)
+                    {
+                        var guildChannel = channel as IGuildChannel;
+                        var channelName = guildChannel.Name;
+                        var guildName = guildChannel.Guild.Name;
+
+                        response += $"/r/{boundSubreddit.SubredditName} -> [{guildName} -> #{channelName}]\n";
+                    }
                 }
 
                 return response.Trim();

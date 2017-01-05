@@ -13,11 +13,11 @@ namespace Shinoa.Modules
         {
             this.BaseUrl = "http://jisho.org/api/v1/";
 
-            this.BoundCommands.Add("jp", (e) =>
+            this.BoundCommands.Add("jp", (c) =>
             {
-                var queryText = GetCommandParametersAsString(e.Message.Text);
+                var queryText = GetCommandParametersAsString(c.Message.Content);
 
-                var responseMessage = e.Channel.SendMessage("Searching...").Result;
+                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
                 var httpResponseText = HttpGet($"search/words?keyword={queryText}");
                 dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
@@ -71,11 +71,11 @@ namespace Shinoa.Modules
 
                     responseText += $"\nSee more: <http://jisho.org/search/{System.Uri.EscapeUriString(queryText)}>";
 
-                    responseMessage.Edit(responseText);
+                    responseMessage.ModifyAsync(p => p.Content = responseText);
                 }
                 catch (Exception)
                 {
-                    responseMessage.Edit("Not found.");
+                    responseMessage.ModifyAsync(p => p.Content = "Not found.");
                 }
             });
         }

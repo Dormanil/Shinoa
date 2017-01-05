@@ -12,68 +12,54 @@ namespace Shinoa.Modules
     {
         public override void Init()
         {
-            this.BoundCommands.Add("setavatar", (e) =>
+            this.BoundCommands.Add("setavatar", (c) =>
             {
-                if (e.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
                 {
-                    var stream = new HttpClient().GetAsync(GetCommandParameters(e.Message.RawText)[0]).Result.Content.ReadAsStreamAsync().Result;
-                    Shinoa.DiscordClient.CurrentUser.Edit(avatar: stream);
+                    var stream = new HttpClient().GetAsync(GetCommandParameters(c.Message.Content)[0]).Result.Content.ReadAsStreamAsync().Result;
+                    Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
+                    {
+                        p.Avatar = new Image(stream);
+                    });
                 }
             });
                 
-            this.BoundCommands.Add("setplaying", (e) =>
+            this.BoundCommands.Add("setplaying", (c) =>
             {
-                if (e.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
                 {
-                    Shinoa.DiscordClient.SetGame(GetCommandParametersAsString(e.Message.Text));
+                    Shinoa.DiscordClient.SetGameAsync(GetCommandParametersAsString(c.Message.Content));
                 }
             });
 
-            this.BoundCommands.Add("stats", (e) =>
+            this.BoundCommands.Add("stats", (c) =>
             {
-                if (e.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
                 {
-                    e.Channel.SendMessage(GenerateStatsMessage());
+                    c.Channel.SendMessageAsync(GenerateStatsMessage());
                 }
             });
 
-            this.BoundCommands.Add("announce", (e) =>
+            this.BoundCommands.Add("announce", (c) =>
             {
-                if (e.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
                 {
-                    var announcement = GetCommandParametersAsString(e.Message.RawText);
+                    var announcement = GetCommandParametersAsString(c.Message.Content);
 
-                    foreach (var server in Shinoa.DiscordClient.Servers)
+                    foreach (var server in Shinoa.DiscordClient.Guilds)
                     {
-                        server.DefaultChannel.SendMessage($"**Announcement:** {announcement}");
+                        server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
                     }
                 }
             });
 
-            this.BoundCommands.Add("say", (e) =>
+            this.BoundCommands.Add("say", (c) =>
             {
-                if (e.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
                 {
-                    var commandParams = GetCommandParameters(e.Message.RawText).ToList();                    
-                    e.Message.Delete();
-
-                    var serverName = commandParams[0];
-                    commandParams.RemoveAt(0);
-
-                    var channelName = commandParams[0];
-                    commandParams.RemoveAt(0);
-
-                    var message = "";
-                    foreach (var word in commandParams)
-                    {
-                        message += word + " ";
-                    }
-                    message = message.Trim();
-
-                    var server = Shinoa.DiscordClient.Servers.First(s => s.Name.ToLower().Contains(serverName.ToLower()));
-                    var channel = server.TextChannels.First(c => c.Name.ToLower() == channelName.ToLower());
-
-                    channel.SendMessage(message);
+                    var message = GetCommandParametersAsString(c.Message.Content);
+                    c.Message.DeleteAsync();
+                    c.Channel.SendMessageAsync(message);
                 }
             });
         }

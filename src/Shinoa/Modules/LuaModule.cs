@@ -10,16 +10,16 @@ namespace Shinoa.Modules
     {
         public override void Init()
         {
-            this.BoundCommands.Add("lua", (e) =>
+            this.BoundCommands.Add("lua", (c) =>
             {
-                if (e.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
                 {
-                    var message = e.Channel.SendMessage($"Running...").Result;
+                    var message = c.Channel.SendMessageAsync($"Running...").Result;
 
-                    var code = GetCommandParametersAsString(e.Message.Text);
+                    var code = GetCommandParametersAsString(c.Message.Content);
                     var output = Script.RunString(code).ToString();
 
-                    message.Edit($"Output: `{output}`");
+                    message.ModifyAsync(p => p.Content = $"Output: `{output}`");
                 }
             });
         }

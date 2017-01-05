@@ -11,9 +11,9 @@ namespace Shinoa.Modules
     {
         public override void Init()
         {
-            this.BoundCommands.Add("help", (e) =>
+            this.BoundCommands.Add("help", (c) =>
             {
-                e.Channel.SendMessage($"<@{e.User.Id}> <http://omegavesko.github.io/Shinoa/commands.html>");
+                c.Channel.SendMessageAsync($"<@{c.User.Id}> <http://omegavesko.github.io/Shinoa/commands.html>");
             });
         }
     }

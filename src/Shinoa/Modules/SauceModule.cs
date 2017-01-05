@@ -11,38 +11,38 @@ namespace Shinoa.Modules
     {
         public override void Init()
         {
-            this.BoundCommands.Add("sauce", (e) =>
+            this.BoundCommands.Add("sauce", (c) =>
             {
-                var responseMessage = e.Channel.SendMessage("Searching...").Result;
+                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
                 var imageUrl = "";
 
-                if (e.Message.Text.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).Length == 1)
+                if (c.Message.Content.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).Length == 1)
                 {
-                    if (e.Message.Attachments.Length > 0)
+                    if (c.Message.Attachments.Count > 0)
                     {
-                        imageUrl = e.Message.Attachments[0].Url;
+                        imageUrl = c.Message.Attachments.First().Url;
                     }
                     else
                     {
-                        foreach (var message in e.Channel.Messages)
-                        {
-                            if (message.Embeds.Length > 0)
-                            {
-                                imageUrl = message.Embeds[0].Url;
-                                break;
-                            }
-                            else if (message.Attachments.Length > 0)
-                            {
-                                imageUrl = message.Attachments[0].Url;
-                                break;
-                            }
-                        }
+                        //foreach (var message in c.Channel.GetMessagesAsync(limit: 10))
+                        //{
+                        //    if (message.Embeds.Length > 0)
+                        //    {
+                        //        imageUrl = message.Embeds[0].Url;
+                        //        break;
+                        //    }
+                        //    else if (message.Attachments.Length > 0)
+                        //    {
+                        //        imageUrl = message.Attachments[0].Url;
+                        //        break;
+                        //    }
+                        //}
                     }
                 }
                 else
                 {
-                    imageUrl = GetCommandParameters(e.Message.Text)[0];
+                    imageUrl = GetCommandParameters(c.Message.Content)[0];
                 }
 
                 var content = new FormUrlEncodedContent(new[]
@@ -61,7 +61,7 @@ namespace Shinoa.Modules
                 var percentage = document.DocumentNode.SelectNodes(@"//div[@class='resultsimilarityinfo']")[0].InnerHtml;
                 var pixivLink = document.DocumentNode.SelectNodes(@"//div[@class='resultcontentcolumn']/a[@class='linkify']")[0].Attributes["href"].Value;
 
-                responseMessage.Edit($"This is the closest match, with **{percentage}** similarity:\n{pixivLink}");
+                responseMessage.ModifyAsync(p => p.Content = $"This is the closest match, with **{percentage}** similarity:\n{pixivLink}");
             });
         }
     }
