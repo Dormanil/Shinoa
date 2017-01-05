@@ -8,7 +8,7 @@ using Tweetinvi;
 
 namespace Shinoa.Modules
 {
-    public class TwitterModule : Abstract.Module, Abstract.IUpdateLoop
+    public class TwitterModule : Abstract.UpdateLoopModule
     {
         int UPDATE_INTERVAL = 20 * 1000;
 
@@ -129,7 +129,7 @@ namespace Shinoa.Modules
             });
         }
 
-        public async Task UpdateLoop()
+        public async override Task UpdateLoop()
         {
             foreach (var user in SubscribedUsers) user.channels.Clear();
             foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())

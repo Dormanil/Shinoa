@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Shinoa.Modules
 {
-    public class RedditModule : Abstract.HttpClientModule, Abstract.IUpdateLoop
+    public class RedditModule : Abstract.UpdateLoopModule
     {
         int UPDATE_INTERVAL = 20 * 1000;
 
@@ -123,7 +123,7 @@ namespace Shinoa.Modules
             });
         }
 
-        public async Task UpdateLoop()
+        public async override Task UpdateLoop()
         {
 
             foreach (var subreddit in SubscribedSubreddits) subreddit.channels.Clear();

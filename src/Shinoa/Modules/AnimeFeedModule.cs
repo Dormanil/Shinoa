@@ -12,7 +12,7 @@ using System.Xml.Linq;
 
 namespace Shinoa.Modules
 {
-    public class AnimeFeedModule : Abstract.HttpClientModule, Abstract.IUpdateLoop
+    public class AnimeFeedModule : Abstract.UpdateLoopModule
     {
         int UPDATE_INTERVAL = 20 * 1000;
 
@@ -101,7 +101,7 @@ namespace Shinoa.Modules
             });
         }
 
-        public async Task UpdateLoop()
+        public async override Task UpdateLoop()
         {
             var responseText = HttpGet(FEED_URL);
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));

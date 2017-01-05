@@ -30,7 +30,12 @@ namespace Shinoa.Modules
             {
                 var choices = GetCommandParametersAsString(c.Message.Content).Split(new string[] { " or " }, StringSplitOptions.RemoveEmptyEntries);
                 var choice = choices[new Random().Next(choices.Length)].Trim();
-                c.Channel.SendMessageAsync($"<@{c.User.Id}> I choose '{choice}'.");
+
+                var embed = new EmbedBuilder()
+                .WithTitle($"I choose '{choice}'.")
+                .WithColor(new Color(255, 0, 0));
+                    
+                c.Channel.SendMessageAsync("", embed: embed.Build());
             });
         }
     }

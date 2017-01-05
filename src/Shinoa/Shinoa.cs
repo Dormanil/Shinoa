@@ -14,7 +14,7 @@ namespace Shinoa
     public class Shinoa
     {
         public static DateTime StartTime = DateTime.Now;
-        public static string Version = "2.0";
+        public static string Version = "2.1";
 
         public static dynamic Config;
         public static DiscordSocketClient DiscordClient;
@@ -54,7 +54,7 @@ namespace Shinoa
                 Logging.Log("Config parsed and loaded.");
             }
 
-            Console.Title = "Shinoa";
+            Console.Title = $"Shinoa v{Version}";
 
             Logging.Log("Connecting to Discord...");
             DiscordClient = new DiscordSocketClient();
@@ -68,25 +68,31 @@ namespace Shinoa
             {
                 Logging.Log($"Initializing module {module.GetType().Name}.");
                 module.Init();
+
+                if (module is Modules.Abstract.UpdateLoopModule)
+                {
+                    Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
+                    (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
+                }
             }
 
             Logging.Log($"All modules initialized successfully.");
 
-            GlobalUpdateTimer = new Timer(s =>
-            {
-                Logging.Log("Running global update loop.");
-                foreach (var module in RunningModules)
-                {
-                    if (module is Modules.Abstract.IUpdateLoop)
-                    {
-                        Logging.Log($"Running update loop for module: {module.GetType().Name}");
-                        (module as Modules.Abstract.IUpdateLoop).UpdateLoop();
-                    }
-                }
-            },
-            null,
-            TimeSpan.FromSeconds(30),
-            TimeSpan.FromSeconds(30));
+            //GlobalUpdateTimer = new Timer(s =>
+            //{
+            //    Logging.Log("Running global update loop.");
+            //    foreach (var module in RunningModules)
+            //    {
+            //        if (module is Modules.Abstract.IUpdateLoop)
+            //        {
+            //            Logging.Log($"Running update loop for module: {module.GetType().Name}");
+            //            (module as Modules.Abstract.IUpdateLoop).UpdateLoop();
+            //        }
+            //    }
+            //},
+            //null,
+            //TimeSpan.FromSeconds(30),
+            //TimeSpan.FromSeconds(30));
 
             DiscordClient.MessageReceived+= async (message) =>
             {
