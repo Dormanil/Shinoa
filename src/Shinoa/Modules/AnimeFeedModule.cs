@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using Discord;
+using SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,9 +12,11 @@ using System.Xml.Linq;
 
 namespace Shinoa.Modules
 {
-    public class AnimeFeedModule : Abstract.HttpClientModule
+    public class AnimeFeedModule : Abstract.HttpClientModule, Abstract.IUpdateLoop
     {
         int UPDATE_INTERVAL = 20 * 1000;
+
+        bool InitialRun = true;
 
         class AnimeFeedBinding
         {
@@ -31,19 +34,19 @@ namespace Shinoa.Modules
             foreach (var binding in Shinoa.DatabaseConnection.Table<AnimeFeedBinding>())
             {
                 var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(binding.ChannelId));
-                var channelName = channel.IsPrivate ? channel.Name : "#" + channel.Name;
-                var serverName = channel.IsPrivate ? "[PM]" : channel.Server.Name;
+                var channelName = channel is IPrivateChannel ? (channel as IPrivateChannel).Name : "#" + (channel as ITextChannel).Name;
+                var serverName = channel is IPrivateChannel ? "[PM]" : (channel as ITextChannel).Guild.Name;
 
                 Logging.Log($"  -> [{serverName} -> {channelName}]");
             }
 
-            this.BoundCommands.Add("animefeed", (e) =>
+            this.BoundCommands.Add("animefeed", (c) =>
             {
-                if (e.Channel.IsPrivate || e.User.ServerPermissions.ManageServer)
+                if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
                 {
-                    var channelIdString = e.Channel.Id.ToString();
+                    var channelIdString = c.Channel.Id.ToString();
 
-                    if (GetCommandParameters(e.Message.Text)[0] == "enable")
+                    if (GetCommandParameters(c.Message.Content)[0] == "enable")
                     {
 
                         if (Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
@@ -51,23 +54,23 @@ namespace Shinoa.Modules
                         {
                             Shinoa.DatabaseConnection.Insert(new AnimeFeedBinding()
                             {
-                                ChannelId = e.Channel.Id.ToString()
+                                ChannelId = c.Channel.Id.ToString()
                             });
 
-                            if (!e.Channel.IsPrivate)
-                                e.Channel.SendMessage($"Anime notifications have been bound to this channel (#{e.Channel.Name}).");
+                            if (!(c.Channel is IPrivateChannel))
+                                c.Channel.SendMessageAsync($"Anime notifications have been bound to this channel (#{c.Channel.Name}).");
                             else
-                                e.Channel.SendMessage($"You will now receive anime notifications via PM.");
+                                c.Channel.SendMessageAsync($"You will now receive anime notifications via PM.");
                         }
                         else
                         {
-                            if (!e.Channel.IsPrivate)
-                                e.Channel.SendMessage($"Anime notifications are already bound to this channel (#{e.Channel.Name}).");
+                            if (!(c.Channel is IPrivateChannel))
+                                c.Channel.SendMessageAsync($"Anime notifications are already bound to this channel (#{c.Channel.Name}).");
                             else
-                                e.Channel.SendMessage($"You are already receiving anime notifications.");
+                                c.Channel.SendMessageAsync($"You are already receiving anime notifications.");
                         }
                     }
-                    else if (GetCommandParameters(e.Message.Text)[0] == "disable")
+                    else if (GetCommandParameters(c.Message.Content)[0] == "disable")
                     {
                         if (Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
                             .Where(item => item.ChannelId == channelIdString).Count() == 1)
@@ -77,78 +80,71 @@ namespace Shinoa.Modules
 
                             Shinoa.DatabaseConnection.Delete(new AnimeFeedBinding() { ChannelId = channelIdString });
 
-                            if (!e.Channel.IsPrivate)
-                                e.Channel.SendMessage($"Anime notifications have been unbound from this channel (#{e.Channel.Name}).");
+                            if (!(c.Channel is IPrivateChannel))
+                                c.Channel.SendMessageAsync($"Anime notifications have been unbound from this channel (#{c.Channel.Name}).");
                             else
-                                e.Channel.SendMessage($"You will no lonnger receive anime notifications.");
+                                c.Channel.SendMessageAsync($"You will no lonnger receive anime notifications.");
                         }
                         else
                         {
-                            if (!e.Channel.IsPrivate)
-                                e.Channel.SendMessage($"Anime notifications are not currently bound to this channel (#{e.Channel.Name}).");
+                            if (!(c.Channel is IPrivateChannel))
+                                c.Channel.SendMessageAsync($"Anime notifications are not currently bound to this channel (#{c.Channel.Name}).");
                             else
-                                e.Channel.SendMessage($"You are not currently receiving anime notifications.");
+                                c.Channel.SendMessageAsync($"You are not currently receiving anime notifications.");
                         }
                     }
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Manage Server");
+                    c.Channel.SendPermissionErrorAsync("Manage Server");
                 }
             });
-
-            this.UpdateLoop();
         }
 
-        async Task UpdateLoop()
+        public async Task UpdateLoop()
         {
-            bool initialRun = true;
-            while (true)
+            var responseText = HttpGet(FEED_URL);
+            var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
+            var entries = document.Root.Descendants().First(i => i.Name.LocalName == "channel").Elements().Where(i => i.Name.LocalName == "item");
+
+            foreach (var item in entries.Take(5))
             {
-                var responseText = HttpGet(FEED_URL);
-                var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
-                var entries = document.Root.Descendants().First(i => i.Name.LocalName == "channel").Elements().Where(i => i.Name.LocalName == "item");
+                var entryTitle = item.Elements().First(i => i.Name.LocalName == "title").Value;
 
-                foreach (var item in entries.Take(5))
+                Regex regex = new Regex(@"^\[.*\] (?<title>.*) - (?<ep>.*) \[.*$");
+                Match match = regex.Match(entryTitle);
+                if (match.Success)
                 {
-                    var entryTitle = item.Elements().First(i => i.Name.LocalName == "title").Value;
+                    var showTitle = match.Groups["title"].Value;
+                    var episodeNumber = match.Groups["ep"].Value;
 
-                    Regex regex = new Regex(@"^\[.*\] (?<title>.*) - (?<ep>.*) \[.*$");
-                    Match match = regex.Match(entryTitle);
-                    if (match.Success)
+                    bool alreadyProcessed = false;
+                    foreach (var queueItem in itemQueue)
                     {
-                        var showTitle = match.Groups["title"].Value;
-                        var episodeNumber = match.Groups["ep"].Value;
-
-                        bool alreadyProcessed = false;
-                        foreach (var queueItem in itemQueue)
+                        if (queueItem.Equals(showTitle))
                         {
-                            if (queueItem.Equals(showTitle))
-                            {
-                                alreadyProcessed = true;
-                                break;
-                            }
+                            alreadyProcessed = true;
+                            break;
                         }
+                    }
 
-                        if (!alreadyProcessed)
+                    if (!alreadyProcessed)
+                    {
+                        itemQueue.Enqueue(showTitle);
+
+                        if (!InitialRun)
                         {
-                            itemQueue.Enqueue(showTitle);
-
-                            if (!initialRun)
+                            foreach (var binding in Shinoa.DatabaseConnection.Table<AnimeFeedBinding>())
                             {
-                                foreach (var binding in Shinoa.DatabaseConnection.Table<AnimeFeedBinding>())
-                                {
-                                    var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(binding.ChannelId));
-                                    await channel.SendMessage($"```\nNew Episode: {showTitle} ep. {episodeNumber}\n```");
-                                }
+                                var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(binding.ChannelId)) as IMessageChannel;
+                                await channel.SendMessageAsync($"```\nNew Episode: {showTitle} ep. {episodeNumber}\n```");
                             }
                         }
                     }
                 }
-
-                if (initialRun) initialRun = false;
-                await Task.Delay(UPDATE_INTERVAL);           
             }
+
+            if (InitialRun) InitialRun = false;
         }
     }
 }

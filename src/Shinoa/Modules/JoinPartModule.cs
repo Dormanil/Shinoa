@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using SQLite;
+using Discord.WebSocket;
 
 namespace Shinoa.Modules
 {
@@ -16,30 +17,30 @@ namespace Shinoa.Modules
             public string ChannelId { get; set; }
         }
 
-        List<Server> Servers = new List<Server>();
+        List<Guid> Guilds = new List<Guid>();
 
         public override void Init()
         {
             Shinoa.DatabaseConnection.CreateTable<JoinPartServer>();
 
-            this.BoundCommands.Add("greetings", (e) => 
+            this.BoundCommands.Add("greetings", (c) => 
             {
-                var serverIdString = e.Server.Id.ToString();
+                var serverIdString = c.Guild.Id.ToString();
 
-                if (e.User.ServerPermissions.ManageServer)
+                if ((c.User as SocketGuildUser).GuildPermissions.ManageGuild)
                 {
-                    switch (GetCommandParameters(e.Message.Text)[0])
+                    switch (GetCommandParameters(c.Message.Content)[0])
                     {
                         case "enable":
                             if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 0)
                             {
 
-                                Shinoa.DatabaseConnection.Insert(new JoinPartServer() { ServerId = serverIdString, ChannelId = e.Channel.Id.ToString() });
-                                e.Channel.SendMessage($"Greetings enabled for this server and bound to channel #{e.Channel.Name}.");
+                                Shinoa.DatabaseConnection.Insert(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
+                                c.Channel.SendMessageAsync($"Greetings enabled for this server and bound to channel #{c.Channel.Name}.");
                             }
                             else
                             {
-                                e.Channel.SendMessage("Greetings are already enabled for this server. Did you mean to use `here`?");
+                                c.Channel.SendMessageAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
                             }
                             break;
 
@@ -47,53 +48,55 @@ namespace Shinoa.Modules
                             if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 1)
                             {
                                 Shinoa.DatabaseConnection.Delete(new JoinPartServer() { ServerId = serverIdString });
-                                e.Channel.SendMessage($"Greetings disabled for this server.");
+                                c.Channel.SendMessageAsync($"Greetings disabled for this server.");
                             }
                             else
                             {
-                                e.Channel.SendMessage("Greetings aren't enabled for this server.");
+                                c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
                             }
                             break;
 
                         case "here":
                             if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 1)
                             {
-                                Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = e.Channel.Id.ToString() });
-                                e.Channel.SendMessage($"Greetings moved to channel #{e.Channel.Name}.");
+                                Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
+                                c.Channel.SendMessageAsync($"Greetings moved to channel #{c.Channel.Name}.");
                             }
                             else
                             {
-                                e.Channel.SendMessage("Greetings aren't enabled for this server.");
+                                c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
                             }
                             break;
                     }
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Manage Server");
+                    c.Channel.SendPermissionErrorAsync("Manage Server");
                 }
 
             });
 
-            Shinoa.DiscordClient.UserJoined += (s, e) =>
+            Shinoa.DiscordClient.UserJoined += async (user) =>
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
-                    if (ulong.Parse(server.ServerId) == e.Server.Id)
+                    if (ulong.Parse(server.ServerId) == user.Guild.Id)
                     {
-                        Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)).SendMessage($"Welcome to the server, <@{e.User.Id}>!");
+                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                        await greetingChannel.SendMessageAsync($"Welcome to the server, {user.Mention}!");
                         break;
                     }
                 }
             };
 
-            Shinoa.DiscordClient.UserLeft += (s, e) =>
+            Shinoa.DiscordClient.UserLeft += async (user) =>
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
-                    if (ulong.Parse(server.ServerId) == e.Server.Id)
+                    if (ulong.Parse(server.ServerId) == user.Guild.Id)
                     {
-                        Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)).SendMessage($"{e.User.Name} has left the server.");
+                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                        await greetingChannel.SendMessageAsync($"{user.Username} has left the server.");
                         break;
                     }
                 }

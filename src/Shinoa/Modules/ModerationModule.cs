@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.WebSocket;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,46 +19,46 @@ namespace Shinoa.Modules
 
         public override void Init()
         {
-            this.BoundCommands.Add("ban", (e) =>
+            this.BoundCommands.Add("ban", (c) =>
             {
-                if (e.User.ServerPermissions.BanMembers)
+                if ((c.User as SocketGuildUser).GuildPermissions.BanMembers)
                 {
-                    e.Message.Delete();
+                    c.Message.DeleteAsync();
 
-                    var user = e.Server.GetUser(Util.IdFromMention(GetCommandParameters(e.Message.RawText)[0]));
-                    e.Server.Ban(user);                    
-                    e.Channel.SendMessage($"User {user.Name} has been banned by <@{e.User.Id}>.");
+                    var user = c.Guild.GetUserAsync(Util.IdFromMention(GetCommandParameters(c.Message.Content)[0])).Result;
+                    c.Guild.AddBanAsync(user);                    
+                    c.Channel.SendMessageAsync($"User {user.Username} has been banned by {c.User.Mention}.");
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Ban Members");
+                    c.Channel.SendPermissionErrorAsync("Ban Members");
                 }
             });
 
-            this.BoundCommands.Add("kick", (e) =>
+            this.BoundCommands.Add("kick", (c) =>
             {
-                if (e.User.ServerPermissions.KickMembers)
+                if ((c.User as SocketGuildUser).GuildPermissions.KickMembers)
                 {
-                    e.Message.Delete();
+                    c.Message.DeleteAsync();
 
-                    var user = e.Server.GetUser(Util.IdFromMention(GetCommandParameters(e.Message.RawText)[0]));
-                    user.Kick();
-                    e.Channel.SendMessage($"User {user.Name} has been kicked by <@{e.User.Id}>.");
+                    var user = c.Guild.GetUserAsync(Util.IdFromMention(GetCommandParameters(c.Message.Content)[0])).Result;
+                    user.KickAsync();
+                    c.Channel.SendMessageAsync($"User {user.Username} has been kicked by {c.User.Mention}.");
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Kick Members");
+                    c.Channel.SendPermissionErrorAsync("Kick Members");
                 }
             });
 
-            this.BoundCommands.Add("mute", async (e) =>
+            this.BoundCommands.Add("mute", async (c) =>
             {
-                if (e.User.ServerPermissions.MuteMembers)
+                if ((c.User as SocketGuildUser).GuildPermissions.MuteMembers)
                 {
-                    await e.Message.Delete();
+                    await c.Message.DeleteAsync();
 
-                    Role mutedRole = null;
-                    foreach (var role in e.Server.Roles)
+                    IRole mutedRole = null;
+                    foreach (var role in c.Guild.Roles)
                     {
                         if (role.Name.ToLower().Contains("muted"))
                         {
@@ -66,40 +67,39 @@ namespace Shinoa.Modules
                         }
                     }
 
-                    var user = e.Server.GetUser(Util.IdFromMention(GetCommandParameters(e.Message.RawText)[0]));
-                    await user.AddRoles(mutedRole);
+                    var user = c.Guild.GetUserAsync(Util.IdFromMention(GetCommandParameters(c.Message.Content)[0])).Result;
+                    await user.AddRolesAsync(mutedRole);
 
-                    if (GetCommandParameters(e.Message.Text).Count() == 1)
+                    if (GetCommandParameters(c.Message.Content).Count() == 1)
                     {
-                        await e.Channel.SendMessage($"User <@{user.Id}> has been muted by <@{e.User.Id}>.");
+                        await c.Channel.SendMessageAsync($"User {user.Mention} has been muted by {c.User.Mention}.");
                     }
-                    else if (GetCommandParameters(e.Message.Text).Count() == 3)
+                    else if (GetCommandParameters(c.Message.Content).Count() == 3)
                     {
-                        var amount = int.Parse(GetCommandParameters(e.Message.Text)[1]);
-                        var unitName = GetCommandParameters(e.Message.Text)[2].Trim().ToLower();
+                        var amount = int.Parse(GetCommandParameters(c.Message.Content)[1]);
+                        var unitName = GetCommandParameters(c.Message.Content)[2].Trim().ToLower();
 
                         var timeDuration = amount * TimeUnits[unitName];
 
-                        await e.Channel.SendMessage($"User <@{user.Id}> has been muted by <@{e.User.Id}> for {amount} {unitName}.");
+                        await c.Channel.SendMessageAsync($"User {user.Mention} has been muted by {c.User.Mention} for {amount} {unitName}.");
                         await Task.Delay(timeDuration);
-                        await user.RemoveRoles(mutedRole);
-                        await e.Channel.SendMessage($"User <@{user.Id}> has been unmuted automatically.");
+                        await user.RemoveRolesAsync(mutedRole);
+                        await c.Channel.SendMessageAsync($"User <@{user.Id}> has been unmuted automatically.");
                     }
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Mute Members");
+                    c.Channel.SendPermissionErrorAsync("Mute Members");
                 }
             });
 
-            this.BoundCommands.Add("unmute", (e) =>
+            this.BoundCommands.Add("unmute", (c) =>
             {
-                if (e.User.ServerPermissions.MuteMembers)
+                if ((c.User as SocketGuildUser).GuildPermissions.MuteMembers)
                 {
-                    e.Message.Delete();
-
-                    Role mutedRole = null;
-                    foreach (var role in e.Server.Roles)
+                    c.Message.DeleteAsync();
+                    IRole mutedRole = null;
+                    foreach (var role in c.Guild.Roles)
                     {
                         if (role.Name.ToLower().Contains("muted"))
                         {
@@ -108,17 +108,17 @@ namespace Shinoa.Modules
                         }
                     }
 
-                    var user = e.Server.GetUser(Util.IdFromMention(GetCommandParameters(e.Message.RawText)[0]));
-                    user.RemoveRoles(mutedRole);
+                    var user = c.Guild.GetUserAsync(Util.IdFromMention(GetCommandParameters(c.Message.Content)[0])).Result;
+                    user.RemoveRolesAsync(mutedRole);
 
-                    if (GetCommandParameters(e.Message.Text).Count() == 1)
+                    if (GetCommandParameters(c.Message.Content).Count() == 1)
                     {
-                        e.Channel.SendMessage($"User <@{user.Id}> has been unmuted by <@{e.User.Id}>.");
+                        c.Channel.SendMessageAsync($"User {user.Mention} has been unmuted by {c.User.Mention}.");
                     }
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Mute Members");
+                    c.Channel.SendPermissionErrorAsync("Mute Members");
                 }
             });
         }

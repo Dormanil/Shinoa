@@ -1,9 +1,12 @@
 ﻿using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
 using SQLite;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Shinoa
@@ -14,8 +17,10 @@ namespace Shinoa
         public static string Version = "2.0";
 
         public static dynamic Config;
-        public static DiscordClient DiscordClient;
+        public static DiscordSocketClient DiscordClient;
         public static SQLiteConnection DatabaseConnection = new SQLiteConnection("db.sqlite");
+
+        static Timer GlobalUpdateTimer;    
 
         public static Modules.Abstract.Module[] RunningModules =
         {            
@@ -25,8 +30,7 @@ namespace Shinoa
             new Modules.ModerationModule(),
             new Modules.JoinPartModule(),
             new Modules.FunModule(),
-            new Modules.MALAnimeModule(),
-            new Modules.MALMangaModule(),
+            new Modules.MALModule(),
             new Modules.JapaneseDictModule(),
             new Modules.SAOWikiaModule(),
             new Modules.WikipediaModule(),
@@ -36,7 +40,12 @@ namespace Shinoa
             new Modules.SauceModule()
         };
 
-        public static void Main(string[] args)
+        public static void Main(string[] args) =>
+            new Shinoa().Start().GetAwaiter().GetResult();
+
+
+
+        public async Task Start()
         {
             using (var streamReader = new StreamReader(new FileStream("config.yaml", FileMode.Open)))
             {
@@ -46,83 +55,82 @@ namespace Shinoa
             }
 
             Console.Title = "Shinoa";
-                        
-            Shinoa.DiscordClient = new DiscordClient(x =>
-            {
-                x.AppName = "Shinoa";
-            });
 
-            Shinoa.DiscordClient.ExecuteAndWait(async () =>
+            Logging.Log("Connecting to Discord...");
+            DiscordClient = new DiscordSocketClient();
+            await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
+            await DiscordClient.ConnectAsync();
+            Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
+
+            await DiscordClient.SetGameAsync(Config["default_game"]);
+
+            foreach (var module in RunningModules)
             {
-                while (true)
+                Logging.Log($"Initializing module {module.GetType().Name}.");
+                module.Init();
+            }
+
+            Logging.Log($"All modules initialized successfully.");
+
+            GlobalUpdateTimer = new Timer(s =>
+            {
+                Logging.Log("Running global update loop.");
+                foreach (var module in RunningModules)
                 {
-                    try
+                    if (module is Modules.Abstract.IUpdateLoop)
                     {
-                        await DiscordClient.Connect(Config["token"], TokenType.Bot);
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        DiscordClient.Log.Error($"Login Failed", ex);
-                        await Task.Delay(DiscordClient.Config.FailedReconnectDelay);
+                        Logging.Log($"Running update loop for module: {module.GetType().Name}");
+                        (module as Modules.Abstract.IUpdateLoop).UpdateLoop();
                     }
                 }
+            },
+            null,
+            TimeSpan.FromSeconds(30),
+            TimeSpan.FromSeconds(30));
 
-                await Task.Delay(5000); // Not everything is instantly loaded if using a bot account.
-                
-                Logging.Log($"Logged into Discord as {DiscordClient.CurrentUser.Name}#{DiscordClient.CurrentUser.Discriminator}.");
-                Logging.Log("---------------");
+            DiscordClient.MessageReceived+= async (message) =>
+            {
+                var userMessage = message as SocketUserMessage;
+                if (userMessage == null) return; 
 
-                DiscordClient.SetGame(Config["default_game"]);
+                var context = new CommandContext(DiscordClient, userMessage);
 
-                foreach(var module in RunningModules)
+                if (context.User.Id != DiscordClient.CurrentUser.Id)
                 {
-                    Logging.Log($"Initializing module {module.GetType().Name}.");
-                    module.Init();
-                }
-
-                Logging.Log($"All modules initialized successfully.");
-
-                DiscordClient.MessageReceived += (s, e) =>
-                {
-                    if (e.Message.User.Id != DiscordClient.CurrentUser.Id)
+                    if (context.IsPrivate)
                     {
-                        if (e.Message.Channel.IsPrivate)
-                        {
-                            if (e.Message.User.Id != DiscordClient.CurrentUser.Id)
-                            {
-                                Logging.Log($"[PM] {e.User.Name}: {e.Message.Text}");
-                            }
-                        }
+                        Logging.Log($"[PM] {context.User.Username}: {context.Message.Content.ToString()}");
+                    }
 
-                        foreach (var module in RunningModules)
-                        {
-                            module.HandleMessage(s, e);
+                    foreach (var module in RunningModules)
+                    {
+                        module.HandleMessage(context);
 
-                            foreach (KeyValuePair<string, Modules.Abstract.Module.CommandFunction> commandDefinition in module.BoundCommands)
+                        foreach (KeyValuePair<string, Modules.Abstract.Module.CommandFunction> commandDefinition in module.BoundCommands)
+                        {
+                            if (context.Message.Content.StartsWith(Config["command_prefix"] + commandDefinition.Key + " ") ||
+                                context.Message.Content.Trim() == Config["command_prefix"] + commandDefinition.Key)
                             {
-                                if (e.Message.Text.StartsWith(Config["command_prefix"] + commandDefinition.Key + " ") ||
-                                    e.Message.Text.Trim() == Config["command_prefix"] + commandDefinition.Key)
+                                Logging.LogMessage(context);
+
+                                try
                                 {
-                                    Logging.LogMessage(e.Message);
-
-                                    try
-                                    {
-                                        commandDefinition.Value(e);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        e.Channel.SendMessage("There was an error. Please check the command syntax and try again.");
-                                        Logging.Log(ex.ToString());
-                                    }
-
-                                    return;
+                                    commandDefinition.Value(context);
                                 }
+                                catch (Exception ex)
+                                {
+                                    await context.Channel.SendMessageAsync("There was an error. Please check the command syntax and try again.");
+                                    Logging.Log(ex.ToString());
+                                }
+
+                                return;
                             }
                         }
                     }
-                };
-            });
+                }
+            };
+
+            await Task.Delay(-1);
         }
     }
 }

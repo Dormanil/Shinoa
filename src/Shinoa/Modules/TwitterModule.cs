@@ -8,7 +8,7 @@ using Tweetinvi;
 
 namespace Shinoa.Modules
 {
-    public class TwitterModule : Abstract.Module
+    public class TwitterModule : Abstract.Module, Abstract.IUpdateLoop
     {
         int UPDATE_INTERVAL = 20 * 1000;
 
@@ -24,7 +24,7 @@ namespace Shinoa.Modules
         class SubscribedUser
         {
             public string username; 
-            public List<Channel> channels = new List<Channel>();
+            public List<ITextChannel> channels = new List<ITextChannel>();
             public Queue<long> lastTweetIds = new Queue<long>();
             public bool retweetsEnabled;
         }
@@ -34,45 +34,66 @@ namespace Shinoa.Modules
         public override void Init()
         {
             Shinoa.DatabaseConnection.CreateTable<TwitterBinding>();
+            
+            var appCreds = Auth.SetApplicationOnlyCredentials(Shinoa.Config["twitter_key"], Shinoa.Config["twitter_secret"], true);
+            Auth.InitializeApplicationOnlyCredentials(appCreds);
 
             foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())
             {
-                var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId));
-                var channelName = channel.IsPrivate ? channel.Name : "#" + channel.Name;
-                var serverName = channel.IsPrivate ? "[PM]" : channel.Server.Name;
+                //var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId));
+                //var channelName = channel.IsPrivate ? channel.Name : "#" + channel.Name;
+                //var serverName = channel.IsPrivate ? "[PM]" : channel.Server.Name;
 
-                Logging.Log($"  @{boundUser.TwitterUserName} -> [{serverName} -> {channelName}]");
+                //Logging.Log($"  @{boundUser.TwitterUserName} -> [{serverName} -> {channelName}]");
+
+                var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId));
+
+                if (channel is IPrivateChannel)
+                {
+                    var privateChannel = channel as IPrivateChannel;
+                    var channelName = privateChannel.Name;
+
+                    Logging.Log($"  @{boundUser.TwitterUserName} -> [[PM] -> {channelName}]");
+                }
+                else if (channel is IGuildChannel)
+                {
+                    var guildChannel = channel as IGuildChannel;
+                    var channelName = guildChannel.Name;
+                    var guildName = guildChannel.Guild.Name;
+
+                    Logging.Log($"  @{boundUser.TwitterUserName} -> [{guildName} -> #{channelName}]");
+                }
             }
 
-            this.BoundCommands.Add("twitter", (e) =>
+            this.BoundCommands.Add("twitter", (c) =>
             {
-                if (e.Channel.IsPrivate || e.User.ServerPermissions.ManageServer)
+                if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
                 {
-                    var channelIdString = e.Channel.Id.ToString();
+                    var channelIdString = c.Channel.Id.ToString();
 
-                    if (GetCommandParameters(e.Message.Text)[0] == "add")
+                    if (GetCommandParameters(c.Message.Content)[0] == "add")
                     {
-                        var twitterName = GetCommandParameters(e.Message.Text)[1].Replace("@", "").ToLower().Trim();
+                        var twitterName = GetCommandParameters(c.Message.Content)[1].Replace("@", "").ToLower().Trim();
 
                         if (Shinoa.DatabaseConnection.Table<TwitterBinding>()
                             .Where(item => item.ChannelId == channelIdString && item.TwitterUserName == twitterName).Count() == 0)
                         {
                             Shinoa.DatabaseConnection.Insert(new TwitterBinding()
                             {
-                                ChannelId = e.Channel.Id.ToString(),
+                                ChannelId = c.Channel.Id.ToString(),
                                 TwitterUserName = twitterName
                             });
 
-                            e.Channel.SendMessage($"Notifications for @{twitterName} have been bound to this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for @{twitterName} have been bound to this channel (#{c.Channel.Name}).");
                         }
                         else
                         {
-                            e.Channel.SendMessage($"Notifications for @{twitterName} are already bound to this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for @{twitterName} are already bound to this channel (#{c.Channel.Name}).");
                         }
                     }
-                    else if (GetCommandParameters(e.Message.Text)[0] == "remove")
+                    else if (GetCommandParameters(c.Message.Content)[0] == "remove")
                     {
-                        var twitterName = GetCommandParameters(e.Message.Text)[1].Replace("@", "").ToLower().Trim();
+                        var twitterName = GetCommandParameters(c.Message.Content)[1].Replace("@", "").ToLower().Trim();
 
                         if (Shinoa.DatabaseConnection.Table<TwitterBinding>()
                             .Where(item => item.ChannelId == channelIdString && item.TwitterUserName == twitterName).Count() == 1)
@@ -82,14 +103,14 @@ namespace Shinoa.Modules
 
                             Shinoa.DatabaseConnection.Delete(new TwitterBinding() { Id = currentEntry.Id });
 
-                            e.Channel.SendMessage($"Notifications for @{twitterName} have been unbound from this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for @{twitterName} have been unbound from this channel (#{c.Channel.Name}).");
                         }
                         else
                         {
-                            e.Channel.SendMessage($"Notifications for @{twitterName} are not currently bound to this channel (#{e.Channel.Name}).");
+                            c.Channel.SendMessageAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{c.Channel.Name}).");
                         }
                     }
-                    else if (GetCommandParameters(e.Message.Text)[0] == "list")
+                    else if (GetCommandParameters(c.Message.Content)[0] == "list")
                     {
                         var response = "Users currently bound to this channel:\n";
                         foreach (var binding in Shinoa.DatabaseConnection.Table<TwitterBinding>()
@@ -98,73 +119,63 @@ namespace Shinoa.Modules
                             response += $"- @{binding.TwitterUserName}\n";
                         }
 
-                        e.Channel.SendMessage(response.Trim());
+                        c.Channel.SendMessageAsync(response.Trim());
                     }
                 }
                 else
                 {
-                    e.Channel.SendPermissionError("Manage Server");
+                    c.Channel.SendPermissionErrorAsync("Manage Server");
                 }
             });
-
-            this.UpdateLoop();
         }
 
-        async Task UpdateLoop()
+        public async Task UpdateLoop()
         {
-            var appCreds = Auth.SetApplicationOnlyCredentials(Shinoa.Config["twitter_key"], Shinoa.Config["twitter_secret"], true);
-            Auth.InitializeApplicationOnlyCredentials(appCreds);
-
-            while (true)
+            foreach (var user in SubscribedUsers) user.channels.Clear();
+            foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())
             {
-                foreach (var user in SubscribedUsers) user.channels.Clear();
-                foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())
+                if (SubscribedUsers.Any(item => item.username == boundUser.TwitterUserName))
                 {
-                    if (SubscribedUsers.Any(item => item.username == boundUser.TwitterUserName))
+                    SubscribedUsers.Find(item => item.username == boundUser.TwitterUserName).channels.Add(
+                        Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId)) as ITextChannel);
+                }
+                else
+                {
+                    var newUser = new SubscribedUser();
+                    newUser.username = boundUser.TwitterUserName;
+                    newUser.channels.Add(Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId)) as ITextChannel);
+                    this.SubscribedUsers.Add(newUser);
+                }
+            }
+
+            foreach (var user in SubscribedUsers)
+            {
+                var tweets = Timeline.GetUserTimeline(user.username);
+                var newestTweet = tweets.ToList()[0];
+
+                if (newestTweet.IsRetweet && !user.retweetsEnabled) continue;
+
+                if (user.lastTweetIds.Count == 0)
+                {
+                    user.lastTweetIds.Enqueue(newestTweet.Id);
+                }
+                else if (!user.lastTweetIds.Contains(newestTweet.Id))
+                {
+                    user.lastTweetIds.Enqueue(newestTweet.Id);
+
+                    var channelMessage = "";
+
+                    channelMessage += $"New tweet from @{user.username} ({newestTweet.CreatedBy.Name}):\n\n";
+                    channelMessage += $"```\n{newestTweet.FullText}\n```\n";
+                    channelMessage += $"<{newestTweet.Url}>";
+
+                    foreach (var channel in user.channels)
                     {
-                        SubscribedUsers.Find(item => item.username == boundUser.TwitterUserName).channels.Add(
-                            Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId)));
-                    }
-                    else
-                    {
-                        var newUser = new SubscribedUser();
-                        newUser.username = boundUser.TwitterUserName;
-                        newUser.channels.Add(Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId)));
-                        this.SubscribedUsers.Add(newUser);
+                        await channel.SendMessageAsync(channelMessage);
                     }
                 }
 
-                foreach (var user in SubscribedUsers)
-                {
-                    var tweets = Timeline.GetUserTimeline(user.username);
-                    var newestTweet = tweets.ToList()[0];
-
-                    if (newestTweet.IsRetweet && !user.retweetsEnabled) continue;
-
-                    if (user.lastTweetIds.Count == 0)
-                    {
-                        user.lastTweetIds.Enqueue(newestTweet.Id);
-                    }
-                    else if (!user.lastTweetIds.Contains(newestTweet.Id))
-                    {
-                        user.lastTweetIds.Enqueue(newestTweet.Id);
-
-                        var channelMessage = "";
-
-                        channelMessage += $"New tweet from @{user.username} ({newestTweet.CreatedBy.Name}):\n\n";
-                        channelMessage += $"```\n{newestTweet.FullText}\n```\n";
-                        channelMessage += $"<{newestTweet.Url}>";
-
-                        foreach (var channel in user.channels)
-                        {
-                            await channel.SendMessage(channelMessage);
-                        }
-                    }
-
-                    while (user.lastTweetIds.Count > 5) user.lastTweetIds.Dequeue();
-                }
-
-                await Task.Delay(UPDATE_INTERVAL);
+                while (user.lastTweetIds.Count > 5) user.lastTweetIds.Dequeue();
             }
         }
     }
