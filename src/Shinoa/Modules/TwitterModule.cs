@@ -1,19 +1,43 @@
 ﻿using BoxKite.Twitter.Authentication;
 using Discord;
+using HtmlAgilityPack;
 using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
-//using Tweetinvi;
-using BoxKite.Twitter;
 
 namespace Shinoa.Modules
 {
     public class TwitterModule : Abstract.UpdateLoopModule
     {
-        int UPDATE_INTERVAL = 20 * 1000;
-        ApplicationSession twitterSession;
+        static Color MODULE_COLOR = new Color(33, 150, 243);
+
+        class Tweet
+        {
+            public long id;
+            public string username;
+            public string displayName;
+            public bool isRetweet;
+            public string content;
+            public string avatarUrl;
+
+            public Embed GetEmbed()
+            {
+                var embed = new EmbedBuilder()
+                    .WithDescription(content)
+                    .WithThumbnailUrl(avatarUrl)
+                    .WithColor(MODULE_COLOR);
+
+                if (isRetweet)
+                    embed.Title = $"{displayName} (retweeted by @{username})";
+                else
+                    embed.Title = $"{displayName} (@{username})";
+
+                return embed.Build();
+            }
+        }
 
         class TwitterBinding
         {
@@ -37,9 +61,6 @@ namespace Shinoa.Modules
         public override void Init()
         {
             Shinoa.DatabaseConnection.CreateTable<TwitterBinding>();
-            
-            twitterSession = new ApplicationSession(Shinoa.Config["twitter_key"], Shinoa.Config["twitter_secret"]);
-            TwitterAuthenticator.StartApplicationOnlyAuth(twitterSession);
 
             foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())
             {
@@ -109,14 +130,20 @@ namespace Shinoa.Modules
                     }
                     else if (GetCommandParameters(c.Message.Content)[0] == "list")
                     {
-                        var response = "Users currently bound to this channel:\n";
+                        var response = "";
                         foreach (var binding in Shinoa.DatabaseConnection.Table<TwitterBinding>()
                             .Where(item => item.ChannelId == channelIdString))
                         {
-                            response += $"- @{binding.TwitterUserName}\n";
+                            response += $"@{binding.TwitterUserName}\n";
                         }
 
-                        c.Channel.SendMessageAsync(response.Trim());
+                        if (response == "") response = "N/A";
+
+                        var embed = new EmbedBuilder()
+                            .AddField(f => f.WithName("Twitter users currently bound to this channel").WithValue(response))
+                            .WithColor(MODULE_COLOR);
+
+                        c.Channel.SendEmbedAsync(embed.Build());
                     }
                 }
                 else
@@ -147,33 +174,43 @@ namespace Shinoa.Modules
 
             foreach (var user in SubscribedUsers)
             {
-                var tweets = twitterSession.GetUserTimeline(screenName: user.username).Result;
-                var newestTweet = tweets.First();
-
-                if (newestTweet.Retweeted.Value && !user.retweetsEnabled) continue;
-
+                var newestTweet = GetNewestTweet(user.username);
+                
                 if (user.lastTweetIds.Count == 0)
                 {
-                    user.lastTweetIds.Enqueue(newestTweet.Id);
+                    user.lastTweetIds.Enqueue(newestTweet.id);
                 }
-                else if (!user.lastTweetIds.Contains(newestTweet.Id))
+                else if (!user.lastTweetIds.Contains(newestTweet.id))
                 {
-                    user.lastTweetIds.Enqueue(newestTweet.Id);
+                    if (newestTweet.isRetweet && !user.retweetsEnabled) continue;
 
-                    var embed = new EmbedBuilder()
-                        .WithTitle($"@{newestTweet.User.ScreenName} ({newestTweet.User.Name})")
-                        .WithDescription(newestTweet.Text)
-                        .WithUrl(newestTweet.Source)
-                        .WithFooter(f => f.WithText($"Posted to Twitter {(DateTime.Now - newestTweet.Time).Seconds}s ago"));
-
+                    user.lastTweetIds.Enqueue(newestTweet.id);
                     foreach (var channel in user.channels)
                     {
-                        await channel.SendEmbedAsync(embed.Build());
+                        await channel.SendEmbedAsync(newestTweet.GetEmbed());
                     }
                 }
 
                 while (user.lastTweetIds.Count > 5) user.lastTweetIds.Dequeue();
             }
+        }
+
+        Tweet GetNewestTweet(string username)
+        {
+            var client = new HttpClient();
+            var pageHtml = client.HttpGet($"https://mobile.twitter.com/{username}");
+            var document = new HtmlDocument();
+            document.LoadHtml(pageHtml);
+
+            var latestTweetNode = document.DocumentNode.SelectNodes("//table[@class='tweet  ']").First();
+            var tweet = new Tweet();
+            tweet.isRetweet = !latestTweetNode.Attributes["href"].Value.ToLower().Contains(username.ToLower());
+            tweet.id = long.Parse(latestTweetNode.SelectNodes("//div[@class='tweet-text']").First().Attributes["data-id"].Value);
+            tweet.username = latestTweetNode.SelectNodes("//div[@class='username']").First().InnerText.Replace("@", "").Trim();
+            tweet.displayName = latestTweetNode.SelectNodes("//strong[@class='fullname']").First().InnerText.Trim();
+            tweet.content = latestTweetNode.SelectNodes("//div[@class='tweet-text']/div").First().InnerText.Trim();
+            tweet.avatarUrl = latestTweetNode.SelectNodes("//td[@class='avatar']/a/img").First().Attributes["src"].Value;
+            return tweet;
         }
     }
 }

@@ -109,9 +109,7 @@ namespace Shinoa.Modules
                                 imageUrl = message.Attachments.First().Url;
                                 break;
                             }
-                            else if (message.Content.Contains(".jpg") ||
-                                     message.Content.Contains(".jpeg") ||
-                                     message.Content.Contains(".png"))
+                            else if (Regex.IsMatch(message.Content, @"http\S*(png|jpg|jpeg)"))
                             {
                                 var match = Regex.Match(message.Content, @"http\S*(png|jpg|jpeg)");
                                 if (match.Success)

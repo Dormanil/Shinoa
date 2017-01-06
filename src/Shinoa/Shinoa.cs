@@ -37,7 +37,7 @@ namespace Shinoa
             new Modules.WikipediaModule(),
             new Modules.SauceModule(),
             new Modules.RedditModule(),
-            //new Modules.TwitterModule(),
+            new Modules.TwitterModule(),
             new Modules.AnimeFeedModule()            
         };
 

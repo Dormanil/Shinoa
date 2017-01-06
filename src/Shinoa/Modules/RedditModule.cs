@@ -124,6 +124,8 @@ namespace Shinoa.Modules
                             response += $"/r/{binding.SubredditName}\n";
                         }
 
+                        if (response == "") response = "N/A";
+
                         var embed = new EmbedBuilder()
                             .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
                             .WithColor(MODULE_COLOR);
