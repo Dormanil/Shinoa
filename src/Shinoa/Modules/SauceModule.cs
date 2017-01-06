@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Shinoa.Modules
@@ -108,14 +109,21 @@ namespace Shinoa.Modules
                                 imageUrl = message.Attachments.First().Url;
                                 break;
                             }
-                            else if (message.Content.EndsWith(".jpg") || message.Content.EndsWith(".png"))
+                            else if (message.Content.Contains(".jpg") ||
+                                     message.Content.Contains(".jpeg") ||
+                                     message.Content.Contains(".png"))
                             {
-                                imageUrl = message.Content;
-                                break;
+                                var match = Regex.Match(message.Content, @"http\S*(png|jpg|jpeg)");
+                                if (match.Success)
+                                {
+                                    imageUrl = match.Captures[0].Value;
+                                    break;
+                                }
                             }
                             else if (message.Embeds.Count > 0)
                             {
                                 var firstEmbed = message.Embeds.First();
+                                
 
                                 foreach (var field in firstEmbed.Fields)
                                 {
