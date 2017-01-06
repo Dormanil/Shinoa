@@ -5,15 +5,19 @@ using System.Threading.Tasks;
 using Discord;
 using System.Xml.Linq;
 using System.Threading;
+using System.Net.Http;
 
 namespace Shinoa.Modules
 {
-    public class MALModule : Abstract.HttpClientModule
+    public class MALModule : Abstract.Module
     {
+        public static Color MODULE_COLOR = new Color(63, 81, 181);
+        HttpClient httpClient = new HttpClient();
+
         public override void Init()
         {
-            this.SetBasicHttpCredentials(Shinoa.Config["mal_username"], Shinoa.Config["mal_password"]);
-            this.BaseUrl = "https://myanimelist.net/api/";
+            httpClient.SetBasicHttpCredentials((string) Shinoa.Config["mal_username"], (string) Shinoa.Config["mal_password"]);
+            httpClient.BaseAddress = new Uri("https://myanimelist.net/api/");
 
             this.BoundCommands.Add("anime", (c) =>
             {
@@ -22,36 +26,59 @@ namespace Shinoa.Modules
 
                 try
                 {
-                    var responseText = HttpGet($"anime/search.xml?q={queryText}");
+                    var responseText = httpClient.HttpGet($"anime/search.xml?q={queryText}");
 
                     XElement root = XElement.Parse(responseText);
 
                     var firstResult = (from el in root.Descendants("entry") select el).First();
-
-                    var resultMessage = "";
-                    resultMessage += $"Title: **{firstResult.Descendants("title").First().Value}**\n";
+                    
+                    var embed = new EmbedBuilder();
+                    embed.AddField(f => f.WithName("Title").WithValue(firstResult.Descendants("title").First().Value));
 
                     var englishTitle = firstResult.Descendants("english").First().Value;
-                    if (englishTitle.Length > 0) resultMessage += $"English title: **{englishTitle}**\n";
+                    if (englishTitle.Length > 0) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
 
                     var synonyms = firstResult.Descendants("synonyms").First().Value;
-                    if (synonyms.Length > 0) resultMessage += $"Synonyms: {synonyms}\n";
+                    if (synonyms.Length > 0) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
 
-                    resultMessage += "\n";
+                    embed.AddField(f => f.WithName("Type").WithValue(firstResult.Descendants("type").First().Value).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Status").WithValue(firstResult.Descendants("status").First().Value).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Score (max. 10)").WithValue(firstResult.Descendants("score").First().Value).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Episode Count").WithValue(firstResult.Descendants("episodes").First().Value).WithIsInline(true));
 
-                    resultMessage += $"Type: {firstResult.Descendants("type").First().Value}\n";
-                    resultMessage += $"Status: {firstResult.Descendants("status").First().Value}\n";
-                    resultMessage += $"Average score (max 10): {firstResult.Descendants("score").First().Value}\n";
-                    resultMessage += $"Episode count: {firstResult.Descendants("episodes").First().Value}\n";
+                    var startDate = DateTime.Parse(firstResult.Descendants("start_date").First().Value);
+                    var endDateString = firstResult.Descendants("end_date").First().Value;
+                    DateTime endDate = DateTime.Parse(endDateString);
 
-                    var startDate = firstResult.Descendants("start_date").First().Value;
-                    var endDate = firstResult.Descendants("end_date").First().Value;
-                    if (endDate == "0000-00-00") endDate = "?";
-                    resultMessage += $"Aired: {startDate} -> {endDate}\n";
+                    embed.AddField(f => f.WithName("Start Date").WithValue(startDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
 
-                    resultMessage += $"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}";
+                    if (endDateString != "0000-00-00")
+                    {
+                        if (startDate != endDate)
+                        {
+                            embed.AddField(f => f.WithName("End Date").WithValue(endDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+                        }
+                        else
+                        {
+                            embed.AddField(f => f.WithName("End Date").WithValue("N/A").WithIsInline(true));
+                        }
+                    }
+                    else
+                    {
+                        embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
+                    }
 
-                    responseMessage.ModifyAsync(p => p.Content = resultMessage);
+                    embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}"));
+                    embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
+
+                    var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
+                        .Replace("<br />", "") .Truncate(1000);
+                    embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
+
+                    embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
+                    embed.WithColor(MODULE_COLOR);
+
+                    responseMessage.ModifyToEmbedAsync(embed.Build());
                 }
                 catch (Exception)
                 {
@@ -66,37 +93,50 @@ namespace Shinoa.Modules
 
                 try
                 {
-                    var responseText = HttpGet($"manga/search.xml?q={queryText}");
+                    var responseText = httpClient.HttpGet($"manga/search.xml?q={queryText}");
 
                     XElement root = XElement.Parse(responseText);
 
                     var firstResult = (from el in root.Descendants("entry") select el).First();
 
-                    var resultMessage = "";
-                    resultMessage += $"Title: **{firstResult.Descendants("title").First().Value}**\n";
+                    var embed = new EmbedBuilder();
+                    embed.AddField(f => f.WithName("Title").WithValue(firstResult.Descendants("title").First().Value));
 
                     var englishTitle = firstResult.Descendants("english").First().Value;
-                    if (englishTitle.Length > 0) resultMessage += $"English title: **{englishTitle}**\n";
+                    if (englishTitle.Length > 0) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
 
                     var synonyms = firstResult.Descendants("synonyms").First().Value;
-                    if (synonyms.Length > 0) resultMessage += $"Synonyms: {synonyms}\n";
+                    if (synonyms.Length > 0) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
 
-                    resultMessage += "\n";
+                    var chaptersString = firstResult.Descendants("chapters").First().Value;
+                    var volumesString = firstResult.Descendants("volumes").First().Value;
+                    if (chaptersString == "0") chaptersString = "?";
+                    if (volumesString == "0") volumesString = "?";
 
-                    resultMessage += $"Type: {firstResult.Descendants("type").First().Value}\n";
-                    resultMessage += $"Status: {firstResult.Descendants("status").First().Value}\n";
-                    resultMessage += $"Average score (max 10): {firstResult.Descendants("score").First().Value}\n";
-                    resultMessage += $"Chapters: {firstResult.Descendants("chapters").First().Value}\n";
-                    resultMessage += $"Volumes: {firstResult.Descendants("volumes").First().Value}\n";
+                    embed.AddField(f => f.WithName("Type").WithValue(firstResult.Descendants("type").First().Value).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Status").WithValue(firstResult.Descendants("status").First().Value).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Score (max. 10)").WithValue(firstResult.Descendants("score").First().Value).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Chapters").WithValue(chaptersString).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Volumes").WithValue(volumesString).WithIsInline(true));
 
                     var startDate = firstResult.Descendants("start_date").First().Value;
                     var endDate = firstResult.Descendants("end_date").First().Value;
                     if (endDate == "0000-00-00") endDate = "?";
-                    resultMessage += $"Published: {startDate} -> {endDate}\n";
+                    var dateString = $"{startDate} -> {endDate}\n";
 
-                    resultMessage += $"\nhttp://myanimelist.net/manga/{firstResult.Descendants("id").First().Value}";
+                    embed.AddField(f => f.WithName("Published").WithValue(dateString).WithIsInline(true));
 
-                    responseMessage.ModifyAsync(p => p.Content = resultMessage);
+                    embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{firstResult.Descendants("id").First().Value}"));
+                    embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
+
+                    var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
+                        .Replace("<br />", "").Truncate(1000);
+                    embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
+
+                    embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
+                    embed.WithColor(MODULE_COLOR);
+
+                    responseMessage.ModifyToEmbedAsync(embed.Build());
                 }
                 catch (Exception)
                 {

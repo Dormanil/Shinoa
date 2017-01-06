@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -14,7 +15,9 @@ namespace Shinoa.Modules
 {
     public class AnimeFeedModule : Abstract.UpdateLoopModule
     {
-        int UPDATE_INTERVAL = 20 * 1000;
+        HttpClient httpClient = new HttpClient();
+
+        public static Color MODULE_COLOR = new Color(0, 150, 136);
 
         bool InitialRun = true;
 
@@ -103,7 +106,7 @@ namespace Shinoa.Modules
 
         public async override Task UpdateLoop()
         {
-            var responseText = HttpGet(FEED_URL);
+            var responseText = httpClient.HttpGet(FEED_URL);
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
             var entries = document.Root.Descendants().First(i => i.Name.LocalName == "channel").Elements().Where(i => i.Name.LocalName == "item");
 
@@ -137,7 +140,12 @@ namespace Shinoa.Modules
                             foreach (var binding in Shinoa.DatabaseConnection.Table<AnimeFeedBinding>())
                             {
                                 var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(binding.ChannelId)) as IMessageChannel;
-                                await channel.SendMessageAsync($"```\nNew Episode: {showTitle} ep. {episodeNumber}\n```");
+
+                                var embed = new EmbedBuilder()
+                                    .AddField(f => f.WithName("New Episode").WithValue($"{showTitle} ep. {episodeNumber}"))
+                                    .WithColor(MODULE_COLOR);
+
+                                await channel.SendEmbedAsync(embed);
                             }
                         }
                     }

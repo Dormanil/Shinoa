@@ -10,6 +10,8 @@ namespace Shinoa.Modules
 {
     public class BotAdministrationModule : Abstract.Module
     {
+        
+
         public override void Init()
         {
             this.BoundCommands.Add("setavatar", (c) =>

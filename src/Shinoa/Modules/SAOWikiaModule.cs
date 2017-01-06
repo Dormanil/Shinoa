@@ -5,21 +5,24 @@ using System.Threading.Tasks;
 using Discord;
 using Newtonsoft.Json;
 using Microsoft.CSharp.RuntimeBinder;
+using System.Net.Http;
 
 namespace Shinoa.Modules
 {
-    public class SAOWikiaModule : Abstract.HttpClientModule
+    public class SAOWikiaModule : Abstract.Module
     {
+        HttpClient httpClient = new HttpClient();
+
         public override void Init()
         {
-            this.BaseUrl = "http://swordartonline.wikia.com/api/v1/";
+            httpClient.BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/");
 
             this.BoundCommands.Add("saowiki", (c) =>
             {
                 var queryText = GetCommandParametersAsString(c.Message.Content);
                 var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
-                var httpResponseText = HttpGet($"Search/List/?query={queryText}");
+                var httpResponseText = httpClient.HttpGet($"Search/List/?query={queryText}");
 
                 dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 

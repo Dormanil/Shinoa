@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Shinoa.Modules.Abstract
 {
-    public abstract class UpdateLoopModule : HttpClientModule
+    public abstract class UpdateLoopModule : Module
     {
         Timer UpdateTimer;
 
@@ -14,8 +14,14 @@ namespace Shinoa.Modules.Abstract
         {
             UpdateTimer = new Timer(s =>
             {
-                Logging.Log($"Running update loop for module: {GetType().Name}");
-                UpdateLoop();
+                try
+                {
+                    UpdateLoop();
+                }
+                catch (Exception e)
+                {
+                    Logging.Log(e.ToString());
+                }
             },
             null,
             TimeSpan.FromSeconds(30),

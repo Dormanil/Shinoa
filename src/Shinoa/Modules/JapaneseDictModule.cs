@@ -4,22 +4,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Newtonsoft.Json;
+using System.Net.Http;
 
 namespace Shinoa.Modules
 {
-    public class JapaneseDictModule : Abstract.HttpClientModule
+    public class JapaneseDictModule : Abstract.Module
     {
+        HttpClient httpClient = new HttpClient();
+
         public override void Init()
         {
-            this.BaseUrl = "http://jisho.org/api/v1/";
-
             this.BoundCommands.Add("jp", (c) =>
             {
                 var queryText = GetCommandParametersAsString(c.Message.Content);
 
                 var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
-                var httpResponseText = HttpGet($"search/words?keyword={queryText}");
+                var httpResponseText = httpClient.HttpGet($"http://jisho.org/api/v1/search/words?keyword={queryText}");
                 dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 
                 try

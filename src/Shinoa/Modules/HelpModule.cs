@@ -13,7 +13,12 @@ namespace Shinoa.Modules
         {
             this.BoundCommands.Add("help", (c) =>
             {
-                c.Channel.SendMessageAsync($"<@{c.User.Id}> <http://omegavesko.github.io/Shinoa/commands.html>");
+                var embed = new EmbedBuilder()
+                    .AddField(f => f.WithName("Command List").WithValue("http://omegavesko.github.io/Shinoa/commands.html"))
+                    .AddField(f => f.WithName("GitHub").WithValue("https://github.com/omegavesko/Shinoa"))
+                    .WithFooter(f => f.WithText(Shinoa.VersionString));
+
+                c.Channel.SendMessageAsync($"{c.User.Mention}", embed: embed.Build());
             });
         }
     }

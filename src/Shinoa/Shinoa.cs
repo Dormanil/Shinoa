@@ -15,6 +15,7 @@ namespace Shinoa
     {
         public static DateTime StartTime = DateTime.Now;
         public static string Version = "2.1";
+        public static string VersionString = $"Shinoa v{Version}, built by OmegaVesko";
 
         public static dynamic Config;
         public static DiscordSocketClient DiscordClient;
@@ -34,16 +35,14 @@ namespace Shinoa
             new Modules.JapaneseDictModule(),
             new Modules.SAOWikiaModule(),
             new Modules.WikipediaModule(),
+            new Modules.SauceModule(),
             new Modules.RedditModule(),
-            new Modules.TwitterModule(),
-            new Modules.AnimeFeedModule(),
-            new Modules.SauceModule()
+            //new Modules.TwitterModule(),
+            new Modules.AnimeFeedModule()            
         };
 
         public static void Main(string[] args) =>
             new Shinoa().Start().GetAwaiter().GetResult();
-
-
 
         public async Task Start()
         {
@@ -77,22 +76,6 @@ namespace Shinoa
             }
 
             Logging.Log($"All modules initialized successfully.");
-
-            //GlobalUpdateTimer = new Timer(s =>
-            //{
-            //    Logging.Log("Running global update loop.");
-            //    foreach (var module in RunningModules)
-            //    {
-            //        if (module is Modules.Abstract.IUpdateLoop)
-            //        {
-            //            Logging.Log($"Running update loop for module: {module.GetType().Name}");
-            //            (module as Modules.Abstract.IUpdateLoop).UpdateLoop();
-            //        }
-            //    }
-            //},
-            //null,
-            //TimeSpan.FromSeconds(30),
-            //TimeSpan.FromSeconds(30));
 
             DiscordClient.MessageReceived+= async (message) =>
             {

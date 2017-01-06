@@ -1,16 +1,19 @@
-﻿using Discord;
+﻿using BoxKite.Twitter.Authentication;
+using Discord;
 using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Tweetinvi;
+//using Tweetinvi;
+using BoxKite.Twitter;
 
 namespace Shinoa.Modules
 {
     public class TwitterModule : Abstract.UpdateLoopModule
     {
         int UPDATE_INTERVAL = 20 * 1000;
+        ApplicationSession twitterSession;
 
         class TwitterBinding
         {
@@ -35,17 +38,11 @@ namespace Shinoa.Modules
         {
             Shinoa.DatabaseConnection.CreateTable<TwitterBinding>();
             
-            var appCreds = Auth.SetApplicationOnlyCredentials(Shinoa.Config["twitter_key"], Shinoa.Config["twitter_secret"], true);
-            Auth.InitializeApplicationOnlyCredentials(appCreds);
+            twitterSession = new ApplicationSession(Shinoa.Config["twitter_key"], Shinoa.Config["twitter_secret"]);
+            TwitterAuthenticator.StartApplicationOnlyAuth(twitterSession);
 
             foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())
             {
-                //var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId));
-                //var channelName = channel.IsPrivate ? channel.Name : "#" + channel.Name;
-                //var serverName = channel.IsPrivate ? "[PM]" : channel.Server.Name;
-
-                //Logging.Log($"  @{boundUser.TwitterUserName} -> [{serverName} -> {channelName}]");
-
                 var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundUser.ChannelId));
 
                 if (channel is IPrivateChannel)
@@ -150,10 +147,10 @@ namespace Shinoa.Modules
 
             foreach (var user in SubscribedUsers)
             {
-                var tweets = Timeline.GetUserTimeline(user.username);
-                var newestTweet = tweets.ToList()[0];
+                var tweets = twitterSession.GetUserTimeline(screenName: user.username).Result;
+                var newestTweet = tweets.First();
 
-                if (newestTweet.IsRetweet && !user.retweetsEnabled) continue;
+                if (newestTweet.Retweeted.Value && !user.retweetsEnabled) continue;
 
                 if (user.lastTweetIds.Count == 0)
                 {
@@ -163,15 +160,15 @@ namespace Shinoa.Modules
                 {
                     user.lastTweetIds.Enqueue(newestTweet.Id);
 
-                    var channelMessage = "";
-
-                    channelMessage += $"New tweet from @{user.username} ({newestTweet.CreatedBy.Name}):\n\n";
-                    channelMessage += $"```\n{newestTweet.FullText}\n```\n";
-                    channelMessage += $"<{newestTweet.Url}>";
+                    var embed = new EmbedBuilder()
+                        .WithTitle($"@{newestTweet.User.ScreenName} ({newestTweet.User.Name})")
+                        .WithDescription(newestTweet.Text)
+                        .WithUrl(newestTweet.Source)
+                        .WithFooter(f => f.WithText($"Posted to Twitter {(DateTime.Now - newestTweet.Time).Seconds}s ago"));
 
                     foreach (var channel in user.channels)
                     {
-                        await channel.SendMessageAsync(channelMessage);
+                        await channel.SendEmbedAsync(embed.Build());
                     }
                 }
 
