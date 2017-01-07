@@ -26,7 +26,8 @@ namespace Shinoa.Modules
             public Embed GetEmbed()
             {
                 var embed = new EmbedBuilder()
-                    .WithDescription(content)
+                    .WithUrl($"https://twitter.com/{username}/status/{id}")
+                    .WithDescription(System.Net.WebUtility.HtmlDecode(content))
                     .WithThumbnailUrl(avatarUrl)
                     .WithColor(MODULE_COLOR);
 
@@ -155,6 +156,8 @@ namespace Shinoa.Modules
 
         public async override Task UpdateLoop()
         {
+            Logging.Log("Running Twitter loop.");
+
             foreach (var user in SubscribedUsers) user.channels.Clear();
             foreach (var boundUser in Shinoa.DatabaseConnection.Table<TwitterBinding>())
             {
@@ -174,20 +177,25 @@ namespace Shinoa.Modules
 
             foreach (var user in SubscribedUsers)
             {
+                Logging.Log($"Twitter: Checking user @{user.username}.");
                 var newestTweet = GetNewestTweet(user.username);
-                
-                if (user.lastTweetIds.Count == 0)
-                {
-                    user.lastTweetIds.Enqueue(newestTweet.id);
-                }
-                else if (!user.lastTweetIds.Contains(newestTweet.id))
-                {
-                    if (newestTweet.isRetweet && !user.retweetsEnabled) continue;
+                Logging.Log($"Latest post is: {newestTweet.content.Truncate(15)}");
 
-                    user.lastTweetIds.Enqueue(newestTweet.id);
-                    foreach (var channel in user.channels)
+                if (newestTweet != null)
+                {
+                    if (user.lastTweetIds.Count == 0)
                     {
-                        await channel.SendEmbedAsync(newestTweet.GetEmbed());
+                        user.lastTweetIds.Enqueue(newestTweet.id);
+                    }
+                    else if (!user.lastTweetIds.Contains(newestTweet.id))
+                    {
+                        if (newestTweet.isRetweet && !user.retweetsEnabled) continue;
+
+                        user.lastTweetIds.Enqueue(newestTweet.id);
+                        foreach (var channel in user.channels)
+                        {
+                            await channel.SendEmbedAsync(newestTweet.GetEmbed());
+                        }
                     }
                 }
 
@@ -197,20 +205,28 @@ namespace Shinoa.Modules
 
         Tweet GetNewestTweet(string username)
         {
-            var client = new HttpClient();
-            var pageHtml = client.HttpGet($"https://mobile.twitter.com/{username}");
-            var document = new HtmlDocument();
-            document.LoadHtml(pageHtml);
+            try
+            {
+                var client = new HttpClient();
+                var pageHtml = client.HttpGet($"https://mobile.twitter.com/{username}");
+                var document = new HtmlDocument();
+                document.LoadHtml(pageHtml);
 
-            var latestTweetNode = document.DocumentNode.SelectNodes("//table[@class='tweet  ']").First();
-            var tweet = new Tweet();
-            tweet.isRetweet = !latestTweetNode.Attributes["href"].Value.ToLower().Contains(username.ToLower());
-            tweet.id = long.Parse(latestTweetNode.SelectNodes("//div[@class='tweet-text']").First().Attributes["data-id"].Value);
-            tweet.username = latestTweetNode.SelectNodes("//div[@class='username']").First().InnerText.Replace("@", "").Trim();
-            tweet.displayName = latestTweetNode.SelectNodes("//strong[@class='fullname']").First().InnerText.Trim();
-            tweet.content = latestTweetNode.SelectNodes("//div[@class='tweet-text']/div").First().InnerText.Trim();
-            tweet.avatarUrl = latestTweetNode.SelectNodes("//td[@class='avatar']/a/img").First().Attributes["src"].Value;
-            return tweet;
+                var latestTweetNode = document.DocumentNode.SelectNodes("//table[@class='tweet  ']").First();
+                var tweet = new Tweet();
+                tweet.isRetweet = !latestTweetNode.Attributes["href"].Value.ToLower().Contains(username.ToLower());
+                tweet.id = long.Parse(latestTweetNode.SelectNodes("//div[@class='tweet-text']").First().Attributes["data-id"].Value);
+                tweet.username = latestTweetNode.SelectNodes("//div[@class='username']").First().InnerText.Replace("@", "").Trim();
+                tweet.displayName = latestTweetNode.SelectNodes("//strong[@class='fullname']").First().InnerText.Trim();
+                tweet.content = latestTweetNode.SelectNodes("//div[@class='tweet-text']/div").First().InnerText.Trim();
+                tweet.avatarUrl = latestTweetNode.SelectNodes("//td[@class='avatar']/a/img").First().Attributes["src"].Value;
+                return tweet;
+            }
+            catch(Exception e)
+            {
+                Logging.Log(e.ToString());
+                return null;
+            }
         }
     }
 }
