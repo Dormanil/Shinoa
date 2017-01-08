@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Newtonsoft.Json;
 using System.Net.Http;
+using Discord.Commands;
+using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
@@ -12,73 +14,69 @@ namespace Shinoa.Modules
     {
         HttpClient httpClient = new HttpClient();
 
-        public override void Init()
+        [@Command("jp", "jisho", "jpdict", "japanese")]
+        public void JishoSearch(CommandContext c, params string[] args)
         {
-            this.BoundCommands.Add("jp", (c) =>
+            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+
+            var httpResponseText = httpClient.HttpGet($"http://jisho.org/api/v1/search/words?keyword={args.ToRemainderString()}");
+            dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
+
+            try
             {
-                var queryText = GetCommandParametersAsString(c.Message.Content);
+                dynamic firstResult = responseObject["data"][0];
 
-                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+                var responseText = "";
 
-                var httpResponseText = httpClient.HttpGet($"http://jisho.org/api/v1/search/words?keyword={queryText}");
-                dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
-
-                try
+                foreach (var word in firstResult["japanese"])
                 {
-                    dynamic firstResult = responseObject["data"][0];
+                    var wordKanji = word["word"];
+                    var wordReading = word["reading"];
 
-                    var responseText = "";
+                    if (wordKanji != null && wordReading != null) responseText += $"**{wordKanji}** - {wordReading}, ";
+                    else if (wordKanji != null) responseText += $"**{wordKanji}**, ";
+                    else if (wordReading != null) responseText += $"**{wordReading}**, ";
+                }
 
-                    foreach (var word in firstResult["japanese"])
+                responseText = responseText.Trim(new char[] { ',', ' ' });
+                responseText += '\n';
+
+                foreach (var sense in firstResult["senses"])
+                {
+                    responseText += "\u2022 ";
+
+                    foreach (var definition in sense["english_definitions"])
                     {
-                        var wordKanji = word["word"];
-                        var wordReading = word["reading"];
-
-                        if (wordKanji != null && wordReading != null) responseText += $"**{wordKanji}** - {wordReading}, ";
-                        else if (wordKanji != null) responseText += $"**{wordKanji}**, ";
-                        else if (wordReading != null) responseText += $"**{wordReading}**, ";
+                        responseText += $"{definition}, ";
                     }
 
                     responseText = responseText.Trim(new char[] { ',', ' ' });
-                    responseText += '\n';
 
-                    foreach (var sense in firstResult["senses"])
+                    if (sense["parts_of_speech"].Count > 0)
                     {
-                        responseText += "\u2022 ";
+                        responseText += " (";
 
-                        foreach (var definition in sense["english_definitions"])
+                        foreach (string part in sense["parts_of_speech"])
                         {
-                            responseText += $"{definition}, ";
+                            responseText += $"{part.ToLower()}, ";
                         }
 
                         responseText = responseText.Trim(new char[] { ',', ' ' });
 
-                        if (sense["parts_of_speech"].Count > 0)
-                        {
-                            responseText += " (";
-
-                            foreach (string part in sense["parts_of_speech"])
-                            {
-                                responseText += $"{part.ToLower()}, ";
-                            }
-
-                            responseText = responseText.Trim(new char[] { ',', ' ' });
-
-                            responseText += ")";
-                        }
-
-                        responseText += '\n';
+                        responseText += ")";
                     }
 
-                    responseText += $"\nSee more: <http://jisho.org/search/{System.Uri.EscapeUriString(queryText)}>";
+                    responseText += '\n';
+                }
 
-                    responseMessage.ModifyAsync(p => p.Content = responseText);
-                }
-                catch (Exception)
-                {
-                    responseMessage.ModifyAsync(p => p.Content = "Not found.");
-                }
-            });
+                responseText += $"\nSee more: <http://jisho.org/search/{System.Uri.EscapeUriString(args.ToRemainderString())}>";
+
+                responseMessage.ModifyAsync(p => p.Content = responseText);
+            }
+            catch (Exception)
+            {
+                responseMessage.ModifyAsync(p => p.Content = "Not found.");
+            }
         }
     }
 }

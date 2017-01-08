@@ -5,65 +5,67 @@ using System.Threading.Tasks;
 using Discord;
 using System.Net.Http;
 using System.IO;
+using Discord.Commands;
+using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
     public class BotAdministrationModule : Abstract.Module
     {
-        
-
-        public override void Init()
+        [@Command("setavatar", "avatar")]
+        public void SetAvatar(CommandContext c, params string[] args)
         {
-            this.BoundCommands.Add("setavatar", (c) =>
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                var stream = new HttpClient().GetAsync(args[0]).Result.Content.ReadAsStreamAsync().Result;
+                Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
                 {
-                    var stream = new HttpClient().GetAsync(GetCommandParameters(c.Message.Content)[0]).Result.Content.ReadAsStreamAsync().Result;
-                    Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
-                    {
-                        p.Avatar = new Image(stream);
-                    });
-                }
-            });
-                
-            this.BoundCommands.Add("setplaying", (c) =>
-            {
-                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-                {
-                    Shinoa.DiscordClient.SetGameAsync(GetCommandParametersAsString(c.Message.Content));
-                }
-            });
+                    p.Avatar = new Image(stream);
+                });
+            }
+        }
 
-            this.BoundCommands.Add("stats", (c) =>
+        [@Command("setplaying", "setstatus", "game", "status")]
+        public void SetPlaying(CommandContext c, params string[] args)
+        {
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-                {
-                    c.Channel.SendMessageAsync(GenerateStatsMessage());
-                }
-            });
+                Shinoa.DiscordClient.SetGameAsync(args.ToRemainderString());
+            }
+        }
 
-            this.BoundCommands.Add("announce", (c) =>
+        [@Command("stats", "diag", "statistics")]
+        public void GetStats(CommandContext c, params string[] args)
+        {
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-                {
-                    var announcement = GetCommandParametersAsString(c.Message.Content);
+                c.Channel.SendMessageAsync(GenerateStatsMessage());
+            }
+        }
 
-                    foreach (var server in Shinoa.DiscordClient.Guilds)
-                    {
-                        server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
-                    }
-                }
-            });
-
-            this.BoundCommands.Add("say", (c) =>
+        [@Command("announce", "announcement", "global")]
+        public void Announce(CommandContext c, params string[] args)
+        {
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+                var announcement = args.ToRemainderString();
+
+                foreach (var server in Shinoa.DiscordClient.Guilds)
                 {
-                    var message = GetCommandParametersAsString(c.Message.Content);
-                    c.Message.DeleteAsync();
-                    c.Channel.SendMessageAsync(message);
+                    server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
                 }
-            });
+            }
+        }
+
+        [@Command("say")]
+        public void Say(CommandContext c, params string[] args)
+        {
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+            {
+                var message = args.ToRemainderString();
+                c.Message.DeleteAsync();
+                c.Channel.SendMessageAsync(message);
+            }
         }
 
         string GenerateStatsMessage()

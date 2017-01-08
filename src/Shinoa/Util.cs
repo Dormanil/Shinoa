@@ -74,5 +74,19 @@ namespace Shinoa
         {
             return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
         }
+
+        public static string ToRemainderString(this string[] array)
+        {
+            var output = "";
+
+            foreach (var word in array)
+            {
+                output += word + " ";
+            }
+
+            output = output.Trim();
+
+            return output;
+        }
     }
 }

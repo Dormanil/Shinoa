@@ -1,5 +1,7 @@
 ﻿using Discord;
+using Discord.Commands;
 using Newtonsoft.Json;
+using Shinoa.Attributes;
 using SQLite;
 using System;
 using System.Collections.Generic;
@@ -69,75 +71,76 @@ namespace Shinoa.Modules
                     Logging.Log($"  /r/{boundSubreddit.SubredditName} -> [{guildName} -> #{channelName}]");
                 }
             }
+        }
 
-            this.BoundCommands.Add("reddit", (c) =>
+        [@Command("reddit")]
+        public void RedditManagement(CommandContext c, params string[] args)
+        {
+            if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
             {
-                if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
+                var channelIdString = c.Channel.Id.ToString();
+
+                if (args[0] == "add")
                 {
-                    var channelIdString = c.Channel.Id.ToString();
+                    var subredditName = args[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
 
-                    if (GetCommandParameters(c.Message.Content)[0] == "add")
+                    if (Shinoa.DatabaseConnection.Table<RedditBinding>()
+                        .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).Count() == 0)
                     {
-                        var subredditName = GetCommandParameters(c.Message.Content)[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
-
-                        if (Shinoa.DatabaseConnection.Table<RedditBinding>()
-                            .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).Count() == 0)
+                        Shinoa.DatabaseConnection.Insert(new RedditBinding()
                         {
-                            Shinoa.DatabaseConnection.Insert(new RedditBinding()
-                            {
-                                ChannelId = c.Channel.Id.ToString(),
-                                SubredditName = subredditName
-                            });
+                            ChannelId = c.Channel.Id.ToString(),
+                            SubredditName = subredditName
+                        });
 
-                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{c.Channel.Name}).");
-                        }
-                        else
-                        {
-                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{c.Channel.Name}).");
-                        }
+                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{c.Channel.Name}).");
                     }
-                    else if (GetCommandParameters(c.Message.Content)[0] == "remove")
+                    else
                     {
-                        var subredditName = GetCommandParameters(c.Message.Content)[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
-
-                        if (Shinoa.DatabaseConnection.Table<RedditBinding>()
-                            .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).Count() == 1)
-                        {
-                            var currentEntry = Shinoa.DatabaseConnection.Table<RedditBinding>()
-                                .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).First();
-
-                            Shinoa.DatabaseConnection.Delete(new RedditBinding() { Id = currentEntry.Id });
-
-                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{c.Channel.Name}).");
-                        }
-                        else
-                        {
-                            c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{c.Channel.Name}).");
-                        }
-                    }
-                    else if (GetCommandParameters(c.Message.Content)[0] == "list")
-                    {
-                        var response = "";
-                        foreach (var binding in  Shinoa.DatabaseConnection.Table<RedditBinding>()
-                            .Where(item => item.ChannelId == channelIdString))
-                        {
-                            response += $"/r/{binding.SubredditName}\n";
-                        }
-
-                        if (response == "") response = "N/A";
-
-                        var embed = new EmbedBuilder()
-                            .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
-                            .WithColor(MODULE_COLOR);
-
-                        c.Channel.SendEmbedAsync(embed.Build());
+                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{c.Channel.Name}).");
                     }
                 }
-                else
+                else if (args[0] == "remove")
                 {
-                    c.Channel.SendPermissionErrorAsync("Manage Server");
+                    var subredditName = args[1].Replace("r/", "").Replace("/", "").ToLower().Trim();
+
+                    if (Shinoa.DatabaseConnection.Table<RedditBinding>()
+                        .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).Count() == 1)
+                    {
+                        var currentEntry = Shinoa.DatabaseConnection.Table<RedditBinding>()
+                            .Where(item => item.ChannelId == channelIdString && item.SubredditName == subredditName).First();
+
+                        Shinoa.DatabaseConnection.Delete(new RedditBinding() { Id = currentEntry.Id });
+
+                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{c.Channel.Name}).");
+                    }
+                    else
+                    {
+                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{c.Channel.Name}).");
+                    }
                 }
-            });
+                else if (args[0] == "list")
+                {
+                    var response = "";
+                    foreach (var binding in Shinoa.DatabaseConnection.Table<RedditBinding>()
+                        .Where(item => item.ChannelId == channelIdString))
+                    {
+                        response += $"/r/{binding.SubredditName}\n";
+                    }
+
+                    if (response == "") response = "N/A";
+
+                    var embed = new EmbedBuilder()
+                        .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
+                        .WithColor(MODULE_COLOR);
+
+                    c.Channel.SendEmbedAsync(embed.Build());
+                }
+            }
+            else
+            {
+                c.Channel.SendPermissionErrorAsync("Manage Server");
+            }
         }
 
         public async override Task UpdateLoop()

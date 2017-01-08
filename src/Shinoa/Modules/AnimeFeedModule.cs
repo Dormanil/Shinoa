@@ -1,4 +1,6 @@
 ﻿using Discord;
+using Discord.Commands;
+using Shinoa.Attributes;
 using SQLite;
 using System;
 using System.Collections.Generic;
@@ -15,20 +17,18 @@ namespace Shinoa.Modules
 {
     public class AnimeFeedModule : Abstract.UpdateLoopModule
     {
-        HttpClient httpClient = new HttpClient();
-
-        public static Color MODULE_COLOR = new Color(0, 150, 136);
-
-        bool InitialRun = true;
-
         class AnimeFeedBinding
         {
             [PrimaryKey]
             public string ChannelId { get; set; }
         }
 
+        HttpClient httpClient = new HttpClient();
+        public static Color MODULE_COLOR = new Color(0, 150, 136);
+        bool InitialRun = true;
         string FEED_URL = "http://www.nyaa.se/?page=rss&user=64513";
         Queue<string> itemQueue = new Queue<string>(5);
+        
 
         public override void Init()
         {
@@ -42,66 +42,67 @@ namespace Shinoa.Modules
 
                 Logging.Log($"  -> [{serverName} -> {channelName}]");
             }
+        }
 
-            this.BoundCommands.Add("animefeed", (c) =>
+        [@Command("animefeed")]
+        public void AnimeFeedManagement(CommandContext c, params string[] args)
+        {
+            if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
             {
-                if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
+                var channelIdString = c.Channel.Id.ToString();
+
+                if (args[0] == "enable")
                 {
-                    var channelIdString = c.Channel.Id.ToString();
 
-                    if (GetCommandParameters(c.Message.Content)[0] == "enable")
+                    if (Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
+                        .Where(item => item.ChannelId == channelIdString).Count() == 0)
                     {
-
-                        if (Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
-                            .Where(item => item.ChannelId == channelIdString).Count() == 0)
+                        Shinoa.DatabaseConnection.Insert(new AnimeFeedBinding()
                         {
-                            Shinoa.DatabaseConnection.Insert(new AnimeFeedBinding()
-                            {
-                                ChannelId = c.Channel.Id.ToString()
-                            });
+                            ChannelId = c.Channel.Id.ToString()
+                        });
 
-                            if (!(c.Channel is IPrivateChannel))
-                                c.Channel.SendMessageAsync($"Anime notifications have been bound to this channel (#{c.Channel.Name}).");
-                            else
-                                c.Channel.SendMessageAsync($"You will now receive anime notifications via PM.");
-                        }
+                        if (!(c.Channel is IPrivateChannel))
+                            c.Channel.SendMessageAsync($"Anime notifications have been bound to this channel (#{c.Channel.Name}).");
                         else
-                        {
-                            if (!(c.Channel is IPrivateChannel))
-                                c.Channel.SendMessageAsync($"Anime notifications are already bound to this channel (#{c.Channel.Name}).");
-                            else
-                                c.Channel.SendMessageAsync($"You are already receiving anime notifications.");
-                        }
+                            c.Channel.SendMessageAsync($"You will now receive anime notifications via PM.");
                     }
-                    else if (GetCommandParameters(c.Message.Content)[0] == "disable")
+                    else
                     {
-                        if (Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
-                            .Where(item => item.ChannelId == channelIdString).Count() == 1)
-                        {
-                            var currentEntry = Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
-                                .Where(item => item.ChannelId == channelIdString).First();
-
-                            Shinoa.DatabaseConnection.Delete(new AnimeFeedBinding() { ChannelId = channelIdString });
-
-                            if (!(c.Channel is IPrivateChannel))
-                                c.Channel.SendMessageAsync($"Anime notifications have been unbound from this channel (#{c.Channel.Name}).");
-                            else
-                                c.Channel.SendMessageAsync($"You will no lonnger receive anime notifications.");
-                        }
+                        if (!(c.Channel is IPrivateChannel))
+                            c.Channel.SendMessageAsync($"Anime notifications are already bound to this channel (#{c.Channel.Name}).");
                         else
-                        {
-                            if (!(c.Channel is IPrivateChannel))
-                                c.Channel.SendMessageAsync($"Anime notifications are not currently bound to this channel (#{c.Channel.Name}).");
-                            else
-                                c.Channel.SendMessageAsync($"You are not currently receiving anime notifications.");
-                        }
+                            c.Channel.SendMessageAsync($"You are already receiving anime notifications.");
                     }
                 }
-                else
+                else if (args[0] == "disable")
                 {
-                    c.Channel.SendPermissionErrorAsync("Manage Server");
+                    if (Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
+                        .Where(item => item.ChannelId == channelIdString).Count() == 1)
+                    {
+                        var currentEntry = Shinoa.DatabaseConnection.Table<AnimeFeedBinding>()
+                            .Where(item => item.ChannelId == channelIdString).First();
+
+                        Shinoa.DatabaseConnection.Delete(new AnimeFeedBinding() { ChannelId = channelIdString });
+
+                        if (!(c.Channel is IPrivateChannel))
+                            c.Channel.SendMessageAsync($"Anime notifications have been unbound from this channel (#{c.Channel.Name}).");
+                        else
+                            c.Channel.SendMessageAsync($"You will no lonnger receive anime notifications.");
+                    }
+                    else
+                    {
+                        if (!(c.Channel is IPrivateChannel))
+                            c.Channel.SendMessageAsync($"Anime notifications are not currently bound to this channel (#{c.Channel.Name}).");
+                        else
+                            c.Channel.SendMessageAsync($"You are not currently receiving anime notifications.");
+                    }
                 }
-            });
+            }
+            else
+            {
+                c.Channel.SendPermissionErrorAsync("Manage Server");
+            }
         }
 
         public async override Task UpdateLoop()

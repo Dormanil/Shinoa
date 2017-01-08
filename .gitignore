@@ -245,4 +245,6 @@ ModelManifest.xml
 .fake/
 
 src/Shinoa/config.yaml
+src/Shinoa/config_alpha.yaml
 src/Shinoa/db.sqlite
+src/Shinoa/db_alpha.sqlite

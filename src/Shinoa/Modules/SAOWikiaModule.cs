@@ -6,6 +6,8 @@ using Discord;
 using Newtonsoft.Json;
 using Microsoft.CSharp.RuntimeBinder;
 using System.Net.Http;
+using Discord.Commands;
+using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
@@ -16,40 +18,41 @@ namespace Shinoa.Modules
         public override void Init()
         {
             httpClient.BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/");
+        }
 
-            this.BoundCommands.Add("saowiki", (c) =>
+        [@Command("sao", "saowiki", "saowikia")]
+        public void SAOWikiaSearch(CommandContext c, params string[] args)
+        {
+            var queryText = args.ToRemainderString();
+            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+
+            var httpResponseText = httpClient.HttpGet($"Search/List/?query={queryText}");
+
+            dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
+
+            try
             {
-                var queryText = GetCommandParametersAsString(c.Message.Content);
-                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+                dynamic firstResult = responseObject["items"][0];
 
-                var httpResponseText = httpClient.HttpGet($"Search/List/?query={queryText}");
+                var resultMessage = "";
+                resultMessage += $"{firstResult["url"]}";
 
-                dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
+                responseMessage.ModifyAsync(p => p.Content = resultMessage);
+            }
+            catch (ArgumentException)
+            {
+                responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
 
-                try
-                {
-                    dynamic firstResult = responseObject["items"][0];
-
-                    var resultMessage = "";
-                    resultMessage += $"{firstResult["url"]}";
-
-                    responseMessage.ModifyAsync(p => p.Content = resultMessage);
-                }
-                catch (ArgumentException)
-                {
-                    responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
-
-                }
-                catch (RuntimeBinderException)
-                {
-                    responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
-                }
-                catch (Exception ex)
-                {
-                    responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
-                    Logging.Log(ex.ToString());
-                }
-            });
+            }
+            catch (RuntimeBinderException)
+            {
+                responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
+            }
+            catch (Exception ex)
+            {
+                responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
+                Logging.Log(ex.ToString());
+            }
         }
     }
 }

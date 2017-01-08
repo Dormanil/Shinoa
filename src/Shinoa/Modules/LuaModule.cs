@@ -3,25 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MoonSharp.Interpreter;
+using Discord.Commands;
+using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
     public class LuaModule : Abstract.Module
     {
-        public override void Init()
+        [@Command("lua", "run", "eval", "exec")]
+        public void RunLua(CommandContext c, params string[] args)
         {
-            this.BoundCommands.Add("lua", (c) =>
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-                {
-                    var message = c.Channel.SendMessageAsync($"Running...").Result;
+                var message = c.Channel.SendMessageAsync($"Running...").Result;
 
-                    var code = GetCommandParametersAsString(c.Message.Content);
-                    var output = Script.RunString(code).ToString();
+                var code = args.ToRemainderString();
+                var output = Script.RunString(code).ToString();
 
-                    message.ModifyAsync(p => p.Content = $"Output: `{output}`");
-                }
-            });
+                message.ModifyAsync(p => p.Content = $"Output: `{output}`");
+            }
         }
     }
 }

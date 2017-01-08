@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using HtmlAgilityPack;
+using Shinoa.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,36 +57,34 @@ namespace Shinoa.Modules
             }
         }
 
-        public override void Init()
+        [@Command("sauce", "source", "saucenao")]
+        public void SAOWikiaSearch(CommandContext c, params string[] args)
         {
-            this.BoundCommands.Add("sauce", (c) =>
+            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var imageUrl = FindRelevantImageURL(c);
+
+            if (imageUrl == null)
             {
-                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
-                var imageUrl = FindRelevantImageURL(c);
+                responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
+                    .WithTitle("Found no suitable image to look up.")
+                    .WithColor(new Color(244, 67, 54)));
 
-                if (imageUrl == null)
-                {
-                    responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
-                        .WithTitle("Found no suitable image to look up.")
-                        .WithColor(new Color(244, 67, 54)));
+                return;
+            }
 
-                    return;
-                }
-                
-                try
-                {
-                    var sauceResult = GetSauce(imageUrl);
-                    responseMessage.ModifyToEmbedAsync(sauceResult.GetEmbed());
-                }
-                catch (SauceNotFoundException)
-                {
-                    responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
-                        .WithTitle("No match found.")
-                        .WithColor(new Color(244, 67, 54)));
+            try
+            {
+                var sauceResult = GetSauce(imageUrl);
+                responseMessage.ModifyToEmbedAsync(sauceResult.GetEmbed());
+            }
+            catch (SauceNotFoundException)
+            {
+                responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
+                    .WithTitle("No match found.")
+                    .WithColor(new Color(244, 67, 54)));
 
-                    return;
-                }
-            });
+                return;
+            }
         }
 
         private static string FindRelevantImageURL(CommandContext c)

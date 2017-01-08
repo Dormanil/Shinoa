@@ -6,6 +6,8 @@ using Discord;
 using System.Xml.Linq;
 using System.Threading;
 using System.Net.Http;
+using Discord.Commands;
+using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
@@ -16,133 +18,135 @@ namespace Shinoa.Modules
 
         public override void Init()
         {
-            httpClient.SetBasicHttpCredentials((string) Shinoa.Config["mal_username"], (string) Shinoa.Config["mal_password"]);
+            httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal_username"], (string)Shinoa.Config["mal_password"]);
             httpClient.BaseAddress = new Uri("https://myanimelist.net/api/");
+        }
 
-            this.BoundCommands.Add("anime", (c) =>
+        [@Command("anime", "mal", "malanime")]
+        public void MALAnimeSearch(CommandContext c, params string[] args)
+        {
+            var queryText = args.ToRemainderString();
+            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+
+            try
             {
-                var queryText = GetCommandParametersAsString(c.Message.Content);
-                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+                var responseText = httpClient.HttpGet($"anime/search.xml?q={queryText}");
 
-                try
+                XElement root = XElement.Parse(responseText);
+
+                var firstResult = (from el in root.Descendants("entry") select el).First();
+
+                var embed = new EmbedBuilder();
+                embed.AddField(f => f.WithName("Title").WithValue(firstResult.Descendants("title").First().Value));
+
+                var englishTitle = firstResult.Descendants("english").First().Value;
+                if (englishTitle.Length > 0) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
+
+                var synonyms = firstResult.Descendants("synonyms").First().Value;
+                if (synonyms.Length > 0) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
+
+                embed.AddField(f => f.WithName("Type").WithValue(firstResult.Descendants("type").First().Value).WithIsInline(true));
+                embed.AddField(f => f.WithName("Status").WithValue(firstResult.Descendants("status").First().Value).WithIsInline(true));
+                embed.AddField(f => f.WithName("Score (max. 10)").WithValue(firstResult.Descendants("score").First().Value).WithIsInline(true));
+                embed.AddField(f => f.WithName("Episode Count").WithValue(firstResult.Descendants("episodes").First().Value).WithIsInline(true));
+
+                var startDate = DateTime.Parse(firstResult.Descendants("start_date").First().Value);
+                var endDateString = firstResult.Descendants("end_date").First().Value;
+                DateTime endDate = DateTime.Parse(endDateString);
+
+                embed.AddField(f => f.WithName("Start Date").WithValue(startDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+
+                if (endDateString != "0000-00-00")
                 {
-                    var responseText = httpClient.HttpGet($"anime/search.xml?q={queryText}");
-
-                    XElement root = XElement.Parse(responseText);
-
-                    var firstResult = (from el in root.Descendants("entry") select el).First();
-                    
-                    var embed = new EmbedBuilder();
-                    embed.AddField(f => f.WithName("Title").WithValue(firstResult.Descendants("title").First().Value));
-
-                    var englishTitle = firstResult.Descendants("english").First().Value;
-                    if (englishTitle.Length > 0) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
-
-                    var synonyms = firstResult.Descendants("synonyms").First().Value;
-                    if (synonyms.Length > 0) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
-
-                    embed.AddField(f => f.WithName("Type").WithValue(firstResult.Descendants("type").First().Value).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Status").WithValue(firstResult.Descendants("status").First().Value).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Score (max. 10)").WithValue(firstResult.Descendants("score").First().Value).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Episode Count").WithValue(firstResult.Descendants("episodes").First().Value).WithIsInline(true));
-
-                    var startDate = DateTime.Parse(firstResult.Descendants("start_date").First().Value);
-                    var endDateString = firstResult.Descendants("end_date").First().Value;
-                    DateTime endDate = DateTime.Parse(endDateString);
-
-                    embed.AddField(f => f.WithName("Start Date").WithValue(startDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
-
-                    if (endDateString != "0000-00-00")
+                    if (startDate != endDate)
                     {
-                        if (startDate != endDate)
-                        {
-                            embed.AddField(f => f.WithName("End Date").WithValue(endDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
-                        }
-                        else
-                        {
-                            embed.AddField(f => f.WithName("End Date").WithValue("N/A").WithIsInline(true));
-                        }
+                        embed.AddField(f => f.WithName("End Date").WithValue(endDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
                     }
                     else
                     {
-                        embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
+                        embed.AddField(f => f.WithName("End Date").WithValue("N/A").WithIsInline(true));
                     }
-
-                    embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}"));
-                    embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
-
-                    var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
-                        .Replace("<br />", "") .Truncate(1000);
-                    embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
-
-                    embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
-                    embed.WithColor(MODULE_COLOR);
-
-                    responseMessage.ModifyToEmbedAsync(embed.Build());
                 }
-                catch (Exception)
+                else
                 {
-                    responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+                    embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
                 }
-            });
 
-            this.BoundCommands.Add("manga", (c) =>
+                embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}"));
+                embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
+
+                var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
+                    .Replace("<br />", "").Truncate(1000);
+                embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
+
+                embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
+                embed.WithColor(MODULE_COLOR);
+
+                responseMessage.ModifyToEmbedAsync(embed.Build());
+            }
+            catch (Exception)
             {
-                var queryText = GetCommandParametersAsString(c.Message.Content);
-                var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+                responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+            }
+        }
 
-                try
-                {
-                    var responseText = httpClient.HttpGet($"manga/search.xml?q={queryText}");
+        [@Command("manga", "ln", "malmanga")]
+        public void MALMangaSearch(CommandContext c, params string[] args)
+        {
+            var queryText = args.ToRemainderString();
+            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
-                    XElement root = XElement.Parse(responseText);
+            try
+            {
+                var responseText = httpClient.HttpGet($"manga/search.xml?q={queryText}");
 
-                    var firstResult = (from el in root.Descendants("entry") select el).First();
+                XElement root = XElement.Parse(responseText);
 
-                    var embed = new EmbedBuilder();
-                    embed.AddField(f => f.WithName("Title").WithValue(firstResult.Descendants("title").First().Value));
+                var firstResult = (from el in root.Descendants("entry") select el).First();
 
-                    var englishTitle = firstResult.Descendants("english").First().Value;
-                    if (englishTitle.Length > 0) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
+                var embed = new EmbedBuilder();
+                embed.AddField(f => f.WithName("Title").WithValue(firstResult.Descendants("title").First().Value));
 
-                    var synonyms = firstResult.Descendants("synonyms").First().Value;
-                    if (synonyms.Length > 0) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
+                var englishTitle = firstResult.Descendants("english").First().Value;
+                if (englishTitle.Length > 0) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
 
-                    var chaptersString = firstResult.Descendants("chapters").First().Value;
-                    var volumesString = firstResult.Descendants("volumes").First().Value;
-                    if (chaptersString == "0") chaptersString = "?";
-                    if (volumesString == "0") volumesString = "?";
+                var synonyms = firstResult.Descendants("synonyms").First().Value;
+                if (synonyms.Length > 0) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
 
-                    embed.AddField(f => f.WithName("Type").WithValue(firstResult.Descendants("type").First().Value).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Status").WithValue(firstResult.Descendants("status").First().Value).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Score (max. 10)").WithValue(firstResult.Descendants("score").First().Value).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Chapters").WithValue(chaptersString).WithIsInline(true));
-                    embed.AddField(f => f.WithName("Volumes").WithValue(volumesString).WithIsInline(true));
+                var chaptersString = firstResult.Descendants("chapters").First().Value;
+                var volumesString = firstResult.Descendants("volumes").First().Value;
+                if (chaptersString == "0") chaptersString = "?";
+                if (volumesString == "0") volumesString = "?";
 
-                    var startDate = firstResult.Descendants("start_date").First().Value;
-                    var endDate = firstResult.Descendants("end_date").First().Value;
-                    if (endDate == "0000-00-00") endDate = "?";
-                    var dateString = $"{startDate} -> {endDate}\n";
+                embed.AddField(f => f.WithName("Type").WithValue(firstResult.Descendants("type").First().Value).WithIsInline(true));
+                embed.AddField(f => f.WithName("Status").WithValue(firstResult.Descendants("status").First().Value).WithIsInline(true));
+                embed.AddField(f => f.WithName("Score (max. 10)").WithValue(firstResult.Descendants("score").First().Value).WithIsInline(true));
+                embed.AddField(f => f.WithName("Chapters").WithValue(chaptersString).WithIsInline(true));
+                embed.AddField(f => f.WithName("Volumes").WithValue(volumesString).WithIsInline(true));
 
-                    embed.AddField(f => f.WithName("Published").WithValue(dateString).WithIsInline(true));
+                var startDate = firstResult.Descendants("start_date").First().Value;
+                var endDate = firstResult.Descendants("end_date").First().Value;
+                if (endDate == "0000-00-00") endDate = "?";
+                var dateString = $"{startDate} -> {endDate}\n";
 
-                    embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{firstResult.Descendants("id").First().Value}"));
-                    embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
+                embed.AddField(f => f.WithName("Published").WithValue(dateString).WithIsInline(true));
 
-                    var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
-                        .Replace("<br />", "").Truncate(1000);
-                    embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
+                embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{firstResult.Descendants("id").First().Value}"));
+                embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
 
-                    embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
-                    embed.WithColor(MODULE_COLOR);
+                var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
+                    .Replace("<br />", "").Truncate(1000);
+                embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
 
-                    responseMessage.ModifyToEmbedAsync(embed.Build());
-                }
-                catch (Exception)
-                {
-                    responseMessage.ModifyAsync(p => p.Content = "Manga not found.");
-                }
-            });
+                embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
+                embed.WithColor(MODULE_COLOR);
+
+                responseMessage.ModifyToEmbedAsync(embed.Build());
+            }
+            catch (Exception)
+            {
+                responseMessage.ModifyAsync(p => p.Content = "Manga not found.");
+            }
         }
     }
 }
