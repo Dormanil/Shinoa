@@ -29,7 +29,6 @@ namespace Shinoa.Modules
         string FEED_URL = "http://www.nyaa.se/?page=rss&user=64513";
         Queue<string> itemQueue = new Queue<string>(5);
         
-
         public override void Init()
         {
             Shinoa.DatabaseConnection.CreateTable<AnimeFeedBinding>();
