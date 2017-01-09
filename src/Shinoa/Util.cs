@@ -75,6 +75,11 @@ namespace Shinoa
             return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
         }
 
+        public static string FirstParagraph(this string value)
+        {
+            return value.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
+        }
+
         public static string ToRemainderString(this string[] array)
         {
             var output = "";

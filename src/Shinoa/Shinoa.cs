@@ -17,7 +17,7 @@ namespace Shinoa
         public static bool ALPHA = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
 
         public static DateTime StartTime = DateTime.Now;
-        public static string Version = "2.1";
+        public static string Version = "2.1.1";
         public static string VersionString = $"Shinoa v{Version}, built by OmegaVesko";
 
         public static dynamic Config;

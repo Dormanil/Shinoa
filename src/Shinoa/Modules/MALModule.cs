@@ -8,6 +8,7 @@ using System.Threading;
 using System.Net.Http;
 using Discord.Commands;
 using Shinoa.Attributes;
+using System.Text.RegularExpressions;
 
 namespace Shinoa.Modules
 {
@@ -20,6 +21,18 @@ namespace Shinoa.Modules
         {
             httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal_username"], (string)Shinoa.Config["mal_password"]);
             httpClient.BaseAddress = new Uri("https://myanimelist.net/api/");
+        }
+
+        string GenerateSynopsisString(string rawValue)
+        {
+            var synopsisString = System.Net.WebUtility.HtmlDecode(rawValue)
+                .FirstParagraph()
+                .Replace("<br />", "")
+                .Truncate(500);
+
+            synopsisString = Regex.Replace(synopsisString, @"\[.+?\]", "");
+            if (synopsisString.Length < 500) synopsisString += "\n\n(...)";
+            return synopsisString;
         }
 
         [@Command("anime", "mal", "malanime")]
@@ -75,9 +88,7 @@ namespace Shinoa.Modules
                 embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{firstResult.Descendants("id").First().Value}"));
                 embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
 
-                var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
-                    .Replace("<br />", "").Truncate(1000);
-                embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
+                embed.AddField(f => f.WithName("Synopsis").WithValue(GenerateSynopsisString(firstResult.Descendants("synopsis").First().Value)));
 
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
                 embed.WithColor(MODULE_COLOR);
@@ -134,9 +145,7 @@ namespace Shinoa.Modules
                 embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{firstResult.Descendants("id").First().Value}"));
                 embed.ThumbnailUrl = firstResult.Descendants("image").First().Value;
 
-                var synopsisString = System.Net.WebUtility.HtmlDecode(firstResult.Descendants("synopsis").First().Value)
-                    .Replace("<br />", "").Truncate(1000);
-                embed.AddField(f => f.WithName("Synopsis").WithValue(synopsisString));
+                embed.AddField(f => f.WithName("Synopsis").WithValue(GenerateSynopsisString(firstResult.Descendants("synopsis").First().Value)));
 
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
                 embed.WithColor(MODULE_COLOR);
