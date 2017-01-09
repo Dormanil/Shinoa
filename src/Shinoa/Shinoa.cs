@@ -135,6 +135,8 @@ namespace Shinoa
                         var splitMessage = context.Message.Content.Split(' ').ToList();
                         if (message.Content.StartsWith(Config["command_prefix"]) && command.commandStrings.Contains(splitMessage[0].Replace(Config["command_prefix"], "")))
                         {
+                            Logging.LogMessage(context);
+
                             splitMessage.RemoveAt(0);
                             var paramsObject = new object[] { context, splitMessage.ToArray() };
 
