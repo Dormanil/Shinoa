@@ -35,6 +35,7 @@ namespace Shinoa
             new Modules.JoinPartModule(),
             new Modules.FunModule(),
             new Modules.MALModule(),
+            new Modules.AnilistModule(),
             new Modules.JapaneseDictModule(),
             new Modules.SAOWikiaModule(),
             new Modules.WikipediaModule(),

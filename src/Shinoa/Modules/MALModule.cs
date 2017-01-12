@@ -32,16 +32,19 @@ namespace Shinoa.Modules
             public Embed GetEmbed()
             {
                 var embed = new EmbedBuilder();
-                embed.AddField(f => f.WithName("Title").WithValue(title));
+                embed.Title = title;
+                embed.Url = $"\nhttp://myanimelist.net/anime/{id}";
+
+                //embed.AddField(f => f.WithName("Title").WithValue(title));
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
                 if (synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
                 embed.AddField(f => f.WithName("Type").WithValue(type).WithIsInline(true));
                 embed.AddField(f => f.WithName("Status").WithValue(status).WithIsInline(true));
                 embed.AddField(f => f.WithName("Score (max. 10)").WithValue(score.ToString()).WithIsInline(true));
-                embed.AddField(f => f.WithName("Episode Count").WithValue(episodeCount.ToString()).WithIsInline(true));
+                embed.AddField(f => f.WithName("Episode Count").WithValue(episodeCount == 0 ? "?" : episodeCount.ToString()).WithIsInline(true));
                 embed.AddField(f => f.WithName("Start Date").WithValue(startDate.ToString("MMMM dd, yyyy")).WithIsInline(true).WithIsInline(true));
 
-                if (endDate != null)
+                if (endDate != null && endDate.Year != 1)
                 {
                     if (startDate != endDate)
                         embed.AddField(f => f.WithName("End Date").WithValue(endDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
@@ -53,7 +56,7 @@ namespace Shinoa.Modules
                     embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
                 }
 
-                embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{id}"));
+                //embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{id}"));
                 embed.ThumbnailUrl = thumbnailUrl;
                 embed.AddField(f => f.WithName("Synopsis").WithValue(synopsis));
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
@@ -80,7 +83,10 @@ namespace Shinoa.Modules
             public Embed GetEmbed()
             {
                 var embed = new EmbedBuilder();
-                embed.AddField(f => f.WithName("Title").WithValue(title));
+                embed.Title = title;
+                embed.Url = $"\nhttp://myanimelist.net/manga/{id}";
+
+                //embed.AddField(f => f.WithName("Title").WithValue(title));
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
                 if (synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
                 embed.AddField(f => f.WithName("Type").WithValue(type).WithIsInline(true));
@@ -98,7 +104,7 @@ namespace Shinoa.Modules
                     embed.AddField(f => f.WithName("Volumes").WithValue("?").WithIsInline(true));
 
                 embed.AddField(f => f.WithName("Published").WithValue(dateString).WithIsInline(true));
-                embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{id}"));
+                //embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{id}"));
                 embed.ThumbnailUrl = thumbnailUrl;
                 embed.AddField(f => f.WithName("Synopsis").WithValue(synopsis));
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
@@ -156,7 +162,15 @@ namespace Shinoa.Modules
             }
             else
             {
-                responseMessage.ModifyAsync(p => p.Content = "Manga/LN not found.");
+                var fallbackResult = AnilistModule.GetAnime(args.ToRemainderString());
+                if (fallbackResult != null)
+                {
+                    responseMessage.ModifyToEmbedAsync(fallbackResult.GetEmbed());
+                }
+                else
+                {
+                    responseMessage.ModifyAsync(p => p.Content = "Manga/LN not found.");
+                }
             }
         }
 
