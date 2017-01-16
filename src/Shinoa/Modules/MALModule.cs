@@ -34,8 +34,7 @@ namespace Shinoa.Modules
                 var embed = new EmbedBuilder();
                 embed.Title = title;
                 embed.Url = $"\nhttp://myanimelist.net/anime/{id}";
-
-                //embed.AddField(f => f.WithName("Title").WithValue(title));
+                
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
                 if (synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
                 embed.AddField(f => f.WithName("Type").WithValue(type).WithIsInline(true));
@@ -55,8 +54,7 @@ namespace Shinoa.Modules
                 {
                     embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
                 }
-
-                //embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/anime/{id}"));
+                
                 embed.ThumbnailUrl = thumbnailUrl;
                 embed.AddField(f => f.WithName("Synopsis").WithValue(synopsis));
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
@@ -125,12 +123,20 @@ namespace Shinoa.Modules
         static string GenerateSynopsisString(string rawValue)
         {
             var synopsisString = System.Net.WebUtility.HtmlDecode(rawValue)
-                .FirstParagraph()
-                .Replace("<br />", "")
-                .Truncate(500);
+                .Replace("<br />", "");
+
+            if (synopsisString.ParagraphCount() > 1)
+            {
+                synopsisString = synopsisString.FirstParagraph();
+                synopsisString += "\n\n(...)";
+            }
 
             synopsisString = Regex.Replace(synopsisString, @"\[.+?\]", "");
-            if (synopsisString.Length < 500) synopsisString += "\n\n(...)";
+            if (synopsisString.Length >= 500)
+            {
+                synopsisString = synopsisString.Truncate(500);
+                
+            }
             return synopsisString;
         }
 

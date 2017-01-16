@@ -46,6 +46,7 @@ namespace Shinoa.Modules
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle).WithIsInline(true));
                 if (jpTitle != null) embed.AddField(f => f.WithName("Japanese Title").WithValue(jpTitle).WithIsInline(true));
 
+                synonyms.RemoveAll(s => s == "");
                 if (synonyms.Count > 0)
                 {
                     var synonymsString = "";
@@ -66,6 +67,7 @@ namespace Shinoa.Modules
                 embed.AddField(f => f.WithName("Start Date").WithValue(startDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
                 embed.AddField(f => f.WithName("End Date").WithValue(endDate.Year == 1 ? "?" : endDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
 
+                genres.RemoveAll(s => s == "");
                 if (genres.Count > 0)
                 {
                     var genresString = "";
