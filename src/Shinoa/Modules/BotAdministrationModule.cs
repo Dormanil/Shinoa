@@ -68,6 +68,15 @@ namespace Shinoa.Modules
             }
         }
 
+        [@Command("invite")]
+        public void GetInviteLink(CommandContext c, params string[] args)
+        {
+            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+            {
+                c.Channel.SendMessageAsync($"Invite link for {Shinoa.DiscordClient.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id=198527882773921792&scope=bot");
+            }
+        }
+
         string GenerateStatsMessage()
         {
             var output = "";

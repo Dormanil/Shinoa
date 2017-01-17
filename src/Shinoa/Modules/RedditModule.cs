@@ -236,7 +236,7 @@ namespace Shinoa.Modules
                             embed.ThumbnailUrl = thumbnailUrl;
                         }
 
-                        if (selftext != "") embed.AddField(f => f.WithName("Text").WithValue(selftext));
+                        if (selftext != "") embed.AddField(f => f.WithName("Text").WithValue(selftext.Truncate(500)));
                     }
 
                     foreach (var channel in subreddit.channels)

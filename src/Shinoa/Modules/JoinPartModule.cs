@@ -45,7 +45,33 @@ namespace Shinoa.Modules
                     if (ulong.Parse(server.ServerId) == user.Guild.Id)
                     {
                         var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
-                        await greetingChannel.SendMessageAsync($"{user.Username} has left the server.");
+                        await greetingChannel.SendMessageAsync($"{user.Mention} has left the server.");
+                        break;
+                    }
+                }
+            };
+
+            Shinoa.DiscordClient.UserBanned += async (user, guild) =>
+            {
+                foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
+                {
+                    if (ulong.Parse(server.ServerId) == guild.Id)
+                    {
+                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                        await greetingChannel.SendMessageAsync($"{user.Mention} has been banned.");
+                        break;
+                    }
+                }
+            };
+
+            Shinoa.DiscordClient.UserUnbanned += async (user, guild) =>
+            {
+                foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
+                {
+                    if (ulong.Parse(server.ServerId) == guild.Id)
+                    {
+                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                        await greetingChannel.SendMessageAsync($"{user.Mention} has been unbanned.");
                         break;
                     }
                 }

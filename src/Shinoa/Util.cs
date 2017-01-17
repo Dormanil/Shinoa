@@ -80,6 +80,11 @@ namespace Shinoa
             return value.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
         }
 
+        public static int ParagraphCount(this string value)
+        {
+            return value.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Length;
+        }
+
         public static string ToRemainderString(this string[] array)
         {
             var output = "";
