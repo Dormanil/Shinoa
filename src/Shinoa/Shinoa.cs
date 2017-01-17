@@ -18,7 +18,7 @@ namespace Shinoa
 
         public static DateTime StartTime = DateTime.Now;
         public static string Version = "2.1.1";
-        public static string VersionString = $"Shinoa v{Version}, built by OmegaVesko";
+        public static string VersionString = $"Shinoa v{Version}, built by Kazumi";
 
         public static dynamic Config;
         public static DiscordSocketClient DiscordClient;
@@ -33,6 +33,7 @@ namespace Shinoa
             new Modules.HelpModule(),
             new Modules.ModerationModule(),
             new Modules.JoinPartModule(),
+            new Modules.InsideJokeModule(),
             new Modules.FunModule(),
             new Modules.MALModule(),
             new Modules.AnilistModule(),
@@ -41,16 +42,16 @@ namespace Shinoa
             new Modules.WikipediaModule(),
             new Modules.SauceModule(),
             new Modules.RedditModule(),
-            new Modules.TwitterModule(),
+            ////new Modules.TwitterModule(),
             new Modules.AnimeFeedModule()
         };
 
         public static List<CommandDefinition> Commands = new List<CommandDefinition>();
 
         public static void Main(string[] args) =>
-            new Shinoa().Start().GetAwaiter().GetResult();
+            new Shinoa().StartAsync().GetAwaiter().GetResult();
 
-        public async Task Start()
+        public async Task StartAsync()
         {
             if (ALPHA)
                 Shinoa.DatabaseConnection = new SQLiteConnection("db_alpha.sqlite");
