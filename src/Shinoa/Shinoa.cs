@@ -64,7 +64,7 @@ namespace Shinoa
             else
                 configurationFileStream = new FileStream("config.yaml", FileMode.Open);
 
-            Console.OutputEncoding = System.Text.Encoding.Unicode;
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             using (var streamReader = new StreamReader(configurationFileStream))
             {

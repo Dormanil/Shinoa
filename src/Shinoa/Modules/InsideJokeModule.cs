@@ -76,8 +76,8 @@ To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or 
         {
             var embed = new EmbedBuilder()
                 .WithTitle("Current Date and Time in Alfheim")
-                .AddField(field => field.WithName("Date:").WithValue($"{GetAlfheimTime().Date.ToString(System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat)}").WithIsInline(true))
-                .AddField(field => field.WithName("Time:").WithValue($"{GetAlfheimTime().TimeOfDay.ToString()}").WithIsInline(true));
+                .AddField(field => field.WithName("Date:").WithValue($"{GetAlfheimTime().ToString(new System.Globalization.CultureInfo("en-US").DateTimeFormat.LongDatePattern)}"))
+                .AddField(field => field.WithName("Time:").WithValue($"{GetAlfheimTime().ToString(new System.Globalization.CultureInfo("de-DE").DateTimeFormat.LongTimePattern)}"));
             c.Channel.SendEmbedAsync(embed);
         }
 
