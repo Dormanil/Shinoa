@@ -152,7 +152,15 @@ namespace Shinoa.Modules
             }
             else
             {
-                responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+                var fallbackResult = AnilistModule.GetAnime(args.ToRemainderString());
+                if (fallbackResult != null)
+                {
+                    responseMessage.ModifyToEmbedAsync(fallbackResult.GetEmbed());
+                }
+                else
+                {
+                    responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+                }
             }
         }
 
@@ -168,15 +176,7 @@ namespace Shinoa.Modules
             }
             else
             {
-                var fallbackResult = AnilistModule.GetAnime(args.ToRemainderString());
-                if (fallbackResult != null)
-                {
-                    responseMessage.ModifyToEmbedAsync(fallbackResult.GetEmbed());
-                }
-                else
-                {
-                    responseMessage.ModifyAsync(p => p.Content = "Manga/LN not found.");
-                }
+                responseMessage.ModifyAsync(p => p.Content = "Manga/LN not found.");
             }
         }
 

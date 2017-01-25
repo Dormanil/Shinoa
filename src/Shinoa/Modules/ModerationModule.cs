@@ -155,7 +155,7 @@ namespace Shinoa.Modules
         {
             try
             {
-                if (context.Channel.Id == context.Guild.DefaultChannelId && context.Message.Attachments.Count > 0)
+                if (context.Channel.Id == context.Guild?.DefaultChannelId && context.Message.Attachments.Count > 0)
                 {
                     var imagesCounter = 0;
                     context.Channel.GetMessagesAsync(limit: 50).ForEach(mlist =>
