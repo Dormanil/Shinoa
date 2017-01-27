@@ -70,5 +70,12 @@ namespace Shinoa.Modules
 
             c.Channel.SendEmbedAsync(embed.Build());
         }
+
+        [@Command("lenny")]
+        public void LennyFace(CommandContext c, params string[] args)
+        {
+            c.Message.DeleteAsync();
+            c.Channel.SendMessageAsync("( ͡° ͜ʖ ͡°)");
+        }
     }
 }

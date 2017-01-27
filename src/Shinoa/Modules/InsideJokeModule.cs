@@ -14,6 +14,7 @@ namespace Shinoa.Modules
         [@Command("mystery")]
         public void MysteryMessage(CommandContext c, params string[] args)
         {
+            c.Message.DeleteAsync();
             var embed = new EmbedBuilder()
             {
                 Url = "https://www.youtube.com/watch?v=fq3abPnEEGE"
@@ -24,6 +25,7 @@ namespace Shinoa.Modules
         [@Command("gentleman")]
         public void GentlemanMessage(CommandContext c, params string[] args)
         {
+            c.Message.DeleteAsync();
             var embed = new EmbedBuilder()
             {
                 ImageUrl = "http://i.imgur.com/WE7Hf9b.jpg"
@@ -58,12 +60,14 @@ To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or 
         [@Command("howitworks")]
         public void HowItWorksMessage(CommandContext c, params string[] args)
         {
+            c.Message.DeleteAsync();
             c.Channel.SendMessageAsync("http://i.imgur.com/oNObxMf.gifv");
         }
 
         [@Command("popo")]
         public void PopoMessage(CommandContext c, params string[] args)
         {
+            c.Message.DeleteAsync();
             var embed = new EmbedBuilder()
             {
                 ImageUrl = "http://25.media.tumblr.com/tumblr_m9dzwbH9t21r3x7i2o1_500.jpg"
