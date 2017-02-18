@@ -152,7 +152,7 @@ namespace Shinoa.Modules
 
             if (multiplier > 100)
             {
-                c.Channel.SendMessageAsync("Please stick to reasonable amounts of dies.");
+                c.Channel.SendMessageAsync("Please stick to reasonable amounts of dice.");
                 return;
             }
 
