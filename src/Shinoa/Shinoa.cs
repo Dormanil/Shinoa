@@ -112,8 +112,9 @@ namespace Shinoa
                     (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
                 }
             }
+            Logging.InitLoggingToChannel();
 
-            Logging.Log($"All modules initialized successfully.");
+            Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
 
             DiscordClient.MessageReceived += async (message) =>
             {
