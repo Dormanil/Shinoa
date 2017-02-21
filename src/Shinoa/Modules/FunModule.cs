@@ -48,27 +48,26 @@ namespace Shinoa.Modules
             var dieSize = int.Parse(args[0].Split('d')[1]);
             var total = 0;
 
-            List<int> rolls = new List<int>();
-            foreach (int i in Enumerable.Range(0, multiplier))
+            if (multiplier > 100)
             {
-                int roll = rng.Next(dieSize) + 1;
-                rolls.Add(roll);
-                total += roll;
+                c.Channel.SendMessageAsync("Please stick to reasonable amounts of dice.");
+                return;
             }
 
             var rollsString = "";
-            foreach (var roll in rolls)
+            foreach (int i in 1.To(multiplier))
             {
+                int roll = rng.Next(dieSize) + 1;
                 rollsString += $"{roll}, ";
+                total += roll;
             }
-            rollsString = rollsString.Trim(new char[] { ' ', ',' });
 
             var embed = new EmbedBuilder()
                 .AddField(f => f.WithName("Total").WithValue(total.ToString()))
-                .AddField(f => f.WithName("Rolls").WithValue(rollsString))
+                .AddField(f => f.WithName("Rolls").WithValue(rollsString.Trim(' ', ',')))
                 .WithColor(MODULE_COLOR);
 
-            c.Channel.SendEmbedAsync(embed.Build());
+            c.Channel.SendEmbedAsync(embed);
         }
 
         [@Command("lenny")]

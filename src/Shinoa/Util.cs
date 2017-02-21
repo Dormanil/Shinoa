@@ -98,5 +98,33 @@ namespace Shinoa
 
             return output;
         }
+
+        public static IEnumerable<int> To(this int from, int to)
+        {
+            if (from < to)
+            {
+                while (from <= to)
+                {
+                    yield return from++;
+                }
+            }
+            else
+            {
+                while (from >= to)
+                {
+                    yield return from--;
+                }
+            }
+        }
+
+        public static IEnumerable<T> InStepsOf<T>(this IEnumerable<T> source, int step)
+        {
+            if (step == 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(step), "Parameter cannot be zero.");
+            }
+
+            return source.Where((x, i) => (i % step) == 0);
+        }
     }
 }
