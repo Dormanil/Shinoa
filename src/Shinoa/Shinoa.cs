@@ -79,7 +79,8 @@ namespace Shinoa
             Logging.Log("Connecting to Discord...");
             DiscordClient = new DiscordSocketClient();
             await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
-            await DiscordClient.ConnectAsync();
+            await DiscordClient.StartAsync();
+            await DiscordClient.WaitForGuildsAsync();
             Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
 
             await DiscordClient.SetGameAsync(Config["default_game"]);

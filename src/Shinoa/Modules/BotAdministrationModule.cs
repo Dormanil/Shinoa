@@ -50,7 +50,7 @@ namespace Shinoa.Modules
             {
                 var announcement = args.ToRemainderString();
 
-                foreach (var server in Shinoa.DiscordClient.Guilds)
+                foreach (IGuild server in Shinoa.DiscordClient.Guilds)
                 {
                     server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
                 }
