@@ -21,7 +21,7 @@ namespace Shinoa
         public static string VersionString = $"Shinoa v{Version}, built by OmegaVesko";
 
         public static dynamic Config;
-        public static DiscordSocketClient DiscordClient;
+        public static DiscordSocketClient DiscordClient = new DiscordSocketClient();
         public static SQLiteConnection DatabaseConnection;
 
         static Timer GlobalUpdateTimer;
@@ -76,15 +76,6 @@ namespace Shinoa
 
             if (ALPHA) Logging.Log("Running in Alpha configuration.");
 
-            Logging.Log("Connecting to Discord...");
-            DiscordClient = new DiscordSocketClient();
-            await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
-            await DiscordClient.StartAsync();
-            await DiscordClient.WaitForGuildsAsync();
-            Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
-
-            await DiscordClient.SetGameAsync(Config["default_game"]);
-
             foreach (var module in RunningModules)
             {
                 Logging.Log($"Initializing module {module.GetType().Name}.");
@@ -112,9 +103,14 @@ namespace Shinoa
                     (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
                 }
             }
-
+			
             Logging.Log($"All modules initialized successfully.");
 
+            DiscordClient.Connected += async () =>
+            {
+                Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
+                await DiscordClient.SetGameAsync(Config["default_game"]);
+            };
             DiscordClient.MessageReceived += async (message) =>
             {
                 var userMessage = message as SocketUserMessage;
@@ -158,6 +154,10 @@ namespace Shinoa
                 }
             };
 
+            Logging.Log("Connecting to Discord...");
+            await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
+            await DiscordClient.StartAsync();
+            await DiscordClient.WaitForGuildsAsync();
             await Task.Delay(-1);
         }
     }
