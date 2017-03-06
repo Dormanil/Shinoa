@@ -52,16 +52,10 @@ namespace Shinoa
 
         public async Task Start()
         {
-            if (ALPHA)
-                Shinoa.DatabaseConnection = new SQLiteConnection("db_alpha.sqlite");
-            else
-                Shinoa.DatabaseConnection = new SQLiteConnection("db.sqlite");
+            Shinoa.DatabaseConnection = ALPHA ? new SQLiteConnection("db_alpha.sqlite") : new SQLiteConnection("db.sqlite");
 
             FileStream configurationFileStream;
-            if (ALPHA)
-                configurationFileStream = new FileStream("config_alpha.yaml", FileMode.Open);
-            else
-                configurationFileStream = new FileStream("config.yaml", FileMode.Open);
+            configurationFileStream = ALPHA ? new FileStream("config_alpha.yaml", FileMode.Open) : new FileStream("config.yaml", FileMode.Open);
 
             Console.OutputEncoding = System.Text.Encoding.Unicode;
 
@@ -84,27 +78,23 @@ namespace Shinoa
                 foreach (var method in module.GetType().GetTypeInfo().DeclaredMethods)
                 {
                     var commandAttribute = method.GetCustomAttribute<Attributes.Command>();
-                    if (commandAttribute != null)
-                    {
-                        Logging.Log($"Found command: '{commandAttribute.CommandString}'");
+                    if (commandAttribute == null) continue;
+                    Logging.Log($"Found command: '{commandAttribute.CommandString}'");
 
-                        var definition = new CommandDefinition();
-                        definition.commandStrings.Add(commandAttribute.CommandString);
-                        definition.commandStrings.AddRange(commandAttribute.Aliases);
-                        definition.methodInfo = method;
-                        definition.moduleInstance = module;
-                        Commands.Add(definition);
-                    }
+                    var definition = new CommandDefinition();
+                    definition.commandStrings.Add(commandAttribute.CommandString);
+                    definition.commandStrings.AddRange(commandAttribute.Aliases);
+                    definition.methodInfo = method;
+                    definition.moduleInstance = module;
+                    Commands.Add(definition);
                 }
 
-                if (module is Modules.Abstract.UpdateLoopModule)
-                {
-                    Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
-                    (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
-                }
+                if (!(module is Modules.Abstract.UpdateLoopModule)) continue;
+                Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
+                (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
             }
 			
-            Logging.Log($"All modules initialized successfully.");
+            Logging.Log("All modules initialized successfully.");
 
             DiscordClient.Connected += async () =>
             {
@@ -120,11 +110,6 @@ namespace Shinoa
 
                 if (context.User.Id != DiscordClient.CurrentUser.Id)
                 {
-                    if (context.IsPrivate)
-                    {
-                        Logging.Log($"[PM] {context.User.Username}: {context.Message.Content.ToString()}");
-                    }
-
                     foreach (var moduleInstance in RunningModules)
                     {
                         moduleInstance.HandleMessage(context);
