@@ -29,12 +29,10 @@ namespace Shinoa.Modules
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
-                    if (ulong.Parse(server.ServerId) == user.Guild.Id)
-                    {
-                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
-                        await greetingChannel.SendMessageAsync($"Welcome to the server, {user.Mention}!");
-                        break;
-                    }
+                    if (ulong.Parse(server.ServerId) != user.Guild.Id) continue;
+                    var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                    await greetingChannel.SendMessageAsync($"Welcome to the server, {user.Mention}!");
+                    break;
                 }
             };
 
@@ -42,12 +40,10 @@ namespace Shinoa.Modules
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
-                    if (ulong.Parse(server.ServerId) == user.Guild.Id)
-                    {
-                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
-                        await greetingChannel.SendMessageAsync($"{user.Mention} has left the server.");
-                        break;
-                    }
+                    if (ulong.Parse(server.ServerId) != user.Guild.Id) continue;
+                    var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                    await greetingChannel.SendMessageAsync($"{user.Mention} has left the server.");
+                    break;
                 }
             };
 
@@ -55,12 +51,10 @@ namespace Shinoa.Modules
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
-                    if (ulong.Parse(server.ServerId) == guild.Id)
-                    {
-                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
-                        await greetingChannel.SendMessageAsync($"{user.Mention} has been banned.");
-                        break;
-                    }
+                    if (ulong.Parse(server.ServerId) != guild.Id) continue;
+                    var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                    await greetingChannel.SendMessageAsync($"{user.Mention} has been banned.");
+                    break;
                 }
             };
 
@@ -68,12 +62,10 @@ namespace Shinoa.Modules
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
-                    if (ulong.Parse(server.ServerId) == guild.Id)
-                    {
-                        var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
-                        await greetingChannel.SendMessageAsync($"{user.Mention} has been unbanned.");
-                        break;
-                    }
+                    if (ulong.Parse(server.ServerId) != guild.Id) continue;
+                    var greetingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(server.ChannelId)) as IMessageChannel;
+                    await greetingChannel.SendMessageAsync($"{user.Mention} has been unbanned.");
+                    break;
                 }
             };
         }
@@ -88,7 +80,7 @@ namespace Shinoa.Modules
                 switch (args[0])
                 {
                     case "enable":
-                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 0)
+                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().All(s => s.ServerId != serverIdString))
                         {
 
                             Shinoa.DatabaseConnection.Insert(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
@@ -101,7 +93,7 @@ namespace Shinoa.Modules
                         break;
 
                     case "disable":
-                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 1)
+                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
                         {
                             Shinoa.DatabaseConnection.Delete(new JoinPartServer() { ServerId = serverIdString });
                             await c.Channel.SendMessageAsync($"Greetings disabled for this server.");
@@ -113,7 +105,7 @@ namespace Shinoa.Modules
                         break;
 
                     case "here":
-                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 1)
+                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
                         {
                             Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
                             await c.Channel.SendMessageAsync($"Greetings moved to channel #{c.Channel.Name}.");
