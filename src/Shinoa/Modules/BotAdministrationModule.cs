@@ -15,14 +15,14 @@ namespace Shinoa.Modules
         [@Command("setavatar", "avatar")]
         public async Task SetAvatar(CommandContext c, params string[] args)
         {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+            if (c.User.Id != ulong.Parse(Shinoa.Config["owner_id"])) return;
+            var splitLink = System.Text.RegularExpressions.Regex.Match(args[0], @"(\S+)\/(\S+)").Groups;
+            if (!splitLink[0].Success) return;
+            var stream = new HttpClient { BaseAddress = new Uri(splitLink[1].Value) }.GetAsync(splitLink[2].Value).Result.Content.ReadAsStreamAsync().Result;
+            Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
             {
-                var stream = new HttpClient().GetAsync(args[0]).Result.Content.ReadAsStreamAsync().Result;
-                await Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
-                {
-                    p.Avatar = new Image(stream);
-                });
-            }
+                p.Avatar = new Image(stream);
+            });
         }
 
         [@Command("setplaying", "setstatus", "game", "status")]

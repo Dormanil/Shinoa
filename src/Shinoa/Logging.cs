@@ -14,18 +14,18 @@ namespace Shinoa
         public static void Log(string message)
         {
             PrintWithTime(message);
-            if (LoggingChannel != null) LoggingChannel.SendMessageAsync(message);
+            LoggingChannel?.SendMessageAsync(message).GetAwaiter().GetResult();
         }
 
-        public static void LogMessage(CommandContext context)
+        public static void LogMessage(ICommandContext context)
         {
-            if (!context.IsPrivate)
+            if (!(context.Channel is IPrivateChannel))
             {
-                Log($"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content.ToString()}");
+                Log($"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content}");
             }
             else
             {
-                Log($"[PM] {context.User.Username}: {context.Message.Content.ToString()}");
+                Log($"[PM] {context.User.Username}: {context.Message.Content}");
             }
         }
 
