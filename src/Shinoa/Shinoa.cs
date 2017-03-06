@@ -22,6 +22,8 @@ namespace Shinoa
 
         public static dynamic Config;
         public static DiscordSocketClient DiscordClient = new DiscordSocketClient();
+        public static CommandService CService = new CommandService();
+        public static DependencyMap Map = new DependencyMap();
         public static SQLiteConnection DatabaseConnection;
 
         static Timer GlobalUpdateTimer;
@@ -48,14 +50,14 @@ namespace Shinoa
         public static List<CommandDefinition> Commands = new List<CommandDefinition>();
 
         public static void Main(string[] args) =>
-            new Shinoa().Start().GetAwaiter().GetResult();
+            Start().GetAwaiter().GetResult();
 
-        public async Task Start()
+        public static async Task Start()
         {
+            #region Prerequisites
             Shinoa.DatabaseConnection = ALPHA ? new SQLiteConnection("db_alpha.sqlite") : new SQLiteConnection("db.sqlite");
 
-            FileStream configurationFileStream;
-            configurationFileStream = ALPHA ? new FileStream("config_alpha.yaml", FileMode.Open) : new FileStream("config.yaml", FileMode.Open);
+            var configurationFileStream = ALPHA ? new FileStream("config_alpha.yaml", FileMode.Open) : new FileStream("config.yaml", FileMode.Open);
 
             Console.OutputEncoding = System.Text.Encoding.Unicode;
 
@@ -64,12 +66,14 @@ namespace Shinoa
                 var deserializer = new YamlDotNet.Serialization.Deserializer();
                 Shinoa.Config = deserializer.Deserialize(streamReader);
                 Logging.Log("Config parsed and loaded.");
-            }
+            } 
+            #endregion
 
             Console.Title = $"Shinoa v{Version}";
 
             if (ALPHA) Logging.Log("Running in Alpha configuration.");
 
+            #region Modules
             foreach (var module in RunningModules)
             {
                 Logging.Log($"Initializing module {module.GetType().Name}.");
@@ -93,62 +97,72 @@ namespace Shinoa
                 Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
                 (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
             }
-			
+
             Logging.Log("All modules initialized successfully.");
 
+
+            //Begin Rework
+            Map.Add(DiscordClient);
+            Map.Add(CService);
+            await CService.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
+            //End Rework
+            #endregion
+
+            #region Event handlers
             DiscordClient.Connected += async () =>
-            {
-                Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
-                await DiscordClient.SetGameAsync(Config["default_game"]);
-            };
+               {
+                   Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
+                   await DiscordClient.SetGameAsync(Config["default_game"]);
+               };
             DiscordClient.MessageReceived += async (message) =>
             {
                 var userMessage = message as SocketUserMessage;
-                if (userMessage == null) return;
+                int argPos = 0;
+                if (userMessage == null || userMessage.Author.Id == DiscordClient.CurrentUser.Id || !userMessage.HasStringPrefix((string)Config["command_prefix"], ref argPos)) return;
 
                 var context = new CommandContext(DiscordClient, userMessage);
-
-                if (context.User.Id != DiscordClient.CurrentUser.Id)
+                
+                foreach (var moduleInstance in RunningModules)
                 {
-                    foreach (var moduleInstance in RunningModules)
+                    moduleInstance.HandleMessage(context);
+                }
+
+                foreach (var command in Commands)
+                {
+                    var splitMessage = context.Message.Content.Split(' ').ToList();
+                    if (!command.commandStrings.Contains(splitMessage[0].Replace(Config["command_prefix"], "")))
+                        continue;
+                    Logging.LogMessage(context);
+
+                    splitMessage.RemoveAt(0);
+                    var paramsObject = new object[] { context, splitMessage.ToArray() };
+
+                    try
                     {
-                        moduleInstance.HandleMessage(context);
+                        command.methodInfo.Invoke(command.moduleInstance, paramsObject);
                     }
-
-                    foreach (var command in Commands)
+                    catch (Exception ex)
                     {
-                        var splitMessage = context.Message.Content.Split(' ').ToList();
-                        if (message.Content.StartsWith(Config["command_prefix"]) && command.commandStrings.Contains(splitMessage[0].Replace(Config["command_prefix"], "")))
-                        {
-                            Logging.LogMessage(context);
-
-                            splitMessage.RemoveAt(0);
-                            var paramsObject = new object[] { context, splitMessage.ToArray() };
-
-                            try
-                            {
-                                await InvokeCommandMethod(command.methodInfo, command.moduleInstance, paramsObject);
-                            }
-                            catch (Exception ex)
-                            {
-                                await context.Channel.SendMessageAsync("There was an error. Please check the command syntax and try again.");
-                                Logging.Log(ex.ToString());
-                            }
-                        }
+                        await context.Channel.SendMessageAsync("There was an error. Please check the command syntax and try again.");
+                        Logging.Log(ex.ToString());
                     }
                 }
-            };
 
+                //Begin Rework
+                var contextSock = new SocketCommandContext(DiscordClient, userMessage);
+                var res = await CService.ExecuteAsync(contextSock, argPos, Map);
+                if (!res.IsSuccess && res.Error != CommandError.UnknownCommand) Logging.Log(res.ErrorReason);
+                //End Rework
+            };
+            #endregion
+
+            #region Connection establishment
             Logging.Log("Connecting to Discord...");
             await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
             await DiscordClient.StartAsync();
             await DiscordClient.WaitForGuildsAsync();
-            await Task.Delay(-1);
-        }
-
-        static async Task InvokeCommandMethod(MethodInfo methodInfo, object obj, object[] parameters)
-        {
-            await (Task) methodInfo.Invoke(obj, parameters);
+            await Task.Delay(-1); 
+            #endregion
         }
     }
 }
