@@ -46,9 +46,8 @@ namespace Shinoa.Modules
         [@Command("announce", "announcement", "global")]
         public async Task Announce(CommandContext c, params string[] args)
         {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-            {
-                var announcement = args.ToRemainderString();
+            if (c.User.Id != ulong.Parse(Shinoa.Config["owner_id"])) return;
+            var announcement = args.ToRemainderString();
 
                 foreach (var server in Shinoa.DiscordClient.Guilds)
                 {
@@ -94,25 +93,23 @@ namespace Shinoa.Modules
             {
                 output += $"{module.GetType().Name}\n";
                 var indentedDetailedStats = "";
-                
-                if (module.DetailedStats != null)
+
+                if (module.DetailedStats == null) continue;
+                using (StringReader reader = new StringReader(module.DetailedStats))
                 {
-                    using (StringReader reader = new StringReader(module.DetailedStats))
+                    string line = string.Empty;
+                    do
                     {
-                        string line = string.Empty;
-                        do
+                        line = reader.ReadLine();
+                        if (line != null)
                         {
-                            line = reader.ReadLine();
-                            if (line != null)
-                            {
-                                indentedDetailedStats += "  " + line + '\n';
-                            }
+                            indentedDetailedStats += "  " + line + '\n';
+                        }
 
-                        } while (line != null);
-                    }
+                    } while (line != null);
+                }
 
-                    output += $"{indentedDetailedStats}\n";
-                }                
+                output += $"{indentedDetailedStats}\n";
             }
             output += "```";
 
