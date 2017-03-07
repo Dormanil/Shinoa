@@ -12,11 +12,11 @@ namespace Shinoa.Modules.Abstract
 
         public void InitUpdateLoop()
         {
-            UpdateTimer = new Timer(s =>
+            UpdateTimer = new Timer(async (s) =>
             {
                 try
                 {
-                    UpdateLoop();
+                    await UpdateLoop();
                 }
                 catch (Exception e)
                 {

@@ -79,7 +79,7 @@ namespace Shinoa.Modules
         }
 
         [@Command("greetings", "joins", "welcome", "welcomes")]
-        public void GreetingsManagement(CommandContext c, params string[] args)
+        public async Task GreetingsManagement(CommandContext c, params string[] args)
         {
             var serverIdString = c.Guild.Id.ToString();
 
@@ -92,11 +92,11 @@ namespace Shinoa.Modules
                         {
 
                             Shinoa.DatabaseConnection.Insert(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
-                            c.Channel.SendMessageAsync($"Greetings enabled for this server and bound to channel #{c.Channel.Name}.");
+                            await c.Channel.SendMessageAsync($"Greetings enabled for this server and bound to channel #{c.Channel.Name}.");
                         }
                         else
                         {
-                            c.Channel.SendMessageAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
+                            await c.Channel.SendMessageAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
                         }
                         break;
 
@@ -104,11 +104,11 @@ namespace Shinoa.Modules
                         if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 1)
                         {
                             Shinoa.DatabaseConnection.Delete(new JoinPartServer() { ServerId = serverIdString });
-                            c.Channel.SendMessageAsync($"Greetings disabled for this server.");
+                            await c.Channel.SendMessageAsync($"Greetings disabled for this server.");
                         }
                         else
                         {
-                            c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
+                            await c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
                         }
                         break;
 
@@ -116,11 +116,11 @@ namespace Shinoa.Modules
                         if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Where(s => s.ServerId == serverIdString).Count() == 1)
                         {
                             Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
-                            c.Channel.SendMessageAsync($"Greetings moved to channel #{c.Channel.Name}.");
+                            await c.Channel.SendMessageAsync($"Greetings moved to channel #{c.Channel.Name}.");
                         }
                         else
                         {
-                            c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
+                            await c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
                         }
                         break;
                 }

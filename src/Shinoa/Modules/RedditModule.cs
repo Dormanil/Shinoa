@@ -74,7 +74,7 @@ namespace Shinoa.Modules
         }
 
         [@Command("reddit")]
-        public void RedditManagement(CommandContext c, params string[] args)
+        public async Task RedditManagement(CommandContext c, params string[] args)
         {
             if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
             {
@@ -93,11 +93,11 @@ namespace Shinoa.Modules
                             SubredditName = subredditName
                         });
 
-                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{c.Channel.Name}).");
                     }
                     else
                     {
-                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{c.Channel.Name}).");
                     }
                 }
                 else if (args[0] == "remove")
@@ -112,11 +112,11 @@ namespace Shinoa.Modules
 
                         Shinoa.DatabaseConnection.Delete(new RedditBinding() { Id = currentEntry.Id });
 
-                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{c.Channel.Name}).");
                     }
                     else
                     {
-                        c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{c.Channel.Name}).");
                     }
                 }
                 else if (args[0] == "list")
@@ -134,12 +134,12 @@ namespace Shinoa.Modules
                         .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
                         .WithColor(MODULE_COLOR);
 
-                    c.Channel.SendEmbedAsync(embed.Build());
+                    await c.Channel.SendEmbedAsync(embed.Build());
                 }
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Manage Server");
+                await c.Channel.SendPermissionErrorAsync("Manage Server");
             }
         }
 

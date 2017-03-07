@@ -11,7 +11,7 @@ namespace Shinoa.Modules
     public class LuaModule : Abstract.Module
     {
         [@Command("lua", "run", "eval", "exec")]
-        public void RunLua(CommandContext c, params string[] args)
+        public async Task RunLua(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
@@ -20,7 +20,7 @@ namespace Shinoa.Modules
                 var code = args.ToRemainderString();
                 var output = Script.RunString(code).ToString();
 
-                message.ModifyAsync(p => p.Content = $"Output: `{output}`");
+                await message.ModifyAsync(p => p.Content = $"Output: `{output}`");
             }
         }
     }

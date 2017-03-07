@@ -21,7 +21,7 @@ namespace Shinoa.Modules
         }
 
         [@Command("sao", "saowiki", "saowikia")]
-        public void SAOWikiaSearch(CommandContext c, params string[] args)
+        public async Task SAOWikiaSearch(CommandContext c, params string[] args)
         {
             var queryText = args.ToRemainderString();
             var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
@@ -37,20 +37,20 @@ namespace Shinoa.Modules
                 var resultMessage = "";
                 resultMessage += $"{firstResult["url"]}";
 
-                responseMessage.ModifyAsync(p => p.Content = resultMessage);
+                await responseMessage.ModifyAsync(p => p.Content = resultMessage);
             }
             catch (ArgumentException)
             {
-                responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
+                await responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
 
             }
             catch (RuntimeBinderException)
             {
-                responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
+                await responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
             }
             catch (Exception ex)
             {
-                responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
+                await responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
                 Logging.Log(ex.ToString());
             }
         }

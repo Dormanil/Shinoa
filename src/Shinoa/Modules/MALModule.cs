@@ -141,25 +141,25 @@ namespace Shinoa.Modules
         }
 
         [@Command("anime", "mal", "malanime")]
-        public void MALAnimeSearch(CommandContext c, params string[] args)
+        public async Task MALAnimeSearch(CommandContext c, params string[] args)
         {
             var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
             var result = GetAnime(args.ToRemainderString());
             if (result != null)
             {
-                responseMessage.ModifyToEmbedAsync(result.GetEmbed());
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed());
             }
             else
             {
                 var fallbackResult = AnilistModule.GetAnime(args.ToRemainderString());
                 if (fallbackResult != null)
                 {
-                    responseMessage.ModifyToEmbedAsync(fallbackResult.GetEmbed());
+                    await responseMessage.ModifyToEmbedAsync(fallbackResult.GetEmbed());
                 }
                 else
                 {
-                    responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+                    await responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
                 }
             }
         }

@@ -179,18 +179,18 @@ namespace Shinoa.Modules
         }
 
         [@Command("anilist", "al", "ani")]
-        public void AnilistCommand(CommandContext c, params string[] args)
+        public async Task AnilistCommand(CommandContext c, params string[] args)
         {
             var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
             var result = GetAnime(args.ToRemainderString());
             if (result != null)
             {
-                responseMessage.ModifyToEmbedAsync(result.GetEmbed());
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed());
             }
             else
             {
-                responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+                await responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
             }
         }
     }

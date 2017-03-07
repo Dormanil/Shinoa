@@ -89,7 +89,7 @@ namespace Shinoa.Modules
 
 
         [@Command("twitter")]
-        public void TwitterManagement(CommandContext c, params string[] args)
+        public async Task TwitterManagement(CommandContext c, params string[] args)
         {
             if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
             {
@@ -108,11 +108,11 @@ namespace Shinoa.Modules
                             TwitterUserName = twitterName
                         });
 
-                        c.Channel.SendMessageAsync($"Notifications for @{twitterName} have been bound to this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for @{twitterName} have been bound to this channel (#{c.Channel.Name}).");
                     }
                     else
                     {
-                        c.Channel.SendMessageAsync($"Notifications for @{twitterName} are already bound to this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for @{twitterName} are already bound to this channel (#{c.Channel.Name}).");
                     }
                 }
                 else if (args[0] == "remove")
@@ -127,11 +127,11 @@ namespace Shinoa.Modules
 
                         Shinoa.DatabaseConnection.Delete(new TwitterBinding() { Id = currentEntry.Id });
 
-                        c.Channel.SendMessageAsync($"Notifications for @{twitterName} have been unbound from this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for @{twitterName} have been unbound from this channel (#{c.Channel.Name}).");
                     }
                     else
                     {
-                        c.Channel.SendMessageAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{c.Channel.Name}).");
+                        await c.Channel.SendMessageAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{c.Channel.Name}).");
                     }
                 }
                 else if (args[0] == "list")
@@ -149,12 +149,12 @@ namespace Shinoa.Modules
                         .AddField(f => f.WithName("Twitter users currently bound to this channel").WithValue(response))
                         .WithColor(MODULE_COLOR);
 
-                    c.Channel.SendEmbedAsync(embed.Build());
+                    await c.Channel.SendEmbedAsync(embed.Build());
                 }
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Manage Server");
+                await c.Channel.SendPermissionErrorAsync("Manage Server");
             }
         }
 

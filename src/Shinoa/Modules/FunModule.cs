@@ -130,7 +130,7 @@ namespace Shinoa.Modules
         }
 
         [@Command("pick", "choose")]
-        public void Pick(CommandContext c, params string[] args)
+        public async Task Pick(CommandContext c, params string[] args)
         {
             var choices = args.ToRemainderString().Split(new string[] { " or " }, StringSplitOptions.RemoveEmptyEntries);
             var choice = choices[new Random().Next(choices.Length)].Trim();
@@ -139,11 +139,11 @@ namespace Shinoa.Modules
             .WithTitle($"I choose '{choice}'.")
             .WithColor(MODULE_COLOR);
 
-            c.Channel.SendEmbedAsync(embed.Build());
+            await c.Channel.SendEmbedAsync(embed.Build());
         }
 
         [@Command("roll", "rolldice")]
-        public void RollDice(CommandContext c, params string[] args)
+        public async Task RollDice(CommandContext c, params string[] args)
         {
             var rng = new Random();
             var multiplier = int.Parse(args[0].Split('d')[0]);
@@ -170,15 +170,15 @@ namespace Shinoa.Modules
                 .AddField(f => f.WithName("Rolls").WithValue(rollsString))
                 .WithColor(MODULE_COLOR);
 
-            c.Channel.SendEmbedAsync(embed.Build());
+            await c.Channel.SendEmbedAsync(embed.Build());
         }
 
         [@Command("jojo", "duwang")]
-        public void JojoMeme(CommandContext c, params string[] args)
+        public async Task JojoMeme(CommandContext c, params string[] args)
         {
             var random = new Random();
             var meme = JojoMemes[random.Next(JojoMemes.Length)];
-            c.Channel.SendMessageAsync(meme);
+            await c.Channel.SendMessageAsync(meme);
         }
     }
 }

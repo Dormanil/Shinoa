@@ -13,12 +13,12 @@ namespace Shinoa.Modules
     public class BotAdministrationModule : Abstract.Module
     {
         [@Command("setavatar", "avatar")]
-        public void SetAvatar(CommandContext c, params string[] args)
+        public async Task SetAvatar(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
                 var stream = new HttpClient().GetAsync(args[0]).Result.Content.ReadAsStreamAsync().Result;
-                Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
+                await Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
                 {
                     p.Avatar = new Image(stream);
                 });
@@ -26,25 +26,25 @@ namespace Shinoa.Modules
         }
 
         [@Command("setplaying", "setstatus", "game", "status")]
-        public void SetPlaying(CommandContext c, params string[] args)
+        public async Task SetPlaying(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                Shinoa.DiscordClient.SetGameAsync(args.ToRemainderString());
+                await Shinoa.DiscordClient.SetGameAsync(args.ToRemainderString());
             }
         }
 
         [@Command("stats", "diag", "statistics")]
-        public void GetStats(CommandContext c, params string[] args)
+        public async Task GetStats(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                c.Channel.SendMessageAsync(GenerateStatsMessage());
+                await c.Channel.SendMessageAsync(GenerateStatsMessage());
             }
         }
 
         [@Command("announce", "announcement", "global")]
-        public void Announce(CommandContext c, params string[] args)
+        public async Task Announce(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
@@ -52,28 +52,28 @@ namespace Shinoa.Modules
 
                 foreach (var server in Shinoa.DiscordClient.Guilds)
                 {
-                    server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
+                    await server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
                 }
             }
         }
 
         [@Command("say")]
-        public void Say(CommandContext c, params string[] args)
+        public async Task Say(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
                 var message = args.ToRemainderString();
-                c.Message.DeleteAsync();
-                c.Channel.SendMessageAsync(message);
+                await c.Message.DeleteAsync();
+                await c.Channel.SendMessageAsync(message);
             }
         }
 
         [@Command("invite")]
-        public void GetInviteLink(CommandContext c, params string[] args)
+        public async Task GetInviteLink(CommandContext c, params string[] args)
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                c.Channel.SendMessageAsync($"Invite link for {Shinoa.DiscordClient.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id=198527882773921792&scope=bot");
+                await c.Channel.SendMessageAsync($"Invite link for {Shinoa.DiscordClient.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id=198527882773921792&scope=bot");
             }
         }
 

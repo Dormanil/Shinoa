@@ -145,7 +145,7 @@ namespace Shinoa
 
                             try
                             {
-                                command.methodInfo.Invoke(command.moduleInstance, paramsObject);
+                                await InvokeCommandMethod(command.methodInfo, command.moduleInstance, paramsObject);
                             }
                             catch (Exception ex)
                             {
@@ -158,6 +158,11 @@ namespace Shinoa
             };
 
             await Task.Delay(-1);
+        }
+
+        static async Task InvokeCommandMethod(MethodInfo methodInfo, object obj, object[] parameters)
+        {
+            await (Task) methodInfo.Invoke(obj, parameters);
         }
     }
 }
