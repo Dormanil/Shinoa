@@ -28,27 +28,6 @@ namespace Shinoa
 
         static Timer GlobalUpdateTimer;
 
-        public static Modules.Abstract.Module[] RunningModules =
-        {
-            new Modules.BotAdministrationModule(),
-            new Modules.LuaModule(),
-            new Modules.HelpModule(),
-            new Modules.ModerationModule(),
-            new Modules.JoinPartModule(),
-            new Modules.FunModule(),
-            new Modules.MALModule(),
-            new Modules.AnilistModule(),
-            new Modules.JapaneseDictModule(),
-            new Modules.SAOWikiaModule(),
-            new Modules.WikipediaModule(),
-            new Modules.SauceModule(),
-            new Modules.RedditModule(),
-            new Modules.TwitterModule(),
-            new Modules.AnimeFeedModule()
-        };
-
-        public static List<CommandDefinition> Commands = new List<CommandDefinition>();
-
         public static void Main(string[] args) =>
             Start().GetAwaiter().GetResult();
 
@@ -74,38 +53,17 @@ namespace Shinoa
             if (ALPHA) Logging.Log("Running in Alpha configuration.");
 
             #region Modules
-            foreach (var module in RunningModules)
-            {
-                Logging.Log($"Initializing module {module.GetType().Name}.");
-                module.Init();
-
-                foreach (var method in module.GetType().GetTypeInfo().DeclaredMethods)
-                {
-                    var commandAttribute = method.GetCustomAttribute<Attributes.Command>();
-                    if (commandAttribute == null) continue;
-                    Logging.Log($"Found command: '{commandAttribute.CommandString}'");
-
-                    var definition = new CommandDefinition();
-                    definition.commandStrings.Add(commandAttribute.CommandString);
-                    definition.commandStrings.AddRange(commandAttribute.Aliases);
-                    definition.methodInfo = method;
-                    definition.moduleInstance = module;
-                    Commands.Add(definition);
-                }
-
-                if (!(module is Modules.Abstract.UpdateLoopModule)) continue;
-                Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
-                (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
-            }
-
-            Logging.Log("All modules initialized successfully.");
-
-
-            //Begin Rework
             Map.Add(DiscordClient);
             Map.Add(CService);
-            await CService.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
-            //End Rework
+
+            var modules = await CService.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
+
+            foreach(var module in modules)
+            {
+                Logging.Log($"Loaded module \"{module.Name}\"");
+                foreach (var command in module.Commands) Logging.Log($"Loaded command \"{command.Name}\"");
+            }
+            Logging.Log($"Loaded {CService.Modules.Count()} module(s) with {CService.Commands.Count()} command(s)");
             #endregion
 
             #region Event handlers
@@ -118,41 +76,37 @@ namespace Shinoa
             {
                 var userMessage = message as SocketUserMessage;
                 int argPos = 0;
-                if (userMessage == null || userMessage.Author.Id == DiscordClient.CurrentUser.Id || !userMessage.HasStringPrefix((string)Config["command_prefix"], ref argPos)) return;
-
-                var context = new CommandContext(DiscordClient, userMessage);
+                if (userMessage == null 
+                || userMessage.Author.Id == DiscordClient.CurrentUser.Id 
+                || !userMessage.HasStringPrefix((string)Config["command_prefix"], ref argPos)) return;
                 
-                foreach (var moduleInstance in RunningModules)
-                {
-                    moduleInstance.HandleMessage(context);
-                }
-
-                foreach (var command in Commands)
-                {
-                    var splitMessage = context.Message.Content.Split(' ').ToList();
-                    if (!command.commandStrings.Contains(splitMessage[0].Replace(Config["command_prefix"], "")))
-                        continue;
-                    Logging.LogMessage(context);
-
-                    splitMessage.RemoveAt(0);
-                    var paramsObject = new object[] { context, splitMessage.ToArray() };
-
-                    try
-                    {
-                        command.methodInfo.Invoke(command.moduleInstance, paramsObject);
-                    }
-                    catch (Exception ex)
-                    {
-                        await context.Channel.SendMessageAsync("There was an error. Please check the command syntax and try again.");
-                        Logging.Log(ex.ToString());
-                    }
-                }
-
-                //Begin Rework
                 var contextSock = new SocketCommandContext(DiscordClient, userMessage);
+                Logging.LogMessage(contextSock);
                 var res = await CService.ExecuteAsync(contextSock, argPos, Map);
-                if (!res.IsSuccess && res.Error != CommandError.UnknownCommand) Logging.Log(res.ErrorReason);
-                //End Rework
+                if (res.IsSuccess) return;
+
+                Logging.Log(res.ErrorReason);
+                string responseMessage = string.Empty;
+                switch (res.Error)
+                {
+                    case CommandError.UnknownCommand:
+                        responseMessage = "Unknown Command.";
+                        break;
+                    case CommandError.ParseFailed:
+                        responseMessage = "The argument did not meet the requirements.";
+                        break;
+                    case CommandError.BadArgCount:
+                        responseMessage = "The argument count was incorrect.";
+                        break;
+                    case CommandError.UnmetPrecondition:
+                        responseMessage = "You are not allowed to execute this command.";
+                        break;
+                }
+                if (responseMessage != string.Empty)
+                {
+                    responseMessage += $"\n\nReason: ```\n{res.ErrorReason}```";
+                    await contextSock.Channel.SendMessageAsync(responseMessage);
+                }
             };
             #endregion
 

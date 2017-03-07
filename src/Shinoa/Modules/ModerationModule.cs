@@ -2,7 +2,6 @@
 using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
-using Shinoa.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Shinoa.Modules
 {
-    public class ModerationModule : Abstract.Module
+    public class ModerationModule : ModuleBase<SocketCommandContext>
     {
         static Dictionary<string, int> TimeUnits = new Dictionary<string, int>()
         {
@@ -20,138 +19,103 @@ namespace Shinoa.Modules
             { "hours",      1000 * 60 * 60 }
         };
 
-        [@Command("ban", "gulag", "getout")]
-        public async Task Ban(CommandContext c, params string[] args)
+        [Command("ban"), Alias("gulag", "getout"), RequireUserPermission(GuildPermission.BanMembers)]
+        public async Task Ban(IUser user)
         {
-            if ((c.User as SocketGuildUser).GuildPermissions.BanMembers)
-            {
-                await c.Message.DeleteAsync();
+            if (Context.Guild == null) return;
+            var delTask = Context.Message.DeleteAsync();
+            
+            await Context.Guild.AddBanAsync(user);
+            await delTask;
+            await ReplyAsync($"User {user.Username} has been banned by {Context.User.Mention}.");
+        }
 
-                var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
-                await c.Guild.AddBanAsync(user);
-                await c.Channel.SendMessageAsync($"User {user.Username} has been banned by {c.User.Mention}.");
+        [Command("kick"), RequireUserPermission(GuildPermission.KickMembers)]
+        public async Task Kick(IGuildUser user)
+        {
+            var delTask = Context.Message.DeleteAsync();
+            
+            var kickTask = user.KickAsync();
+            await delTask;
+            if (kickTask == null) return;
+            else await kickTask;
+            await ReplyAsync($"User {user.Username} has been kicked by {Context.User.Mention}.");
+        }
+
+        [Command("mute"), RequireUserPermission(GuildPermission.MuteMembers)]
+        public async Task Mute(IGuildUser user, int amount = 0, string unitName = "")
+        {
+            var delTask = Context.Message.DeleteAsync();
+
+            IRole mutedRole = null;
+            foreach (var role in Context.Guild.Roles)
+            {
+                if (role.Name.ToLower().Contains("muted"))
+                {
+                    mutedRole = role;
+                    break;
+                }
+            }
+
+            await user.AddRolesAsync(mutedRole);
+            await delTask;
+
+            if (amount == 0)
+            {
+                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
             }
             else
             {
-                await c.Channel.SendPermissionErrorAsync("Ban Members");
-            }
-        }
-
-        [@Command("kick")]
-        public async Task Kick(CommandContext c, params string[] args)
-        {
-            if ((c.User as SocketGuildUser).GuildPermissions.KickMembers)
-            {
-                await c.Message.DeleteAsync();
-
-                var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
-                await user.KickAsync();
-                await c.Channel.SendMessageAsync($"User {user.Username} has been kicked by {c.User.Mention}.");
-            }
-            else
-            {
-                await c.Channel.SendPermissionErrorAsync("Kick Members");
-            }
-        }
-
-        [@Command("mute")]
-        public async void Mute(CommandContext c, params string[] args)
-        {
-            if ((c.User as SocketGuildUser).GuildPermissions.MuteMembers)
-            {
-                await c.Message.DeleteAsync();
-
-                IRole mutedRole = null;
-                foreach (var role in c.Guild.Roles)
-                {
-                    if (role.Name.ToLower().Contains("muted"))
-                    {
-                        mutedRole = role;
-                        break;
-                    }
-                }
-
-                var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
-                await user.AddRolesAsync(mutedRole);
-
-                if (args.Count() == 1)
-                {
-                    await c.Channel.SendMessageAsync($"User {user.Mention} has been muted by {c.User.Mention}.");
-                }
-                else if (args.Count() == 3)
-                {
-                    var amount = int.Parse(args[1]);
-                    var unitName = args[2].Trim().ToLower();
-
-                    var timeDuration = amount * TimeUnits[unitName];
-
-                    await c.Channel.SendMessageAsync($"User {user.Mention} has been muted by {c.User.Mention} for {amount} {unitName}.");
-                    await Task.Delay(timeDuration);
-                    await user.RemoveRolesAsync(mutedRole);
-                    await c.Channel.SendMessageAsync($"User <@{user.Id}> has been unmuted automatically.");
-                }
-            }
-            else
-            {
-                await c.Channel.SendPermissionErrorAsync("Mute Members");
-            }
-        }
-
-        [@Command("unmute")]
-        public async Task Unmute(CommandContext c, params string[] args)
-        {
-            if ((c.User as SocketGuildUser).GuildPermissions.MuteMembers)
-            {
-                await c.Message.DeleteAsync();
-                IRole mutedRole = null;
-                foreach (var role in c.Guild.Roles)
-                {
-                    if (role.Name.ToLower().Contains("muted"))
-                    {
-                        mutedRole = role;
-                        break;
-                    }
-                }
-
-                var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
+                var duration = amount * TimeUnits[unitName];
+                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
+                await Task.Delay(duration);
                 await user.RemoveRolesAsync(mutedRole);
-
-                if (args.Count() == 1)
-                {
-                    await c.Channel.SendMessageAsync($"User {user.Mention} has been unmuted by {c.User.Mention}.");
-                }
-            }
-            else
-            {
-                await c.Channel.SendPermissionErrorAsync("Mute Members");
+                await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
             }
         }
 
-        [@Command("stop")]
-        public async Task StopChannel(CommandContext c, params string[] args)
+        [Command("unmute"), RequireUserPermission(GuildPermission.MuteMembers)]
+        public async Task Unmute(IGuildUser user)
         {
-            if ((c.User as SocketGuildUser).GuildPermissions.ManageChannels)
+            var delTask = Context.Message.DeleteAsync();
+            IRole mutedRole = null;
+            foreach (var role in Context.Guild.Roles)
             {
-                var channel = c.Channel as IGuildChannel;
+                if (role.Name.ToLower().Contains("muted"))
+                {
+                    mutedRole = role;
+                    break;
+                }
+            }
+            
+            await user.RemoveRolesAsync(mutedRole);
+            await delTask;
+            await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
+        }
 
-                if (args[0] == "on")
-                {
-                    var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
-                    await c.Channel.SendEmbedAsync(embed.Build());
-                    await channel.AddPermissionOverwriteAsync(c.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
-                    await channel.AddPermissionOverwriteAsync(c.User, new OverwritePermissions(sendMessages: PermValue.Allow));
-                }
-                else if (args[0] == "off")
-                {
-                    await channel.AddPermissionOverwriteAsync(c.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                    await channel.AddPermissionOverwriteAsync(c.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                    var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
-                    await c.Channel.SendEmbedAsync(embed.Build());
-                }
+        [Command("stop"), RequireUserPermission(GuildPermission.ManageChannels)]
+        public async Task StopChannel(string setting)
+        {
+            var channel = Context.Channel as IGuildChannel;
+
+            if (setting == "on")
+            {
+                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
+                await ReplyAsync("", embed: embed.Build());
+                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
+                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
+            }
+            else if (setting == "off")
+            {
+                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
+                await ReplyAsync("", embed: embed.Build());
             }
         }
 
-        public override async void HandleMessage(CommandContext context)
+        //TODO: Migrate
+        public async Task HandleMessage(CommandContext context)
         {
             try
             {

@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using HtmlAgilityPack;
-using Shinoa.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Shinoa.Modules
 {
-    public class SauceModule: Abstract.Module
+    public class SauceModule : ModuleBase<SocketCommandContext>
     {
         static HttpClient httpClient = new HttpClient();
 
@@ -29,39 +28,39 @@ namespace Shinoa.Modules
 
             public SauceResult(string title, float similarityPercentage, string sourceUrl, string artistName, string thumbmnailImageUrl)
             {
-                this.Title = title;
-                this.SimilarityPercentage = similarityPercentage;
-                this.SourceURL = sourceUrl;
-                this.ArtistName = artistName;
-                this.ThumbnailImageURL = thumbmnailImageUrl;
+                Title = title;
+                SimilarityPercentage = similarityPercentage;
+                SourceURL = sourceUrl;
+                ArtistName = artistName;
+                ThumbnailImageURL = thumbmnailImageUrl;
             }
 
             public Embed GetEmbed()
             {
                 var embed = new EmbedBuilder()
-                    .WithTitle(this.SimilarityPercentage > 90 ? this.Title : $"{this.Title} (unlikely match)")
-                    .AddField(f => f.WithName("Source").WithValue(this.SourceURL))
-                    .AddField(f => f.WithName("Artist Name").WithValue(this.ArtistName).WithIsInline(true))
-                    .AddField(f => f.WithName("Similarity").WithValue($"{this.SimilarityPercentage}%").WithIsInline(true))
+                    .WithTitle(SimilarityPercentage > 90 ? Title : $"{Title} (unlikely match)")
+                    .AddField(f => f.WithName("Source").WithValue(SourceURL))
+                    .AddField(f => f.WithName("Artist Name").WithValue(ArtistName).WithIsInline(true))
+                    .AddField(f => f.WithName("Similarity").WithValue($"{SimilarityPercentage}%").WithIsInline(true))
                     .WithFooter(f => f.WithText("Powered by SauceNAO"));
 
-                if (this.SimilarityPercentage > 90)
+                if (SimilarityPercentage > 90)
                     embed.Color = new Color(139, 195, 74);
                 else
                     embed.Color = new Color(96, 125, 139);
 
-                if (!this.ThumbnailImageURL.Contains("blocked") && !this.ThumbnailImageURL.Contains(".gif"))
-                    embed.ThumbnailUrl = this.ThumbnailImageURL;
+                if (!ThumbnailImageURL.Contains("blocked") && !ThumbnailImageURL.Contains(".gif"))
+                    embed.ThumbnailUrl = ThumbnailImageURL;
 
                 return embed.Build();
             }
         }
 
-        [@Command("sauce", "source", "saucenao")]
-        public async Task SAOWikiaSearch(CommandContext c, params string[] args)
+        [Command("sauce"), Alias("source", "saucenao")]
+        public async Task SAOWikiaSearch(string url = "")
         {
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
-            var imageUrl = FindRelevantImageURL(c);
+            var responseMessage = ReplyAsync("Searching...").Result;
+            var imageUrl = url == "" ? await FindRelevantImageURLAsync() : url;
 
             if (imageUrl == null)
             {
@@ -87,67 +86,57 @@ namespace Shinoa.Modules
             }
         }
 
-        private static string FindRelevantImageURL(CommandContext c)
+        private async Task<string> FindRelevantImageURLAsync()
         {
             var imageUrl = "";
 
-            if (c.Message.Content.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).Length == 1)
+            if (Context.Message.Attachments.Count > 0)
             {
-                if (c.Message.Attachments.Count > 0)
-                {
-                    imageUrl = c.Message.Attachments.First().Url;
-                }
-                else
-                {
-                    c.Channel.GetMessagesAsync(limit: 30).ForEach(mlist =>
-                    {
-                        foreach (var message in mlist.ToList().OrderByDescending(o => o.Timestamp))
-                        {
-                            if (message.Attachments.Count > 0)
-                            {
-                                imageUrl = message.Attachments.First().Url;
-                                break;
-                            }
-                            else if (Regex.IsMatch(message.Content, @"http\S*(png|jpg|jpeg)"))
-                            {
-                                var match = Regex.Match(message.Content, @"http\S*(png|jpg|jpeg)");
-                                if (match.Success)
-                                {
-                                    imageUrl = match.Captures[0].Value;
-                                    break;
-                                }
-                            }
-                            else if (message.Embeds.Count > 0)
-                            {
-                                var firstEmbed = message.Embeds.First();
-                                
-
-                                foreach (var field in firstEmbed.Fields)
-                                {
-                                    if (field.Value.EndsWith(".jpg") || field.Value.EndsWith(".png"))
-                                    {
-                                        imageUrl = field.Value;
-                                        break;
-                                    }
-                                }
-
-                                if (firstEmbed.Image.HasValue)
-                                {
-                                    imageUrl = firstEmbed.Image.Value.Url;
-                                    break;
-                                }
-                            }
-
-                            if (imageUrl != "") break;
-                        }
-                    }); ;
-                }
+                imageUrl = Context.Message.Attachments.First().Url;
             }
             else
             {
-                imageUrl = GetCommandParameters(c.Message.Content)[0];
-            }
+                var messages = await Context.Channel.GetMessagesAsync(limit: 30).Flatten();
+                foreach (var message in messages.OrderByDescending(o => o.Timestamp))
+                {
+                    if (message.Attachments.Count > 0)
+                    {
+                        imageUrl = message.Attachments.First().Url;
+                        break;
+                    }
+                    else if (Regex.IsMatch(message.Content, @"http\S*(png|jpg|jpeg)"))
+                    {
+                        var match = Regex.Match(message.Content, @"http\S*(png|jpg|jpeg)");
+                        if (match.Success)
+                        {
+                            imageUrl = match.Captures[0].Value;
+                            break;
+                        }
+                    }
+                    else if (message.Embeds.Count > 0)
+                    {
+                        var firstEmbed = message.Embeds.First();
+                                
 
+                        foreach (var field in firstEmbed.Fields)
+                        {
+                            if (field.Value.EndsWith(".jpg") || field.Value.EndsWith(".png"))
+                            {
+                                imageUrl = field.Value;
+                                break;
+                            }
+                        }
+
+                        if (firstEmbed.Image.HasValue)
+                        {
+                            imageUrl = firstEmbed.Image.Value.Url;
+                            break;
+                        }
+                    }
+
+                    if (imageUrl != "") break;
+                }
+            }
             return imageUrl == "" ? null : imageUrl;
         }
 

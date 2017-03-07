@@ -4,24 +4,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using MoonSharp.Interpreter;
 using Discord.Commands;
-using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
-    public class LuaModule : Abstract.Module
+    public class LuaModule : ModuleBase<SocketCommandContext>
     {
-        [@Command("lua", "run", "eval", "exec")]
-        public async Task RunLua(CommandContext c, params string[] args)
+        [Command("lua"), Alias("run", "eval", "exec"), RequireOwner]
+        public async Task RunLua([Remainder]string code)
         {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-            {
-                var message = c.Channel.SendMessageAsync($"Running...").Result;
+            var messageTask = ReplyAsync($"Running...");
+                
+            var output = Script.RunString(code).ToString();
 
-                var code = args.ToRemainderString();
-                var output = Script.RunString(code).ToString();
-
-                await message.ModifyAsync(p => p.Content = $"Output: `{output}`");
-            }
+            var message = await messageTask;
+            await message.ModifyAsync(p => p.Content = $"Output: `{output}`");
         }
     }
 }

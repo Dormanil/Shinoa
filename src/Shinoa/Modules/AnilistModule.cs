@@ -1,18 +1,17 @@
-﻿using Discord;
-using Discord.Commands;
-using Newtonsoft.Json;
-using Shinoa.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Newtonsoft.Json;
 
 namespace Shinoa.Modules
 {
-    public class AnilistModule : Abstract.Module
+    public class AnilistModule : ModuleBase<SocketCommandContext>
     {
         public static Color MODULE_COLOR = new Color(2, 169, 255);
 
@@ -38,11 +37,12 @@ namespace Shinoa.Modules
 
             public Embed GetEmbed()
             {
-                var embed = new EmbedBuilder();
-                embed.Title = romanizedTitle;
-                embed.Url = $"http://anilist.co/anime/{id}";
-                embed.ThumbnailUrl = thumbnailUrl;
-
+                var embed = new EmbedBuilder()
+                {
+                    Title = romanizedTitle,
+                    Url = $"http://anilist.co/anime/{id}",
+                    ThumbnailUrl = thumbnailUrl
+                };
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle).WithIsInline(true));
                 if (jpTitle != null) embed.AddField(f => f.WithName("Japanese Title").WithValue(jpTitle).WithIsInline(true));
 
@@ -88,7 +88,7 @@ namespace Shinoa.Modules
         string clientId;
         string clientSecret;
 
-        public override void Init()
+        public AnilistModule()
         {
             clientId = Shinoa.Config["anilist_client_id"];
             clientSecret = Shinoa.Config["anilist_client_secret"];
@@ -178,12 +178,12 @@ namespace Shinoa.Modules
             }
         }
 
-        [@Command("anilist", "al", "ani")]
-        public async Task AnilistCommand(CommandContext c, params string[] args)
+        [Command("anilist"), Alias("al", "ani")]
+        public async Task AnilistCommand([Remainder]string name)
         {
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var responseMessage = await ReplyAsync("Searching...");
 
-            var result = GetAnime(args.ToRemainderString());
+            var result = GetAnime(name);
             if (result != null)
             {
                 await responseMessage.ModifyToEmbedAsync(result.GetEmbed());

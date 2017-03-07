@@ -6,11 +6,11 @@ using Discord;
 using SQLite;
 using Discord.WebSocket;
 using Discord.Commands;
-using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
-    public class JoinPartModule : Abstract.Module
+    //TODO: Improve migrate
+    public class JoinPartModule : ModuleBase<SocketCommandContext>
     {
         class JoinPartServer
         {
@@ -19,13 +19,16 @@ namespace Shinoa.Modules
             public string ChannelId { get; set; }
         }
 
+        static bool init = false;
+
         List<Guid> Guilds = new List<Guid>();
 
-        public override void Init()
+        public JoinPartModule(DiscordSocketClient client)
         {
+            if (!init) return;
             Shinoa.DatabaseConnection.CreateTable<JoinPartServer>();
 
-            Shinoa.DiscordClient.UserJoined += async (user) =>
+            client.UserJoined += async (user) =>
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
@@ -36,7 +39,7 @@ namespace Shinoa.Modules
                 }
             };
 
-            Shinoa.DiscordClient.UserLeft += async (user) =>
+            client.UserLeft += async (user) =>
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
@@ -47,7 +50,7 @@ namespace Shinoa.Modules
                 }
             };
 
-            Shinoa.DiscordClient.UserBanned += async (user, guild) =>
+            client.UserBanned += async (user, guild) =>
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
@@ -58,7 +61,7 @@ namespace Shinoa.Modules
                 }
             };
 
-            Shinoa.DiscordClient.UserUnbanned += async (user, guild) =>
+            client.UserUnbanned += async (user, guild) =>
             {
                 foreach (var server in Shinoa.DatabaseConnection.Table<JoinPartServer>())
                 {
@@ -68,58 +71,52 @@ namespace Shinoa.Modules
                     break;
                 }
             };
+            init = true;
         }
 
-        [@Command("greetings", "joins", "welcome", "welcomes")]
-        public async Task GreetingsManagement(CommandContext c, params string[] args)
+        [Command("greetings"), Alias("joins", "welcome", "welcomes"), RequireUserPermission(GuildPermission.ManageGuild)]
+        public async Task GreetingsManagement(string option)
         {
-            var serverIdString = c.Guild.Id.ToString();
-
-            if ((c.User as SocketGuildUser).GuildPermissions.ManageGuild)
+            var serverIdString = Context.Guild.Id.ToString();
+            
+            switch (option)
             {
-                switch (args[0])
-                {
-                    case "enable":
-                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().All(s => s.ServerId != serverIdString))
-                        {
+                case "enable":
+                    if (Shinoa.DatabaseConnection.Table<JoinPartServer>().All(s => s.ServerId != serverIdString))
+                    {
 
-                            Shinoa.DatabaseConnection.Insert(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
-                            await c.Channel.SendMessageAsync($"Greetings enabled for this server and bound to channel #{c.Channel.Name}.");
-                        }
-                        else
-                        {
-                            await c.Channel.SendMessageAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
-                        }
-                        break;
+                        Shinoa.DatabaseConnection.Insert(new JoinPartServer() { ServerId = serverIdString, ChannelId = Context.Channel.Id.ToString() });
+                        await ReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.");
+                    }
+                    else
+                    {
+                        await ReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
+                    }
+                    break;
 
-                    case "disable":
-                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
-                        {
-                            Shinoa.DatabaseConnection.Delete(new JoinPartServer() { ServerId = serverIdString });
-                            await c.Channel.SendMessageAsync($"Greetings disabled for this server.");
-                        }
-                        else
-                        {
-                            await c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
-                        }
-                        break;
+                case "disable":
+                    if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
+                    {
+                        Shinoa.DatabaseConnection.Delete(new JoinPartServer() { ServerId = serverIdString });
+                        await ReplyAsync($"Greetings disabled for this server.");
+                    }
+                    else
+                    {
+                        await ReplyAsync("Greetings aren't enabled for this server.");
+                    }
+                    break;
 
-                    case "here":
-                        if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
-                        {
-                            Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = c.Channel.Id.ToString() });
-                            await c.Channel.SendMessageAsync($"Greetings moved to channel #{c.Channel.Name}.");
-                        }
-                        else
-                        {
-                            await c.Channel.SendMessageAsync("Greetings aren't enabled for this server.");
-                        }
-                        break;
-                }
-            }
-            else
-            {
-                c.Channel.SendPermissionErrorAsync("Manage Server");
+                case "here":
+                    if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
+                    {
+                        Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = Context.Channel.Id.ToString() });
+                        ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
+                    }
+                    else
+                    {
+                        ReplyAsync("Greetings aren't enabled for this server.");
+                    }
+                    break;
             }
         }
     }

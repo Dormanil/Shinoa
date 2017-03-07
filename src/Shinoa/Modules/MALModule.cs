@@ -7,12 +7,12 @@ using System.Xml.Linq;
 using System.Threading;
 using System.Net.Http;
 using Discord.Commands;
-using Shinoa.Attributes;
 using System.Text.RegularExpressions;
 
 namespace Shinoa.Modules
 {
-    public class MALModule : Abstract.Module
+    //TODO: Improve migrate
+    public class MALModule : ModuleBase<SocketCommandContext>
     {
         public class AnimeResult
         {
@@ -31,10 +31,11 @@ namespace Shinoa.Modules
 
             public Embed GetEmbed()
             {
-                var embed = new EmbedBuilder();
-                embed.Title = title;
-                embed.Url = $"\nhttp://myanimelist.net/anime/{id}";
-                
+                var embed = new EmbedBuilder()
+                {
+                    Title = title,
+                    Url = $"\nhttp://myanimelist.net/anime/{id}"
+                };
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
                 if (synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(synonyms));
                 embed.AddField(f => f.WithName("Type").WithValue(type).WithIsInline(true));
@@ -80,9 +81,11 @@ namespace Shinoa.Modules
 
             public Embed GetEmbed()
             {
-                var embed = new EmbedBuilder();
-                embed.Title = title;
-                embed.Url = $"\nhttp://myanimelist.net/manga/{id}";
+                var embed = new EmbedBuilder()
+                {
+                    Title = title,
+                    Url = $"\nhttp://myanimelist.net/manga/{id}"
+                };
 
                 //embed.AddField(f => f.WithName("Title").WithValue(title));
                 if (englishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(englishTitle));
@@ -112,12 +115,14 @@ namespace Shinoa.Modules
         }
 
         public static Color MODULE_COLOR = new Color(63, 81, 181);
-        HttpClient httpClient = new HttpClient();
+        static HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://myanimelist.net/api/") };
+        static bool init = false;
 
-        public override void Init()
+        public MALModule()
         {
+            if (init) return;
             httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal_username"], (string)Shinoa.Config["mal_password"]);
-            httpClient.BaseAddress = new Uri("https://myanimelist.net/api/");
+
         }
 
         static string GenerateSynopsisString(string rawValue)
@@ -140,19 +145,20 @@ namespace Shinoa.Modules
             return synopsisString;
         }
 
-        [@Command("anime", "mal", "malanime")]
-        public async Task MALAnimeSearch(CommandContext c, params string[] args)
+        [Command("anime"), Alias("mal", "malanime")]
+        public async Task MALAnimeSearch([Remainder]string name)
         {
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = GetAnime(args.ToRemainderString());
+            var result = GetAnime(name);
+            var responseMessage = await responseMessageTask;
             if (result != null)
             {
                 await responseMessage.ModifyToEmbedAsync(result.GetEmbed());
             }
             else
             {
-                var fallbackResult = AnilistModule.GetAnime(args.ToRemainderString());
+                var fallbackResult = AnilistModule.GetAnime(name);
                 if (fallbackResult != null)
                 {
                     await responseMessage.ModifyToEmbedAsync(fallbackResult.GetEmbed());
@@ -164,19 +170,20 @@ namespace Shinoa.Modules
             }
         }
 
-        [@Command("manga", "ln", "malmanga")]
-        public void MALMangaSearch(CommandContext c, params string[] args)
+        [Command("manga"), Alias("ln", "malmanga")]
+        public async Task MALMangaSearch(string name)
         {
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = GetManga(args.ToRemainderString());
+            var result = GetManga(name);
+            var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                responseMessage.ModifyToEmbedAsync(result.GetEmbed());
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed());
             }
             else
             {
-                responseMessage.ModifyAsync(p => p.Content = "Manga/LN not found.");
+                await responseMessage.ModifyAsync(p => p.Content = "Manga/LN not found.");
             }
         }
 
@@ -185,10 +192,6 @@ namespace Shinoa.Modules
             try
             {
                 var result = new AnimeResult();
-
-                var httpClient = new HttpClient();
-                httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal_username"], (string)Shinoa.Config["mal_password"]);
-                httpClient.BaseAddress = new Uri("https://myanimelist.net/api/");
 
                 var responseText = httpClient.HttpGet($"anime/search.xml?q={searchQuery}");
                 XElement root = XElement.Parse(responseText);
@@ -231,11 +234,7 @@ namespace Shinoa.Modules
             try
             {
                 var result = new MangaResult();
-
-                var httpClient = new HttpClient();
-                httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal_username"], (string)Shinoa.Config["mal_password"]);
-                httpClient.BaseAddress = new Uri("https://myanimelist.net/api/");
-
+                
                 var responseText = httpClient.HttpGet($"manga/search.xml?q={searchQuery}");
                 XElement root = XElement.Parse(responseText);
                 var firstResult = (from el in root.Descendants("entry") select el).First();
