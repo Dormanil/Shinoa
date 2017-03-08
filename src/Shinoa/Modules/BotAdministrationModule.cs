@@ -77,7 +77,7 @@ namespace Shinoa.Modules
             output += $"Uptime: {uptimeString}\n\n";
 
             output += "Running modules:\n\n```";
-            foreach (var module in Shinoa.CService.Modules)
+            foreach (var module in Shinoa.Commands.Modules)
             {
                 output += $"{module.Name}\n";
                 var indentedDetailedStats = "";

@@ -116,13 +116,13 @@ namespace Shinoa.Modules
 
         public static Color MODULE_COLOR = new Color(63, 81, 181);
         static HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://myanimelist.net/api/") };
-        static bool init = false;
+        static bool init;
 
         public MALModule()
         {
             if (init) return;
-            httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal_username"], (string)Shinoa.Config["mal_password"]);
-
+            httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal"]["mal_username"], (string)Shinoa.Config["mal"]["mal_password"]);
+            init = true;
         }
 
         static string GenerateSynopsisString(string rawValue)
@@ -223,7 +223,7 @@ namespace Shinoa.Modules
                 result.synopsis = GenerateSynopsisString(firstResult.Descendants("synopsis").First().Value);
                 return result;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }
@@ -267,7 +267,7 @@ namespace Shinoa.Modules
                 result.synopsis = GenerateSynopsisString(firstResult.Descendants("synopsis").First().Value);
                 return result;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }

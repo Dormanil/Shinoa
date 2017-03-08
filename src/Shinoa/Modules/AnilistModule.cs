@@ -61,7 +61,7 @@ namespace Shinoa.Modules
                 embed.AddField(f => f.WithName("Avg. Score (max. 100)").WithValue(averageScore == 0 ? "?" : averageScore.ToString()).WithIsInline(true));
                 embed.AddField(f => f.WithName("Episodes").WithValue(totalEpisodes == 0 ? "?" : totalEpisodes.ToString()).WithIsInline(true));
 
-                embed.AddField(f => f.WithName("Source Material").WithValue(sourceMaterial == null ? "Unknown" : sourceMaterial).WithIsInline(true));
+                embed.AddField(f => f.WithName("Source Material").WithValue(sourceMaterial ?? "Unknown").WithIsInline(true));
                 embed.AddField(f => f.WithName("Duration").WithValue(duration == 0 ? "?" : $"{duration} min.").WithIsInline(true));
 
                 embed.AddField(f => f.WithName("Start Date").WithValue(startDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
@@ -90,8 +90,8 @@ namespace Shinoa.Modules
 
         public AnilistModule()
         {
-            clientId = Shinoa.Config["anilist_client_id"];
-            clientSecret = Shinoa.Config["anilist_client_secret"];
+            clientId = Shinoa.Config["anilist"]["anilist_client_id"];
+            clientSecret = Shinoa.Config["anilist"]["anilist_client_secret"];
 
             tokenRefreshTimer = new Timer(s =>
             {
@@ -116,8 +116,8 @@ namespace Shinoa.Modules
             var postContent = new FormUrlEncodedContent(new[]
                 {
                     new KeyValuePair<string, string>("grant_type", "client_credentials"),
-                    new KeyValuePair<string, string>("client_id", this.clientId),
-                    new KeyValuePair<string, string>("client_secret", this.clientSecret),
+                    new KeyValuePair<string, string>("client_id", clientId),
+                    new KeyValuePair<string, string>("client_secret", clientSecret),
                 });
 
             var responseString = client.HttpPost("https://anilist.co/api/auth/access_token", postContent);
@@ -135,11 +135,13 @@ namespace Shinoa.Modules
 
                 dynamic firstResult = responseObject[0];
 
-                var result = new AnimeResult();
-                result.id = firstResult["id"];
-                result.jpTitle = firstResult["title_japanese"];
-                result.romanizedTitle = firstResult["title_romaji"];
-                result.englishTitle = firstResult["title_english"];
+                var result = new AnimeResult
+                {
+                    id = firstResult["id"],
+                    jpTitle = firstResult["title_japanese"],
+                    romanizedTitle = firstResult["title_romaji"],
+                    englishTitle = firstResult["title_english"]
+                };
 
                 if (firstResult["synonyms"].Count > 0)
                 {
@@ -161,7 +163,7 @@ namespace Shinoa.Modules
                 result.type = firstResult["type"];
                 result.averageScore = firstResult["average_score"];
                 result.totalEpisodes = firstResult["total_episodes"];
-                result.duration = firstResult["duration"] == null ? 0 : firstResult["duration"];
+                result.duration = firstResult["duration"] ?? 0;
                 result.sourceMaterial = firstResult["source"];
                 result.description = ((string)firstResult["description"]).Truncate(500);
                 result.description = Regex.Replace(result.description, @"\<.+?\>", "");
@@ -172,7 +174,7 @@ namespace Shinoa.Modules
 
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }

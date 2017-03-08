@@ -110,11 +110,11 @@ namespace Shinoa.Modules
                     if (Shinoa.DatabaseConnection.Table<JoinPartServer>().Count(s => s.ServerId == serverIdString) == 1)
                     {
                         Shinoa.DatabaseConnection.Update(new JoinPartServer() { ServerId = serverIdString, ChannelId = Context.Channel.Id.ToString() });
-                        ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
+                        await ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
                     }
                     else
                     {
-                        ReplyAsync("Greetings aren't enabled for this server.");
+                        await ReplyAsync("Greetings aren't enabled for this server.");
                     }
                     break;
             }

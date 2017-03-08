@@ -12,7 +12,7 @@ namespace Shinoa.Modules
 {
     public class ModerationModule : ModuleBase<SocketCommandContext>
     {
-        static Dictionary<string, int> TimeUnits = new Dictionary<string, int>()
+        static readonly Dictionary<string, int> TimeUnits = new Dictionary<string, int>()
         {
             { "seconds",    1000 },
             { "minutes",    1000 * 60 },
@@ -47,15 +47,7 @@ namespace Shinoa.Modules
         {
             var delTask = Context.Message.DeleteAsync();
 
-            IRole mutedRole = null;
-            foreach (var role in Context.Guild.Roles)
-            {
-                if (role.Name.ToLower().Contains("muted"))
-                {
-                    mutedRole = role;
-                    break;
-                }
-            }
+            IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
             await user.AddRolesAsync(mutedRole);
             await delTask;
@@ -78,16 +70,8 @@ namespace Shinoa.Modules
         public async Task Unmute(IGuildUser user)
         {
             var delTask = Context.Message.DeleteAsync();
-            IRole mutedRole = null;
-            foreach (var role in Context.Guild.Roles)
-            {
-                if (role.Name.ToLower().Contains("muted"))
-                {
-                    mutedRole = role;
-                    break;
-                }
-            }
-            
+            IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
+
             await user.RemoveRolesAsync(mutedRole);
             await delTask;
             await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");

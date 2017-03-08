@@ -31,7 +31,7 @@ namespace Shinoa
 
         public static void InitLoggingToChannel()
         {
-            var loggingChannelId = Shinoa.Config["logging_channel_id"];
+            var loggingChannelId = Shinoa.Config["global"]["logging_channel_id"];
             LoggingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(loggingChannelId));
 
             LoggingChannel.SendMessageAsync("Logging initialized.");

@@ -22,11 +22,9 @@ namespace Shinoa
 
         public static dynamic Config;
         public static DiscordSocketClient DiscordClient = new DiscordSocketClient();
-        public static CommandService CService = new CommandService();
+        public static CommandService Commands = new CommandService();
         public static DependencyMap Map = new DependencyMap();
         public static SQLiteConnection DatabaseConnection;
-
-        static Timer GlobalUpdateTimer;
 
         public static void Main(string[] args) =>
             Start().GetAwaiter().GetResult();
@@ -54,23 +52,23 @@ namespace Shinoa
 
             #region Modules
             Map.Add(DiscordClient);
-            Map.Add(CService);
+            Map.Add(Commands);
 
-            var modules = await CService.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
+            var modules = await Commands.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
 
             foreach(var module in modules)
             {
                 Logging.Log($"Loaded module \"{module.Name}\"");
                 foreach (var command in module.Commands) Logging.Log($"Loaded command \"{command.Name}\"");
             }
-            Logging.Log($"Loaded {CService.Modules.Count()} module(s) with {CService.Commands.Count()} command(s)");
+            Logging.Log($"Loaded {Commands.Modules.Count()} module(s) with {Commands.Commands.Count()} command(s)");
             #endregion
 
             #region Event handlers
             DiscordClient.Connected += async () =>
                {
                    Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
-                   await DiscordClient.SetGameAsync(Config["default_game"]);
+                   await DiscordClient.SetGameAsync(Config["global"]["default_game"]);
                };
             DiscordClient.MessageReceived += async (message) =>
             {
@@ -78,11 +76,11 @@ namespace Shinoa
                 int argPos = 0;
                 if (userMessage == null 
                 || userMessage.Author.Id == DiscordClient.CurrentUser.Id 
-                || !userMessage.HasStringPrefix((string)Config["command_prefix"], ref argPos)) return;
+                || !userMessage.HasStringPrefix((string)Config["global"]["command_prefix"], ref argPos)) return;
                 
                 var contextSock = new SocketCommandContext(DiscordClient, userMessage);
                 Logging.LogMessage(contextSock);
-                var res = await CService.ExecuteAsync(contextSock, argPos, Map);
+                var res = await Commands.ExecuteAsync(contextSock, argPos, Map);
                 if (res.IsSuccess) return;
 
                 Logging.Log(res.ErrorReason);
@@ -112,7 +110,7 @@ namespace Shinoa
 
             #region Connection establishment
             Logging.Log("Connecting to Discord...");
-            await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
+            await DiscordClient.LoginAsync(TokenType.Bot, Config["global"]["token"]);
             await DiscordClient.StartAsync();
             await DiscordClient.WaitForGuildsAsync();
             await Task.Delay(-1); 

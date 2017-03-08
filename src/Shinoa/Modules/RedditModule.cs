@@ -143,7 +143,7 @@ namespace Shinoa.Modules
             }
         }
 
-        public async override Task UpdateLoop()
+        public override async Task UpdateLoop()
         {
             foreach (var subreddit in SubscribedSubreddits) subreddit.channels.Clear();
             foreach (var boundSubreddit in Shinoa.DatabaseConnection.Table<RedditBinding>())
@@ -155,10 +155,9 @@ namespace Shinoa.Modules
                 }
                 else
                 {
-                    var newSubscribedSubreddit = new SubscribedSubreddit();
-                    newSubscribedSubreddit.subreddit = boundSubreddit.SubredditName;
+                    var newSubscribedSubreddit = new SubscribedSubreddit {subreddit = boundSubreddit.SubredditName};
                     newSubscribedSubreddit.channels.Add(Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId)) as ITextChannel);
-                    this.SubscribedSubreddits.Add(newSubscribedSubreddit);
+                    SubscribedSubreddits.Add(newSubscribedSubreddit);
                 }
             }
 

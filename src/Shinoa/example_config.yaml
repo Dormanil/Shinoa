@@ -1,19 +1,26 @@
 ### Global configuration.
+global:
+    default_game: "Battlefield 1"
 
-default_game: "Battlefield 1"
 
-### Credentials for Discord and other services.
+    ### Credentials for Discord
+    token: "blank"
 
-token: "blank"
-owner_id: 0000
+    command_prefix: "!"
 
-command_prefix: "!"
+    ### Refresh rate for timed modules
+    refresh_rate: 30
 
-anilist_client_id: "id"
-anilist_client_secret: "secret"
 
-mal_username: "username"
-mal_password: "password;"
+### Module configuration
+anilist:
+    anilist_client_id: "id"
+    anilist_client_secret: "secret"
 
-twitter_key: "key"
-twitter_secret: "secret"
+mal:
+    mal_username: "username"
+    mal_password: "password;"
+
+twitter:
+    twitter_key: "key"
+    twitter_secret: "secret"
