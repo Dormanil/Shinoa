@@ -121,7 +121,7 @@ namespace Shinoa.Modules
         public MALModule()
         {
             if (init) return;
-            httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal"]["mal_username"], (string)Shinoa.Config["mal"]["mal_password"]);
+            httpClient.SetBasicHttpCredentials((string)Shinoa.Config["mal"]["username"], (string)Shinoa.Config["mal"]["password"]);
             init = true;
         }
 

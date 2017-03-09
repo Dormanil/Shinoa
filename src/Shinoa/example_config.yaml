@@ -14,13 +14,13 @@ global:
 
 ### Module configuration
 anilist:
-    anilist_client_id: "id"
-    anilist_client_secret: "secret"
+    client_id: "id"
+    client_secret: "secret"
 
 mal:
-    mal_username: "username"
-    mal_password: "password;"
+    username: "username"
+    password: "password;"
 
 twitter:
-    twitter_key: "key"
-    twitter_secret: "secret"
+    key: "key"
+    secret: "secret"

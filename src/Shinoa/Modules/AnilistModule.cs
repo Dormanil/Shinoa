@@ -90,8 +90,8 @@ namespace Shinoa.Modules
 
         public AnilistModule()
         {
-            clientId = Shinoa.Config["anilist"]["anilist_client_id"];
-            clientSecret = Shinoa.Config["anilist"]["anilist_client_secret"];
+            clientId = Shinoa.Config["anilist"]["client_id"];
+            clientSecret = Shinoa.Config["anilist"]["client_secret"];
 
             tokenRefreshTimer = new Timer(s =>
             {
