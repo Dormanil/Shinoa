@@ -9,6 +9,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Shinoa.Attributes;
+using Shinoa.Services;
 
 namespace Shinoa
 {
@@ -23,7 +25,7 @@ namespace Shinoa
         public static dynamic Config;
         public static DiscordSocketClient DiscordClient = new DiscordSocketClient();
         public static CommandService Commands = new CommandService();
-        public static DependencyMap Map = new DependencyMap();
+        public static OpaqueDependencyMap Map = new OpaqueDependencyMap();
         public static SQLiteConnection DatabaseConnection;
 
         public static void Main(string[] args) =>
@@ -32,7 +34,7 @@ namespace Shinoa
         public static async Task Start()
         {
             #region Prerequisites
-            Shinoa.DatabaseConnection = ALPHA ? new SQLiteConnection("db_alpha.sqlite") : new SQLiteConnection("db.sqlite");
+            DatabaseConnection = ALPHA ? new SQLiteConnection("db_alpha.sqlite") : new SQLiteConnection("db.sqlite");
 
             var configurationFileStream = ALPHA ? new FileStream("config_alpha.yaml", FileMode.Open) : new FileStream("config.yaml", FileMode.Open);
 
@@ -41,7 +43,7 @@ namespace Shinoa
             using (var streamReader = new StreamReader(configurationFileStream))
             {
                 var deserializer = new YamlDotNet.Serialization.Deserializer();
-                Shinoa.Config = deserializer.Deserialize(streamReader);
+                Config = deserializer.Deserialize(streamReader);
                 Logging.Log("Config parsed and loaded.");
             } 
             #endregion
@@ -53,6 +55,27 @@ namespace Shinoa
             #region Modules
             Map.Add(DiscordClient);
             Map.Add(Commands);
+            Map.Add(DatabaseConnection);
+
+            #region Services
+
+            var services =
+                typeof(Shinoa).GetTypeInfo()
+                    .Assembly.GetExportedTypes()
+                    .Select(t => t.GetTypeInfo())
+                    .Where(t => t.GetInterfaces().Contains(typeof(IService)));
+            
+            foreach (var service in services)
+            {
+                var configAttr = service.GetCustomAttribute<ConfigAttribute>();
+                dynamic config = configAttr?.ConfigName != null ? Config[configAttr.ConfigName] : null;
+                var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
+                instance.Init(config, Map);
+                Logging.Log($"Loaded service \"{service.Name}\"");
+                Map.AddOpaque(instance);
+            }
+
+            #endregion
 
             var modules = await Commands.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
 
