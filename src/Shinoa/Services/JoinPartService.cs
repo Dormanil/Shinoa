@@ -22,7 +22,7 @@ namespace Shinoa.Services
         private SQLiteConnection db;
         private DiscordSocketClient client;
 
-        void IService.Init(IDictionary<string, dynamic> config, IDependencyMap map)
+        void IService.Init(dynamic config, IDependencyMap map)
         {
             if(!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<JoinPartServer>();

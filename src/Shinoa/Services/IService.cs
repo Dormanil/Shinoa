@@ -5,6 +5,6 @@ namespace Shinoa.Services
 {
     public interface IService
     {
-        void Init(IDictionary<string, dynamic> config, IDependencyMap map);
+        void Init(dynamic config, IDependencyMap map);
     }
 }
