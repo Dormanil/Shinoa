@@ -8,10 +8,6 @@ global:
 
     command_prefix: "!"
 
-    ### Refresh rate for timed modules
-    refresh_rate: 30
-
-
 ### Module configuration
 anilist:
     client_id: "id"
@@ -24,3 +20,16 @@ mal:
 twitter:
     key: "key"
     secret: "secret"
+
+reddit:
+    color:
+        - 255
+        - 152
+        - 0
+
+    compact_keywords:
+        - "spoiler"
+        - "nsfw"
+
+    filter_keywords: []
+    refresh_rate: 30
