@@ -1,13 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
-using Newtonsoft.Json;
 using Shinoa.Attributes;
-using SQLite;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Shinoa.Services;
 
@@ -69,7 +63,8 @@ namespace Shinoa.Modules
                 }
                     break;
                 case RedditOption.List:
-                    var response = service.GetBindings(Context.Channel).Aggregate("", (current, binding) => current + $"/r/{binding.SubredditName}\n");
+                    var response = service.GetBindings(Context.Channel)
+                        .Aggregate("", (current, binding) => current + $"/r/{binding.SubredditName}\n");
 
                     if (response == "") response = "N/A";
 
@@ -81,35 +76,5 @@ namespace Shinoa.Modules
                     break;
             }
         }
-
-        /*public string DetailedStats
-        {
-            get
-            {
-                var response = "";
-                foreach (var boundSubreddit in Shinoa.DatabaseConnection.Table<RedditService.RedditBinding>())
-                {
-                    var channel = Shinoa.DiscordClient.GetChannel(ulong.Parse(boundSubreddit.ChannelId));
-
-                    if (channel is IPrivateChannel)
-                    {
-                        var privateChannel = channel as IPrivateChannel;
-                        var channelName = privateChannel.Name;
-
-                        response += $"/r/{boundSubreddit.SubredditName} -> [[PM] -> {channelName}]\n";
-                    }
-                    else if (channel is IGuildChannel)
-                    {
-                        var guildChannel = channel as IGuildChannel;
-                        var channelName = guildChannel.Name;
-                        var guildName = guildChannel.Guild.Name;
-
-                        response += $"/r/{boundSubreddit.SubredditName} -> [{guildName} -> #{channelName}]\n";
-                    }
-                }
-
-                return response.Trim();
-            }
-        }*/
     }
 }

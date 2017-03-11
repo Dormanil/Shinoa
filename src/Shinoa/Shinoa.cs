@@ -64,17 +64,6 @@ namespace Shinoa
                     .Assembly.GetExportedTypes()
                     .Select(t => t.GetTypeInfo())
                     .Where(t => t.GetInterfaces().Contains(typeof(IService)));
-            
-            foreach (var service in services)
-            {
-                var configAttr = service.GetCustomAttribute<ConfigAttribute>();
-                dynamic config = configAttr?.ConfigName != null ? Config[configAttr.ConfigName] : null;
-                var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
-                instance.Init(config, Map);
-                Logging.Log($"Loaded service \"{service.Name}\"");
-                Map.AddOpaque(instance);
-            }
-
             #endregion
 
             var modules = await Commands.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
@@ -89,10 +78,19 @@ namespace Shinoa
 
             #region Event handlers
             DiscordClient.Connected += async () =>
-               {
-                   Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
-                   await DiscordClient.SetGameAsync(Config["global"]["default_game"]);
-               };
+            {
+                Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
+                foreach (var service in services)
+                {
+                    var configAttr = service.GetCustomAttribute<ConfigAttribute>();
+                    dynamic config = configAttr?.ConfigName != null ? Config[configAttr.ConfigName] : null;
+                    var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
+                    instance.Init(config, Map);
+                    Logging.Log($"Loaded service \"{service.Name}\"");
+                    Map.AddOpaque(instance);
+                }
+                await DiscordClient.SetGameAsync(Config["global"]["default_game"]);
+            };
             DiscordClient.MessageReceived += async (message) =>
             {
                 var userMessage = message as SocketUserMessage;

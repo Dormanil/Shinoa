@@ -80,25 +80,6 @@ namespace Shinoa.Modules
             foreach (var module in Shinoa.Commands.Modules)
             {
                 output += $"{module.Name}\n";
-                var indentedDetailedStats = "";
-
-                //TODO: Rework
-                /*if (module.DetailedStats == null) continue;
-                using (StringReader reader = new StringReader(module.DetailedStats))
-                {
-                    string line = string.Empty;
-                    do
-                    {
-                        line = reader.ReadLine();
-                        if (line != null)
-                        {
-                            indentedDetailedStats += "  " + line + '\n';
-                        }
-
-                    } while (line != null);
-                }
-
-                output += $"{indentedDetailedStats}\n";*/
             }
             output += "```";
 

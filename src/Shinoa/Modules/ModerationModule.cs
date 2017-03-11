@@ -38,7 +38,7 @@ namespace Shinoa.Modules
             var kickTask = user.KickAsync();
             await delTask;
             if (kickTask == null) return;
-            else await kickTask;
+            await kickTask;
             await ReplyAsync($"User {user.Username} has been kicked by {Context.User.Mention}.");
         }
 
@@ -77,24 +77,35 @@ namespace Shinoa.Modules
             await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
         }
 
+        public enum StopSetting
+        {
+            On,
+            Off
+        }
+
         [Command("stop"), RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task StopChannel(string setting)
+        public async Task StopChannel(StopSetting setting)
         {
             var channel = Context.Channel as IGuildChannel;
 
-            if (setting == "on")
+            switch (setting)
             {
-                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
-                await ReplyAsync("", embed: embed.Build());
-                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
-                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
-            }
-            else if (setting == "off")
-            {
-                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
-                await ReplyAsync("", embed: embed.Build());
+                case StopSetting.On:
+                {
+                    var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
+                    await ReplyAsync("", embed: embed.Build());
+                    await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
+                    await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
+                }
+                    break;
+                case StopSetting.Off:
+                {
+                    await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                    await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                    var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
+                    await ReplyAsync("", embed: embed.Build());
+                }
+                    break;
             }
         }
 
