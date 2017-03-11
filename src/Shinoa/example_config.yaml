@@ -18,8 +18,15 @@ mal:
     password: "password;"
 
 twitter:
-    key: "key"
-    secret: "secret"
+    client_key: "key"
+    client_secret: "secret"
+
+    color:
+        - 33
+        - 155
+        - 243
+
+    refresh_rate: 30
 
 reddit:
     color:
