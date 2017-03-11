@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
-using Newtonsoft.Json;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Discord.Commands;
+using Newtonsoft.Json;
 
 namespace Shinoa.Modules
 {
     public class JapaneseDictModule : ModuleBase<SocketCommandContext>
     {
-        static HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };
+        static readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };
 
         [Command("jp"), Alias("jisho", "jpdict", "japanese")]
         public async Task JishoSearch([Remainder] string term)
@@ -39,7 +36,7 @@ namespace Shinoa.Modules
                     else if (wordReading != null) responseText += $"**{wordReading}**, ";
                 }
 
-                responseText = responseText.Trim(new char[] { ',', ' ' });
+                responseText = responseText.Trim(',', ' ');
                 responseText += '\n';
 
                 foreach (var sense in firstResult["senses"])
@@ -51,7 +48,7 @@ namespace Shinoa.Modules
                         responseText += $"{definition}, ";
                     }
 
-                    responseText = responseText.Trim(new char[] { ',', ' ' });
+                    responseText = responseText.Trim(',', ' ');
 
                     if (sense["parts_of_speech"].Count > 0)
                     {
@@ -62,7 +59,7 @@ namespace Shinoa.Modules
                             responseText += $"{part.ToLower()}, ";
                         }
 
-                        responseText = responseText.Trim(new char[] { ',', ' ' });
+                        responseText = responseText.Trim(',', ' ');
 
                         responseText += ")";
                     }

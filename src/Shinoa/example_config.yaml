@@ -2,20 +2,32 @@
 global:
     default_game: "Battlefield 1"
 
-
     ### Credentials for Discord
     token: "blank"
 
     command_prefix: "!"
+
+    ### Refresh rate for timed services
+    refresh_rate: 30
 
 ### Module configuration
 anilist:
     client_id: "id"
     client_secret: "secret"
 
+    color:
+        - 2
+        - 169
+        - 255
+
 mal:
     username: "username"
-    password: "password;"
+    password: "password"
+
+    color:
+        - 63
+        - 81
+        - 181
 
 twitter:
     client_key: "key"
@@ -25,8 +37,6 @@ twitter:
         - 33
         - 155
         - 243
-
-    refresh_rate: 30
 
 reddit:
     color:
@@ -39,7 +49,3 @@ reddit:
         - "nsfw"
 
     filter_keywords: []
-    refresh_rate: 30
-
-animefeed:
-    refresh_rate: 30

@@ -30,7 +30,6 @@ namespace Shinoa.Services
 
             client.UserJoined += async (user) =>
             {
-                Logging.Log($"User \"{user.Username}\" joined server \"{user.Guild.Name}\"");
                 await SendGreetingAsync(user.Guild, $"Welcome to the server, {user.Mention}!");
             };
 
@@ -52,7 +51,6 @@ namespace Shinoa.Services
 
         IMessageChannel GetGreetingChannel(IGuild guild)
         {
-            Logging.Log($"Scanning database for ID \"{guild.Id}\"");
             JoinPartServer server = Enumerable.FirstOrDefault(db.Table<JoinPartServer>(), srv => srv.ServerId == guild.Id.ToString());
             if (server == default(JoinPartServer)) return null;
             var greetingChannel = client.GetChannel(ulong.Parse(server.ChannelId));
@@ -64,10 +62,8 @@ namespace Shinoa.Services
 
         async Task SendGreetingAsync(IGuild guild, string message)
         {
-            Logging.Log("Looking for greeting channel.");
             var channel = GetGreetingChannel(guild);
             if(channel == null) return;
-            Logging.Log($"Sending message \"{message}\" to channel \"{channel.Name}\" on server \"{guild.Name}\"");
             await channel.SendMessageAsync(message);
         }
 

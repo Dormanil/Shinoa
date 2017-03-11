@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -12,10 +13,10 @@ using Shinoa.Attributes;
 using Shinoa.Modules;
 using SQLite;
 
-namespace Shinoa.Services
+namespace Shinoa.Services.TimedServices
 {
     [Config("reddit")]
-    public class RedditService : IService
+    public class RedditService : ITimedService
     {
         public class RedditBinding
         {
@@ -42,7 +43,6 @@ namespace Shinoa.Services
             public DateTimeOffset LatestPost = DateTimeOffset.UtcNow;
         }
         
-        private Timer refreshTimer;
         private SQLiteConnection db;
         private DiscordSocketClient client;
         private HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://www.reddit.com/r/")};
@@ -61,11 +61,9 @@ namespace Shinoa.Services
             filterKeywords = ((List<object>)config["filter_keywords"]).Cast<string>().ToArray();
 
             ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
-
-            refreshTimer = new Timer(Callback, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string)config["refresh_rate"])));
         }
 
-        void Callback(object state)
+        async Task ITimedService.Callback()
         {
             foreach (var subreddit in GetFromDb())
             {
@@ -135,7 +133,7 @@ namespace Shinoa.Services
                 foreach (var embed in postStack)
                 foreach (var channel in subreddit.Channels)
                 {
-                    channel.SendEmbedAsync(embed).Wait();
+                    await channel.SendEmbedAsync(embed);
                 }
 
                 if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;

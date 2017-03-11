@@ -3,7 +3,7 @@ using Discord.Commands;
 using Shinoa.Attributes;
 using System.Linq;
 using System.Threading.Tasks;
-using Shinoa.Services;
+using Shinoa.Services.TimedServices;
 
 namespace Shinoa.Modules
 {

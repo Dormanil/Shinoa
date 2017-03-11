@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
 namespace Shinoa.Modules
 {
-    //TODO: Improve migrate
     public class FunModule : ModuleBase<SocketCommandContext>
     {
-        static string[] JojoMemes = {
+        static readonly string[] jojoMemes = {
             "Rohan’s holding a pen!",
             "We’re going to ignore the law.",
             "Are you hiding somewhere in my body? Somewhere in my pants?",
@@ -114,7 +111,8 @@ namespace Shinoa.Modules
 
         public static Color MODULE_COLOR = new Color(63, 81, 181);
 
-        public void HandleMessage(CommandContext context)
+        //TODO: Migrate
+        /*public void HandleMessage(CommandContext context)
         {
             if (context.User.Id != Shinoa.DiscordClient.CurrentUser.Id)
             {
@@ -127,12 +125,12 @@ namespace Shinoa.Modules
                 else if (context.Message.Content == @"\o\")
                     context.Channel.SendMessageAsync(@"/o/");
             }
-        }
+        }*/
 
         [Command("pick"), Alias("choose")]
         public async Task Pick([Remainder]string args)
         {
-            var choices = args.Split(new string[] { " or " }, StringSplitOptions.RemoveEmptyEntries);
+            var choices = args.Split(new[] { " or " }, StringSplitOptions.RemoveEmptyEntries);
             var choice = choices[new Random().Next(choices.Length)].Trim();
 
             var embed = new EmbedBuilder()
@@ -176,7 +174,7 @@ namespace Shinoa.Modules
         public async Task JojoMeme()
         {
             var random = new Random();
-            var meme = JojoMemes[random.Next(JojoMemes.Length)];
+            var meme = jojoMemes[random.Next(jojoMemes.Length)];
             await ReplyAsync(meme);
         }
     }

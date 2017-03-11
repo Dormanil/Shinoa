@@ -7,17 +7,16 @@ using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Shinoa.Attributes;
 using SQLite;
 
-namespace Shinoa.Services
+namespace Shinoa.Services.TimedServices
 {
-    [Config("animefeed")]
-    public class AnimeFeedService : IService
+    public class AnimeFeedService : ITimedService
     {
         class AnimeFeedBinding
         {
@@ -30,7 +29,6 @@ namespace Shinoa.Services
         private HttpClient httpClient = new HttpClient {BaseAddress = new Uri("http://www.nyaa.se/")};
         private SQLiteConnection db;
         private DiscordSocketClient client;
-        private Timer refreshTimer;
 
         private Color moduleColor;
 
@@ -40,11 +38,9 @@ namespace Shinoa.Services
             db.CreateTable<AnimeFeedBinding>();
 
             client = map.Get<DiscordSocketClient>();
-
-            refreshTimer = new Timer(Callback, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string) config["refresh_rate"])));
         }
 
-        void Callback(object state)
+        async Task ITimedService.Callback()
         {
             var responseText = httpClient.HttpGet("?page=rss&user=64513");
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
@@ -83,7 +79,7 @@ namespace Shinoa.Services
             foreach (var embed in postStack)
             foreach (var channel in GetFromDb())
             {
-                channel.SendEmbedAsync(embed).Wait();
+                await channel.SendEmbedAsync(embed);
             }
         }
 

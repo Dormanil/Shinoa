@@ -9,12 +9,12 @@ namespace Shinoa
 {
     public class Logging
     {
-        static ITextChannel LoggingChannel;
+        static IMessageChannel loggingChannel;
 
         public static void Log(string message)
         {
             PrintWithTime(message);
-            LoggingChannel?.SendMessageAsync(message).GetAwaiter().GetResult();
+            loggingChannel?.SendMessageAsync(message).GetAwaiter().GetResult();
         }
 
         public static void LogMessage(ICommandContext context)
@@ -29,12 +29,10 @@ namespace Shinoa
             }
         }
 
-        public static void InitLoggingToChannel()
+        public static void InitLoggingToChannel(IMessageChannel channel)
         {
-            var loggingChannelId = Shinoa.Config["global"]["logging_channel_id"];
-            LoggingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(loggingChannelId));
-
-            LoggingChannel.SendMessageAsync("Logging initialized.");
+            loggingChannel = channel;
+            loggingChannel.SendMessageAsync("Logging initialized.");
         }
 
         private static void PrintWithTime(string line)

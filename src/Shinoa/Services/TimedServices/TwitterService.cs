@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using BoxKite.Twitter;
+using BoxKite.Twitter.Models;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using SQLite;
-using BoxKite.Twitter;
-using BoxKite.Twitter.Models;
 using Shinoa.Attributes;
+using SQLite;
 
-namespace Shinoa.Services
+namespace Shinoa.Services.TimedServices
 {
     [Config("twitter")]
-    public class TwitterService : IService
+    public class TwitterService : ITimedService
     {
         class TwitterBinding
         {
@@ -40,8 +40,7 @@ namespace Shinoa.Services
             public ICollection<IMessageChannel> Channels = new List<IMessageChannel>();
             public DateTimeOffset LatestPost = DateTimeOffset.UtcNow;
         }
-
-        private Timer refreshTimer;
+        
         private SQLiteConnection db;
         private DiscordSocketClient client;
         private ApplicationSession twitterSession;
@@ -59,15 +58,13 @@ namespace Shinoa.Services
             ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
 
             twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
-
-            refreshTimer = new Timer(Callback, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string)config["refresh_rate"])));
         }
 
-        void Callback(object state)
+        async Task ITimedService.Callback()
         {
             foreach (var user in GetFromDb())
             {
-                var response = twitterSession.GetUserTimeline(user.Username).Result;
+                var response = await twitterSession.GetUserTimeline(user.Username);
                 var newestCreationTime = response.FirstOrDefault()?.Time ?? DateTimeOffset.FromUnixTimeSeconds(0);
                 Stack<Embed> postStack = new Stack<Embed>();
 
@@ -92,7 +89,7 @@ namespace Shinoa.Services
                 foreach (var embed in postStack)
                 foreach (var channel in user.Channels)
                 {
-                    channel.SendEmbedAsync(embed).Wait();
+                    await channel.SendEmbedAsync(embed);
                 }
 
                 db.Update(new TwitterBinding
