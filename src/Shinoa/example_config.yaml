@@ -40,3 +40,6 @@ reddit:
 
     filter_keywords: []
     refresh_rate: 30
+
+animefeed:
+    refresh_rate: 30
