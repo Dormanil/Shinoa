@@ -9,9 +9,11 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CSharp.RuntimeBinder;
 using Shinoa.Attributes;
 using Shinoa.Services;
 using Shinoa.Services.TimedServices;
+using SQLite.Extensions;
 
 namespace Shinoa
 {
@@ -29,7 +31,7 @@ namespace Shinoa
         private static readonly OpaqueDependencyMap Map = new OpaqueDependencyMap();
         private static SQLiteConnection databaseConnection;
         private static Timer globalRefreshTimer;
-        private static readonly List<Func<Task>> Callbacks = new List<Func<Task>>();
+        private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
 
         public static void Main(string[] args) =>
             StartAsync().GetAwaiter().GetResult();
@@ -84,10 +86,23 @@ namespace Shinoa
             {
                 await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
                 await Client.SetGameAsync(Config["global"]["default_game"]);
-                var loggingChannel = Client.GetChannel(ulong.Parse(Config["global"]["logging_channel_id"])) as IMessageChannel;
-                await Logging.InitLoggingToChannel(loggingChannel);
+                try
+                {
+                    var loggingChannel =
+                        Client.GetChannel(ulong.Parse(Config["global"]["logging_channel_id"])) as IMessageChannel;
+                    await Logging.InitLoggingToChannel(loggingChannel);
+                }
+                catch (KeyNotFoundException)
+                {
+                    await Logging.LogError("The property was not found on the dynamic object. No logging channel was supplied.");
+                }
+                catch (Exception e)
+                {
+                    await Logging.LogError(e.ToString());
+                }
+                
 
-                await Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
+                await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
             };
             Client.MessageReceived += async (message) =>
             {
@@ -132,6 +147,10 @@ namespace Shinoa
                     {
                         config = configAttr?.ConfigName != null ? Config[configAttr.ConfigName] : null;
                     }
+                    catch (KeyNotFoundException)
+                    {
+                        Logging.LogError($"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.").Wait();
+                    }
                     catch (Exception e)
                     {
                         Logging.LogError(e.ToString()).GetAwaiter().GetResult();
@@ -140,16 +159,16 @@ namespace Shinoa
                     instance.Init(config, Map);
                     if (instance is ITimedService timedService)
                     {
-                        Callbacks.Add(timedService.Callback);
+                        Callbacks.TryAdd(service.UnderlyingSystemType, timedService.Callback);
                         Logging.Log($"Service \"{service.Name}\" added to callbacks").GetAwaiter().GetResult();
                     }
                     Logging.Log($"Loaded service \"{service.Name}\"").GetAwaiter().GetResult();
-                    Map.AddOpaque(instance);
+                    Map.TryAddOpaque(instance);
                 }
 
                 globalRefreshTimer = new Timer(async (s) =>
                 {
-                    foreach (var callback in Callbacks)
+                    foreach (var callback in Callbacks.Values)
                     {
                         try
                         {
@@ -157,7 +176,7 @@ namespace Shinoa
                         }
                         catch (Exception e)
                         {
-                            Logging.LogError(e.ToString()).GetAwaiter().GetResult();
+                            await Logging.LogError(e.ToString());
                         }
                     }
                 }, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string) Config["global"]["refresh_rate"])));

@@ -57,7 +57,7 @@ namespace Shinoa.Modules
         }
 
         [Command("sauce"), Alias("source", "saucenao")]
-        public async Task SAOWikiaSearch(string url = "")
+        public async Task SauceSearch(string url = "")
         {
             var responseMessage = ReplyAsync("Searching...").Result;
             var imageUrl = url == "" ? await FindRelevantImageURLAsync() : url;

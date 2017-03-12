@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using BoxKite.Twitter;
 using BoxKite.Twitter.Models;
@@ -60,7 +59,17 @@ namespace Shinoa.Services.TimedServices
             {
                 ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]),
                     byte.Parse(config["color"][2]));
-            } catch(Exception) { }
+            }
+            catch (KeyNotFoundException)
+            {
+                Logging.LogError(
+                        "TwitterService.Init(): The property was not found on the dynamic object. No colors were supplied.")
+                    .Wait();
+            }
+            catch (Exception e)
+            {
+                Logging.LogError(e.ToString()).Wait();
+            }
 
             twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
         }

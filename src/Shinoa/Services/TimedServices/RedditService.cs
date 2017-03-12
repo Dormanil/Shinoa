@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -63,9 +61,19 @@ namespace Shinoa.Services.TimedServices
             ModuleColor = new Color(255,152, 0);
             try
             {
-                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]),
+                    byte.Parse(config["color"][2]));
             }
-            catch(Exception) { }
+            catch (KeyNotFoundException)
+            {
+                Logging.LogError(
+                        "RedditService.Init: The property was not found on the dynamic object. No colors were supplied.")
+                    .Wait();
+            }
+            catch (Exception e)
+            {
+                Logging.LogError(e.ToString()).Wait();
+            }
         }
 
         async Task ITimedService.Callback()

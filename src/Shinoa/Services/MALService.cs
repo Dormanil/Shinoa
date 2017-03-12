@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Discord;
 using Discord.Commands;
+using Microsoft.CSharp.RuntimeBinder;
 using Shinoa.Attributes;
 
 namespace Shinoa.Services
@@ -134,9 +135,19 @@ namespace Shinoa.Services
             ModuleColor = new Color(63, 81, 181);
             try
             {
-                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]),
+                    byte.Parse(config["color"][2]));
             }
-            catch(Exception) { }
+            catch (KeyNotFoundException)
+            {
+                Logging.LogError(
+                        "MALService.Init: The property was not found on the dynamic object. No colors were supplied.")
+                    .Wait();
+            }
+            catch(Exception e)
+            {
+                Logging.LogError(e.ToString()).Wait();
+            }
         }
 
 
@@ -198,6 +209,7 @@ namespace Shinoa.Services
             }
             catch (Exception)
             {
+                Logging.LogError($"Could not find anime \"{searchQuery}\"").Wait();
                 return null;
             }
         }
@@ -242,6 +254,7 @@ namespace Shinoa.Services
             }
             catch (Exception)
             {
+                Logging.LogError($"Could not find manga \"{searchQuery}\"").Wait();
                 return null;
             }
         }

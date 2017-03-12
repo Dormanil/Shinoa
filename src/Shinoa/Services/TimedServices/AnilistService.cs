@@ -110,9 +110,19 @@ namespace Shinoa.Services.TimedServices
 
             try
             {
-                moduleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                moduleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]),
+                    byte.Parse(config["color"][2]));
             }
-            catch(Exception) { }
+            catch (KeyNotFoundException)
+            {
+                Logging.LogError(
+                        "AnilistService.Init: The property was not found on the dynamic object. No colors were supplied.")
+                    .Wait();
+            }
+            catch (Exception e)
+            {
+                Logging.LogError(e.ToString()).Wait();
+            }
         }
 
         async Task<AnimeResult> GetAnime(string query)
@@ -166,6 +176,7 @@ namespace Shinoa.Services.TimedServices
             }
             catch (Exception)
             {
+                Logging.LogError($"Could not find anime \"{query}\"").Wait();
                 return null;
             }
         }
