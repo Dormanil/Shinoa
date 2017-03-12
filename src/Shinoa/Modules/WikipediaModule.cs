@@ -2,7 +2,6 @@
 using Discord.Commands;
 using Microsoft.CSharp.RuntimeBinder;
 using Newtonsoft.Json;
-using Shinoa.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,19 +10,20 @@ using System.Threading.Tasks;
 
 namespace Shinoa.Modules
 {
-    public class WikipediaModule : Abstract.Module
+    public class WikipediaModule : ModuleBase<SocketCommandContext>
     {
         public static Color MODULE_COLOR = new Color(33, 150, 243);
         HttpClient httpClient = new HttpClient();
         
-        [@Command("wiki", "wikipedia", "wikisearch")]
-        public async Task WikipediaSearch(CommandContext c, params string[] args)
+        [Command("wiki"), Alias("wikipedia", "wikisearch")]
+        public async Task WikipediaSearch([Remainder]string queryText)
         {
-            var queryText = GetCommandParametersAsString(c.Message.Content);
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var responseMessageTask = ReplyAsync("Searching...");
 
             var responseText = httpClient.HttpGet($"https://en.wikipedia.org/w/api.php?action=opensearch&search={queryText}");
             dynamic responseObject = JsonConvert.DeserializeObject(responseText);
+
+            var responseMessage = await responseMessageTask;
 
             try
             {

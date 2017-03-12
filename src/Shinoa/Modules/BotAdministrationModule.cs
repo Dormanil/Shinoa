@@ -5,68 +5,73 @@ using System.Threading.Tasks;
 using Discord;
 using System.Net.Http;
 using System.IO;
+using System.Net;
 using Discord.Commands;
-using Shinoa.Attributes;
+using Discord.WebSocket;
 
 namespace Shinoa.Modules
 {
-    public class BotAdministrationModule : Abstract.Module
+    public class BotAdministrationModule : ModuleBase<SocketCommandContext>
     {
-        [@Command("setavatar", "avatar")]
-        public async Task SetAvatar(CommandContext c, params string[] args)
+        private readonly DiscordSocketClient client;
+        private readonly CommandService commandService;
+
+        public BotAdministrationModule(DiscordSocketClient clnt, CommandService commandSvc)
         {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
+            client = clnt;
+            commandService = commandSvc;
+        }
+
+        [Command("setavatar"), Alias("avatar"), RequireOwner]
+        public async Task SetAvatar(string url)
+        {
+            var splitLink = System.Text.RegularExpressions.Regex.Match(url, @"(\S+)\/(\S+)").Groups;
+            if (!splitLink[0].Success) return;
+            var handler = new HttpClientHandler
             {
-                var stream = new HttpClient().GetAsync(args[0]).Result.Content.ReadAsStreamAsync().Result;
-                await Shinoa.DiscordClient.CurrentUser.ModifyAsync(p => p.Avatar = new Image(stream));
+                AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+            }; 
+            var stream = await (await new HttpClient (handler) { BaseAddress = new Uri(splitLink[1].Value) }.GetAsync(splitLink[2].Value))
+                .Content.ReadAsStreamAsync();
+            await client.CurrentUser.ModifyAsync(p =>
+            {
+                p.Avatar = new Image(stream);
+            });
+        }
+
+        [Command("setplaying"), Alias("setstatus", "game", "status"), RequireOwner]
+        public async Task SetPlaying([Remainder]string game)
+        {
+            await client.SetGameAsync(game);
+        }
+
+        [Command("stats"), Alias("diag", "statistics"), RequireOwner]
+        public async Task GetStats()
+        {
+            await ReplyAsync(GenerateStatsMessage());
+        }
+
+        [Command("announce"), Alias("announcement", "global"), RequireOwner]
+        public async Task Announce([Remainder]string announcement)
+        {
+            foreach (IGuild server in client.Guilds)
+            {
+                await (await server.GetDefaultChannelAsync()).SendMessageAsync($"**Announcement:** {announcement}");
             }
         }
 
-        [@Command("setplaying", "setstatus", "game", "status")]
-        public async Task SetPlaying(CommandContext c, params string[] args)
+        [Command("say"), RequireOwner, RequireBotPermission(ChannelPermission.ManageMessages)]
+        public async Task Say([Remainder]string message)
         {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-            {
-                await Shinoa.DiscordClient.SetGameAsync(args.ToRemainderString());
-            }
+            var replyTask = ReplyAsync(message);
+            if(Context.Channel is IGuildChannel) await Context.Message.DeleteAsync();
+            await replyTask;
         }
 
-        [@Command("stats", "diag", "statistics")]
-        public async Task GetStats(CommandContext c, params string[] args)
+        [Command("invite"), RequireOwner]
+        public async Task GetInviteLink()
         {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-            {
-                await c.Channel.SendMessageAsync(GenerateStatsMessage());
-            }
-        }
-
-        [@Command("announce", "announcement", "global")]
-        public async Task Announce(CommandContext c, params string[] args)
-        {
-            if (c.User.Id != ulong.Parse(Shinoa.Config["owner_id"])) return;
-            var announcement = args.ToRemainderString();
-            foreach (var server in Shinoa.DiscordClient.Guilds)
-                await server.DefaultChannel.SendMessageAsync($"**Announcement:** {announcement}");
-        }
-
-        [@Command("say")]
-        public async Task Say(CommandContext c, params string[] args)
-        {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-            {
-                var message = args.ToRemainderString();
-                await c.Message.DeleteAsync();
-                await c.Channel.SendMessageAsync(message);
-            }
-        }
-
-        [@Command("invite")]
-        public async Task GetInviteLink(CommandContext c, params string[] args)
-        {
-            if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
-            {
-                await c.Channel.SendMessageAsync($"Invite link for {Shinoa.DiscordClient.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={Shinoa.DiscordClient.GetApplicationInfoAsync().Id}&scope=bot");
-            }
+            await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot&permissions=8");
         }
 
         string GenerateStatsMessage()
@@ -82,27 +87,9 @@ namespace Shinoa.Modules
             output += $"Uptime: {uptimeString}\n\n";
 
             output += "Running modules:\n\n```";
-            foreach (var module in Shinoa.RunningModules)
+            foreach (var module in commandService.Modules)
             {
-                output += $"{module.GetType().Name}\n";
-                var indentedDetailedStats = "";
-
-                if (module.DetailedStats == null) continue;
-                using (StringReader reader = new StringReader(module.DetailedStats))
-                {
-                    string line = string.Empty;
-                    do
-                    {
-                        line = reader.ReadLine();
-                        if (line != null)
-                        {
-                            indentedDetailedStats += "  " + line + '\n';
-                        }
-
-                    } while (line != null);
-                }
-
-                output += $"{indentedDetailedStats}\n";
+                output += $"{module.Name}\n";
             }
             output += "```";
 

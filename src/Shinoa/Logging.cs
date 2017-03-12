@@ -10,7 +10,7 @@
     /// </summary>
     public static class Logging
     {
-        private static ITextChannel loggingChannel;
+        static IMessageChannel loggingChannel;
 
         /// <summary>
         /// Logs a specific string, as given in message.
@@ -19,8 +19,7 @@
         public static async Task Log(string message)
         {
             PrintWithTime(message);
-            var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
-            if (sendMessageAsync != null) await sendMessageAsync;
+            loggingChannel?.SendMessageAsync(message).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -57,7 +56,7 @@
         /// <param name="context">The context of the command.</param>
         public static async Task LogMessage(CommandContext context)
         {
-            await Log(!context.IsPrivate
+            await Log(!(context.Channel is IPrivateChannel)
                 ? $"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content}"
                 : $"[PM] {context.User.Username}: {context.Message.Content}");
         }

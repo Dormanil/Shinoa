@@ -7,28 +7,22 @@ using Newtonsoft.Json;
 using Microsoft.CSharp.RuntimeBinder;
 using System.Net.Http;
 using Discord.Commands;
-using Shinoa.Attributes;
 
 namespace Shinoa.Modules
 {
-    public class SAOWikiaModule : Abstract.Module
+    public class SAOWikiaModule : ModuleBase<SocketCommandContext>
     {
-        HttpClient httpClient = new HttpClient();
+        HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/") };
 
-        public override void Init()
+        [Command("sao"), Alias("saowiki", "saowikia")]
+        public async Task SAOWikiaSearch([Remainder]string queryText)
         {
-            httpClient.BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/");
-        }
-
-        [@Command("sao", "saowiki", "saowikia")]
-        public async Task SAOWikiaSearch(CommandContext c, params string[] args)
-        {
-            var queryText = args.ToRemainderString();
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var responseMessageTask = ReplyAsync("Searching...");
 
             var httpResponseText = httpClient.HttpGet($"Search/List/?query={queryText}");
-
             dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
+
+            var responseMessage = await responseMessageTask;
 
             try
             {
@@ -42,7 +36,6 @@ namespace Shinoa.Modules
             catch (ArgumentException)
             {
                 await responseMessage.ModifyAsync(p => p.Content = "Search returned no results.");
-
             }
             catch (RuntimeBinderException)
             {
@@ -50,8 +43,8 @@ namespace Shinoa.Modules
             }
             catch (Exception ex)
             {
-                await responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
-                await Logging.Log(ex.ToString());
+               await responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
+               await Logging.Log(ex.ToString());
             }
         }
     }

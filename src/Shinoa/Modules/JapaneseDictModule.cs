@@ -1,26 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
-using Newtonsoft.Json;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Discord.Commands;
-using Shinoa.Attributes;
+using Newtonsoft.Json;
 
 namespace Shinoa.Modules
 {
-    public class JapaneseDictModule : Abstract.Module
+    public class JapaneseDictModule : ModuleBase<SocketCommandContext>
     {
-        HttpClient httpClient = new HttpClient();
+        static readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };
 
-        [@Command("jp", "jisho", "jpdict", "japanese")]
-        public async Task JishoSearch(CommandContext c, params string[] args)
+        [Command("jp"), Alias("jisho", "jpdict", "japanese")]
+        public async Task JishoSearch([Remainder] string term)
         {
-            var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var httpResponseText = httpClient.HttpGet($"http://jisho.org/api/v1/search/words?keyword={args.ToRemainderString()}");
+            var httpResponseText = httpClient.HttpGet($"words?keyword={term}");
             dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
+
+            var responseMessage = await responseMessageTask;
 
             try
             {
@@ -38,7 +36,7 @@ namespace Shinoa.Modules
                     else if (wordReading != null) responseText += $"**{wordReading}**, ";
                 }
 
-                responseText = responseText.Trim(new char[] { ',', ' ' });
+                responseText = responseText.Trim(',', ' ');
                 responseText += '\n';
 
                 foreach (var sense in firstResult["senses"])
@@ -50,7 +48,7 @@ namespace Shinoa.Modules
                         responseText += $"{definition}, ";
                     }
 
-                    responseText = responseText.Trim(new char[] { ',', ' ' });
+                    responseText = responseText.Trim(',', ' ');
 
                     if (sense["parts_of_speech"].Count > 0)
                     {
@@ -61,7 +59,7 @@ namespace Shinoa.Modules
                             responseText += $"{part.ToLower()}, ";
                         }
 
-                        responseText = responseText.Trim(new char[] { ',', ' ' });
+                        responseText = responseText.Trim(',', ' ');
 
                         responseText += ")";
                     }
@@ -69,7 +67,7 @@ namespace Shinoa.Modules
                     responseText += '\n';
                 }
 
-                responseText += $"\nSee more: <http://jisho.org/search/{System.Uri.EscapeUriString(args.ToRemainderString())}>";
+                responseText += $"\nSee more: <http://jisho.org/search/{Uri.EscapeUriString(term)}>";
 
                 await responseMessage.ModifyAsync(p => p.Content = responseText);
             }
