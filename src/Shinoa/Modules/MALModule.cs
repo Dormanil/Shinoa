@@ -44,7 +44,7 @@ namespace Shinoa.Modules
         }
 
         [Command("manga"), Alias("ln", "malmanga")]
-        public async Task MALMangaSearch(string name)
+        public async Task MALMangaSearch([Remainder]string name)
         {
             var responseMessageTask = ReplyAsync("Searching...");
 

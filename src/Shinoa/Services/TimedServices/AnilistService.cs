@@ -85,7 +85,7 @@ namespace Shinoa.Services.TimedServices
         private string clientId;
         private string clientSecret;
         private string accessToken = "";
-        private Color moduleColor;
+        private Color moduleColor = new Color(2, 169, 255);
 
         async Task ITimedService.Callback()
         {
@@ -108,7 +108,11 @@ namespace Shinoa.Services.TimedServices
             clientId = config["client_id"];
             clientSecret = config["client_secret"];
 
-            moduleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            try
+            {
+                moduleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            }
+            catch(Exception) { }
         }
 
         async Task<AnimeResult> GetAnime(string query)

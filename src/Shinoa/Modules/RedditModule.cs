@@ -7,15 +7,9 @@ using Shinoa.Services.TimedServices;
 
 namespace Shinoa.Modules
 {
-    //TODO: Finish migrate
+    [Group("reddit")]
     public class RedditModule : ModuleBase<SocketCommandContext>
     {
-        public enum RedditOption
-        {
-            Add,
-            Remove,
-            List
-        }
 
         private readonly RedditService service;
 
@@ -24,57 +18,45 @@ namespace Shinoa.Modules
             service = svc;
         }
 
-        [Command("reddit"), RequireGuildUserPermission(GuildPermission.ManageGuild)]
-        public async Task RedditManagement(RedditOption option, string subredditName = "")
+        [Command("add"), RequireGuildUserPermission(GuildPermission.ManageGuild)]
+        public async Task Add(string subredditName)
         {
-            subredditName = subredditName.Replace("r/", "").Replace("/", "");
-            if (option != RedditOption.List && subredditName == "")
+            if (service.AddBinding(subredditName, Context.Channel))
             {
-                await ReplyAsync("Subreddit name required.");
-                return;
+                await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
             }
-
-            switch (option)
+            else
             {
-                case RedditOption.Add:
-                {
+                await ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
+            }
+        }
 
-                    if (service.AddBinding(subredditName, Context.Channel))
-                    {
-                        await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
-                    }
-                    else
-                    {
-                        await ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
-                    }
-                }
-                    break;
-                case RedditOption.Remove:
-                {
+        [Command("remove"), RequireGuildUserPermission(GuildPermission.ManageGuild)]
+        public async Task Remove(string subredditName)
+        {
+            if (service.RemoveBinding(subredditName, Context.Channel))
+            {
+                await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
+            }
+            else
+            {
+                await ReplyAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{Context.Channel.Name}).");
+            }
+        }
 
-                    if (service.RemoveBinding(subredditName, Context.Channel))
-                    {
-                        await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
-                    }
-                    else
-                    {
-                        await ReplyAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{Context.Channel.Name}).");
-                    }
-                }
-                    break;
-                case RedditOption.List:
-                    var response = service.GetBindings(Context.Channel)
+        [Command("list")]
+        public async Task List()
+        {
+            var response = service.GetBindings(Context.Channel)
                         .Aggregate("", (current, binding) => current + $"/r/{binding.SubredditName}\n");
 
-                    if (response == "") response = "N/A";
+            if (response == "") response = "N/A";
 
-                    var embed = new EmbedBuilder()
-                        .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
-                        .WithColor(service.ModuleColor);
+            var embed = new EmbedBuilder()
+                .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
+                .WithColor(service.ModuleColor);
 
-                    await ReplyAsync("", embed: embed.Build());
-                    break;
-            }
+            await ReplyAsync("", embed: embed.Build());
         }
     }
 }

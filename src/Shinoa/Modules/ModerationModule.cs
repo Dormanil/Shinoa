@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Shinoa.Services;
 
 namespace Shinoa.Modules
 {
@@ -77,86 +78,83 @@ namespace Shinoa.Modules
             await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
         }
 
-        public enum StopSetting
+        [Group("stop")]
+        public class StopModule : ModuleBase<SocketCommandContext>
         {
-            On,
-            Off
-        }
-
-        [Command("stop"), RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task StopChannel(StopSetting setting)
-        {
-            var channel = Context.Channel as IGuildChannel;
-
-            switch (setting)
+            [Command("on"), RequireUserPermission(GuildPermission.ManageChannels)]
+            public async Task On()
             {
-                case StopSetting.On:
-                {
-                    var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
-                    await ReplyAsync("", embed: embed.Build());
-                    await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
-                    await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
-                }
-                    break;
-                case StopSetting.Off:
-                {
-                    await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                    await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                    var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
-                    await ReplyAsync("", embed: embed.Build());
-                }
-                    break;
+                var channel = Context.Channel as IGuildChannel;
+
+                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
+                await ReplyAsync("", embed: embed.Build());
+                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny));
+                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
+            }
+
+            [Command("off"), RequireUserPermission(GuildPermission.ManageChannels)]
+            public async Task Off()
+            {
+                var channel = Context.Channel as IGuildChannel;
+
+                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
+                await ReplyAsync("", embed: embed.Build());
             }
         }
 
-        //TODO: Migrate
-        public async Task HandleMessage(CommandContext context)
+        [Group("imagespam")]
+        public class ImageSpamModule : ModuleBase<SocketCommandContext>
         {
-            try
+            private ModerationService service;
+
+            public ImageSpamModule(ModerationService svc)
             {
-                if (context.Channel.Id == context.Guild?.DefaultChannelId && context.Message.Attachments.Count > 0)
+                service = svc;
+            }
+
+            [Command("block"), RequireUserPermission(GuildPermission.ManageChannels)]
+            public async Task Block()
+            {
+                var channel = Context.Channel as ITextChannel;
+                if (service.AddBinding(channel))
                 {
-                    var imagesCounter = 0;
-                    context.Channel.GetMessagesAsync(limit: 50).ForEach(mlist =>
-                    {
-                        foreach (var message in mlist.ToList().OrderByDescending(o => o.Timestamp))
-                        {
-                            var timeDifference = DateTimeOffset.Now - message.Timestamp;
-                            if (timeDifference.TotalSeconds < 15)
-                            {
-                                if (message.Attachments.Count > 0 && message.Author.Id == context.User.Id)
-                                {
-                                    imagesCounter++;
-                                }
-                            }
-                        }
-                    });
-
-                    if (imagesCounter > 2)
-                    {
-                        await context.Message.DeleteAsync();
-                        await context.Channel.SendMessageAsync($"{context.User.Mention} Your message has been removed for being image spam. You have been preventively muted.");
-
-                        IRole mutedRole = null;
-                        foreach (var role in context.Guild.Roles)
-                        {
-                            if (role.Name.ToLower().Contains("muted"))
-                            {
-                                mutedRole = role;
-                                break;
-                            }
-                        }
-
-                        await (context.User as SocketGuildUser).AddRolesAsync(mutedRole);
-                        await Task.Delay(5 * 60 * 1000);
-                        await (context.User as SocketGuildUser).RemoveRolesAsync(mutedRole);
-                        await context.Channel.SendMessageAsync($"User {context.User.Mention} has been unmuted automatically.");
-                    }
+                    await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
+                }
+                else
+                {
+                    await ReplyAsync("Image spam in this channel is already blocked.");
                 }
             }
-            catch (HttpException)
+
+            [Command("unblock"), RequireUserPermission(GuildPermission.ManageChannels)]
+            public async Task Unblock()
             {
-                return;
+                var channel = Context.Channel as ITextChannel;
+                if (service.RemoveBinding(channel))
+                {
+                    await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
+                }
+                else
+                {
+                    await ReplyAsync("Image spam in this channel was not blocked.");
+                }
+            }
+
+            [Command("check")]
+            public async Task Check()
+            {
+                var channel = Context.Channel as ITextChannel;
+                if (service.CheckBinding(channel))
+                {
+                    await ReplyAsync(
+                        "Image spam in this channel is blocked. Send more than three images within 15 seconds will get you muted.");
+                }
+                else
+                {
+                    await ReplyAsync("Image spam in this channel is not restricted.");
+                }
             }
         }
     }
