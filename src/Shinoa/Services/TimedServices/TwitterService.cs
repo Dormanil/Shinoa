@@ -55,7 +55,12 @@ namespace Shinoa.Services.TimedServices
 
             client = map.Get<DiscordSocketClient>();
             
-            ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            ModuleColor  = new Color(33, 155, 243);
+            try
+            {
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]),
+                    byte.Parse(config["color"][2]));
+            } catch(Exception) { }
 
             twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
         }

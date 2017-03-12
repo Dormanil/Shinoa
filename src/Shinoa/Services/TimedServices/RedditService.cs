@@ -60,7 +60,12 @@ namespace Shinoa.Services.TimedServices
             compactKeywords = ((List<object>)config["compact_keywords"]).Cast<string>().ToArray();
             filterKeywords = ((List<object>)config["filter_keywords"]).Cast<string>().ToArray();
 
-            ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            ModuleColor = new Color(255,152, 0);
+            try
+            {
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            }
+            catch(Exception) { }
         }
 
         async Task ITimedService.Callback()

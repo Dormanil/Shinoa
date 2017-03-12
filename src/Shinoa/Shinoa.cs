@@ -102,9 +102,6 @@ namespace Shinoa
                 string responseMessage = string.Empty;
                 switch (res.Error)
                 {
-                    case CommandError.UnknownCommand:
-                        responseMessage = "Unknown Command.";
-                        break;
                     case CommandError.ParseFailed:
                         responseMessage = "The argument did not meet the requirements.";
                         break;

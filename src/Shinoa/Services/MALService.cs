@@ -131,7 +131,12 @@ namespace Shinoa.Services
         {
             httpClient.SetBasicHttpCredentials((string)config["username"], (string)config["password"]);
 
-            ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            ModuleColor = new Color(63, 81, 181);
+            try
+            {
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+            }
+            catch(Exception) { }
         }
 
 

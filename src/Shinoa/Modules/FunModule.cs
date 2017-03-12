@@ -111,22 +111,6 @@ namespace Shinoa.Modules
 
         public static Color MODULE_COLOR = new Color(63, 81, 181);
 
-        //TODO: Migrate
-        /*public void HandleMessage(CommandContext context)
-        {
-            if (context.User.Id != Shinoa.DiscordClient.CurrentUser.Id)
-            {
-                if (context.Message.Content == @"o/")
-                    context.Channel.SendMessageAsync(@"\o");
-                else if (context.Message.Content == @"\o")
-                    context.Channel.SendMessageAsync(@"o/");
-                else if (context.Message.Content == @"/o/")
-                    context.Channel.SendMessageAsync(@"\o\");
-                else if (context.Message.Content == @"\o\")
-                    context.Channel.SendMessageAsync(@"/o/");
-            }
-        }*/
-
         [Command("pick"), Alias("choose")]
         public async Task Pick([Remainder]string args)
         {
