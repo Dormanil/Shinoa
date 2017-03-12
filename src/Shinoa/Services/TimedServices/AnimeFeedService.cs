@@ -23,14 +23,14 @@ namespace Shinoa.Services.TimedServices
             [PrimaryKey]
             public string ChannelId { get; set; }
 
-            public DateTimeOffset LatestPost { get; set; }
+            public static DateTimeOffset LatestPost = DateTimeOffset.UtcNow;
         }
 
         private HttpClient httpClient = new HttpClient {BaseAddress = new Uri("http://www.nyaa.se/")};
         private SQLiteConnection db;
         private DiscordSocketClient client;
 
-        private Color moduleColor;
+        private static readonly Color moduleColor = new Color(0, 150, 136);
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
@@ -60,6 +60,7 @@ namespace Shinoa.Services.TimedServices
             {
                 var creationTime = new DateTimeOffset(DateTime.ParseExact
                     (entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value, "ddd, dd MMM yyyy H:m:s zzz", CultureInfo.InvariantCulture));
+                if (creationTime <= AnimeFeedBinding.LatestPost) break;
 
                 var title = entry.Elements().First(i => i.Name.LocalName == "title").Value;
 
@@ -75,6 +76,8 @@ namespace Shinoa.Services.TimedServices
 
                 postStack.Push(embed.Build());
             }
+
+            if (newestCreationTime > AnimeFeedBinding.LatestPost) AnimeFeedBinding.LatestPost = newestCreationTime;
 
             foreach (var embed in postStack)
             foreach (var channel in GetFromDb())
@@ -99,8 +102,7 @@ namespace Shinoa.Services.TimedServices
 
             db.Insert(new AnimeFeedBinding
             {
-                ChannelId = channel.Id.ToString(),
-                LatestPost = DateTimeOffset.UtcNow
+                ChannelId = channel.Id.ToString()
             });
             return true;
         }
