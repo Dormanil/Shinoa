@@ -87,12 +87,7 @@ namespace Shinoa
 
         public static string ToRemainderString(this string[] array)
         {
-            var output = "";
-
-            foreach (var word in array)
-            {
-                output += word + " ";
-            }
+            var output = array.Aggregate("", (current, word) => current + (word + " "));
 
             output = output.Trim();
 

@@ -14,16 +14,36 @@ namespace Shinoa.Modules
 
         public override void HandleMessage(CommandContext context)
         {
-            if (context.User.Id != Shinoa.DiscordClient.CurrentUser.Id)
+            if (context.User.Id == Shinoa.DiscordClient.CurrentUser.Id) return;
+            switch (context.Message.Content)
             {
-                if (context.Message.Content == @"o/")
+                case @"o/":
                     context.Channel.SendMessageAsync(@"\o");
-                else if (context.Message.Content == @"\o")
+                    break;
+                case @"\o":
                     context.Channel.SendMessageAsync(@"o/");
-                else if (context.Message.Content == @"/o/")
+                    break;
+                case @"/o/":
                     context.Channel.SendMessageAsync(@"\o\");
-                else if (context.Message.Content == @"\o\")
+                    break;
+                case @"\o\":
                     context.Channel.SendMessageAsync(@"/o/");
+                    break;
+                default:
+                    if (context.Message.Content.ToLower() == "wake me up")
+                        context.Channel.SendMessageAsync($"_Wakes {context.User.Username} up inside._");
+                    else if (context.Message.Content.ToLower().StartsWith("wake") &&
+                             context.Message.Content.ToLower().EndsWith("up"))
+                    {
+                        var messageArray = context.Message.Content.Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries)
+                            .Skip(1)
+                            .Reverse()
+                            .Skip(1)
+                            .Reverse();
+
+                        context.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate("", (current, word) => current + (word + " ")).Trim()} up inside._");
+                    }
+                    break;
             }
         }
 

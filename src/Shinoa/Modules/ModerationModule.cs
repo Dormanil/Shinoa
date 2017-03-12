@@ -29,7 +29,21 @@ namespace Shinoa.Modules
 
                 var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
                 c.Guild.AddBanAsync(user);
-                c.Channel.SendMessageAsync($"User {user.Username} has been banned by {c.User.Mention}.");
+                var banmessage = c.Message.Content;
+                string blurb;
+                if (banmessage.StartsWith($"{Shinoa.Config["command_prefix"]}gulag"))
+                {
+                    blurb = "was sent to work in a Sibirian gulag on orders of";
+                }
+                else if (banmessage.StartsWith($"{Shinoa.Config["command_prefix"]}getout"))
+                {
+                    blurb = "found their way out thanks to";
+                }
+                else
+                {
+                    blurb = "was banned by";
+                }
+                c.Channel.SendMessageAsync($"User {user.Username} {blurb} {c.User.Mention}.");
             }
             else
             {
@@ -150,7 +164,7 @@ namespace Shinoa.Modules
                 }
             }
         }
-
+        /*
         public override async void HandleMessage(CommandContext context)
         {
             try
@@ -200,5 +214,6 @@ namespace Shinoa.Modules
                 return;
             }
         }
+        */
     }
 }
