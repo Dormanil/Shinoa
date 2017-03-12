@@ -20,8 +20,8 @@ namespace Shinoa
         private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
 
         public static DateTime StartTime = DateTime.Now;
-        public const string Version = "2.3.0.K";
-        public static readonly string VersionString = $"Shinoa v{Version}, built by OmegaVesko & Kazumi";
+        public const string Version = "2.5.1K";
+        public static readonly string VersionString = $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
 
         public static dynamic Config;
         public static readonly DiscordSocketClient Client = new DiscordSocketClient();
@@ -84,7 +84,8 @@ namespace Shinoa
             {
                 await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
                 await Client.SetGameAsync(Config["global"]["default_game"]);
-                await Logging.InitLoggingToChannel();
+                var loggingChannel = Client.GetChannel(ulong.Parse(Config["global"]["logging_channel_id"])) as IMessageChannel;
+                await Logging.InitLoggingToChannel(loggingChannel);
 
                 await Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
             };
@@ -124,7 +125,7 @@ namespace Shinoa
                     await contextSock.Channel.SendMessageAsync(responseMessage);
                 }
             };
-            Client.Ready += async () =>
+            Client.Ready += () =>
             {
                 foreach (var service in services)
                 {
@@ -134,15 +135,18 @@ namespace Shinoa
                     {
                         config = configAttr?.ConfigName != null ? Config[configAttr.ConfigName] : null;
                     }
-                    catch(Exception) { }
+                    catch (Exception e)
+                    {
+                        Logging.LogError(e.ToString()).GetAwaiter().GetResult();
+                    }
                     var instance = (IService) Activator.CreateInstance(service.UnderlyingSystemType);
                     instance.Init(config, Map);
                     if (instance is ITimedService timedService)
                     {
                         Callbacks.Add(timedService.Callback);
-                        await Logging.Log($"Service \"{service.Name}\" added to callbacks");
+                        Logging.Log($"Service \"{service.Name}\" added to callbacks").GetAwaiter().GetResult();
                     }
-                    await Logging.Log($"Loaded service \"{service.Name}\"");
+                    Logging.Log($"Loaded service \"{service.Name}\"").GetAwaiter().GetResult();
                     Map.AddOpaque(instance);
                 }
 
@@ -156,10 +160,11 @@ namespace Shinoa
                         }
                         catch (Exception e)
                         {
-                            await Logging.Log(e.ToString());
+                            Logging.LogError(e.ToString()).GetAwaiter().GetResult();
                         }
                     }
                 }, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string) Config["global"]["refresh_rate"])));
+                return Task.CompletedTask;
             };
             #endregion
 

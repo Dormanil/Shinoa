@@ -65,11 +65,9 @@
         /// <summary>
         /// Initialises logging to a specific Discord Channel.
         /// </summary>
-        public static async Task InitLoggingToChannel()
+        public static async Task InitLoggingToChannel(IMessageChannel channel)
         {
-            var loggingChannelId = Shinoa.Config["global"]["logging_channel_id"];
-            loggingChannel = Shinoa.Client?.GetChannel(ulong.Parse(loggingChannelId));
-
+            loggingChannel = channel;
             var sendMessageAsync = loggingChannel?.SendMessageAsync("Logging initialized.");
             if (sendMessageAsync != null)
                 await sendMessageAsync;

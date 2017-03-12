@@ -16,7 +16,7 @@ namespace Shinoa.Modules
             List
         }
 
-        private TwitterService service;
+        public TwitterService service;
 
         public TwitterModule(TwitterService svc)
         {
