@@ -100,7 +100,7 @@ namespace Shinoa.Modules
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Manage Server");
+                await c.Channel.SendPermissionErrorAsync("Manage Server");
             }
         }
 

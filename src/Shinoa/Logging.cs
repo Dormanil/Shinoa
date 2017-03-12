@@ -37,7 +37,7 @@
                 Author =
                     new EmbedAuthorBuilder()
                     {
-                        IconUrl = Shinoa.DiscordClient.CurrentUser.AvatarUrl,
+                        IconUrl = Shinoa.DiscordClient.CurrentUser.GetAvatarUrl(),
                         Name = nameof(Shinoa),
                     },
                 Timestamp = DateTimeOffset.Now,

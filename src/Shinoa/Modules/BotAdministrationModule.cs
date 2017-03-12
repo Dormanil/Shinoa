@@ -18,10 +18,7 @@ namespace Shinoa.Modules
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
                 var stream = new HttpClient().GetAsync(args[0]).Result.Content.ReadAsStreamAsync().Result;
-                await Shinoa.DiscordClient.CurrentUser.ModifyAsync(p =>
-                {
-                    p.Avatar = new Image(stream);
-                });
+                await Shinoa.DiscordClient.CurrentUser.ModifyAsync(p => p.Avatar = new Image(stream));
             }
         }
 
@@ -48,12 +45,8 @@ namespace Shinoa.Modules
         {
             if (c.User.Id != ulong.Parse(Shinoa.Config["owner_id"])) return;
             var announcement = args.ToRemainderString();
-
-                foreach (var server in Shinoa.DiscordClient.Guilds)
-                {
-                    await server.GetDefaultChannelAsync().Result.SendMessageAsync($"**Announcement:** {announcement}");
-                }
-            }
+            foreach (var server in Shinoa.DiscordClient.Guilds)
+                await server.DefaultChannel.SendMessageAsync($"**Announcement:** {announcement}");
         }
 
         [@Command("say")]
@@ -72,7 +65,7 @@ namespace Shinoa.Modules
         {
             if (c.User.Id == ulong.Parse(Shinoa.Config["owner_id"]))
             {
-                await c.Channel.SendMessageAsync($"Invite link for {Shinoa.DiscordClient.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id=198527882773921792&scope=bot");
+                await c.Channel.SendMessageAsync($"Invite link for {Shinoa.DiscordClient.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={Shinoa.DiscordClient.GetApplicationInfoAsync().Id}&scope=bot");
             }
         }
 
