@@ -10,7 +10,7 @@
     /// </summary>
     public static class Logging
     {
-        static IMessageChannel loggingChannel;
+        private static IMessageChannel loggingChannel;
 
         /// <summary>
         /// Logs a specific string, as given in message.
@@ -19,7 +19,8 @@
         public static async Task Log(string message)
         {
             PrintWithTime(message);
-            loggingChannel?.SendMessageAsync(message).GetAwaiter().GetResult();
+            var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
+            if (sendMessageAsync != null) await sendMessageAsync;
         }
 
         /// <summary>
@@ -37,7 +38,7 @@
                 Author =
                     new EmbedAuthorBuilder()
                     {
-                        IconUrl = Shinoa.DiscordClient.CurrentUser.GetAvatarUrl(),
+                        IconUrl = Shinoa.Client.CurrentUser.GetAvatarUrl(),
                         Name = nameof(Shinoa),
                     },
                 Timestamp = DateTimeOffset.Now,
@@ -54,7 +55,7 @@
         /// Logs a specific Discord message as specified by the CommandContext.
         /// </summary>
         /// <param name="context">The context of the command.</param>
-        public static async Task LogMessage(CommandContext context)
+        public static async Task LogMessage(SocketCommandContext context)
         {
             await Log(!(context.Channel is IPrivateChannel)
                 ? $"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content}"
@@ -66,10 +67,12 @@
         /// </summary>
         public static async Task InitLoggingToChannel()
         {
-            var loggingChannelId = Shinoa.Config["logging_channel_id"];
-            loggingChannel = Shinoa.DiscordClient?.GetChannel(ulong.Parse(loggingChannelId));
+            var loggingChannelId = Shinoa.Config["global"]["logging_channel_id"];
+            loggingChannel = Shinoa.Client?.GetChannel(ulong.Parse(loggingChannelId));
 
-            await loggingChannel?.SendMessageAsync("Logging initialized.");
+            var sendMessageAsync = loggingChannel?.SendMessageAsync("Logging initialized.");
+            if (sendMessageAsync != null)
+                await sendMessageAsync;
         }
 
         private static void PrintWithTime(string line)

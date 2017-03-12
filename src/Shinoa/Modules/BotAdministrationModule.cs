@@ -74,7 +74,7 @@ namespace Shinoa.Modules
             await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot&permissions=8");
         }
 
-        string GenerateStatsMessage()
+        private string GenerateStatsMessage()
         {
             var output = "";
             output += $"**Shinoa v{Shinoa.Version}**\n";
@@ -87,10 +87,7 @@ namespace Shinoa.Modules
             output += $"Uptime: {uptimeString}\n\n";
 
             output += "Running modules:\n\n```";
-            foreach (var module in commandService.Modules)
-            {
-                output += $"{module.Name}\n";
-            }
+            output = commandService.Modules.Aggregate(output, (current, module) => current + $"{module.Name}\n");
             output += "```";
 
             return output;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -10,36 +11,36 @@ namespace Shinoa.Modules
         public static Color MODULE_COLOR = new Color(63, 81, 181);
 
         //TODO: Migrate
-        public void HandleMessage(CommandContext context)
+        public void HandleMessage()
         {
-            if (context.User.Id == Shinoa.DiscordClient.CurrentUser.Id) return;
-            switch (context.Message.Content)
+            if (Context.User.Id == Shinoa.Client.CurrentUser.Id) return;
+            switch (Context.Message.Content)
             {
                 case @"o/":
-                    context.Channel.SendMessageAsync(@"\o");
+                    Context.Channel.SendMessageAsync(@"\o");
                     break;
                 case @"\o":
-                    context.Channel.SendMessageAsync(@"o/");
+                    Context.Channel.SendMessageAsync(@"o/");
                     break;
                 case @"/o/":
-                    context.Channel.SendMessageAsync(@"\o\");
+                    Context.Channel.SendMessageAsync(@"\o\");
                     break;
                 case @"\o\":
-                    context.Channel.SendMessageAsync(@"/o/");
+                    Context.Channel.SendMessageAsync(@"/o/");
                     break;
                 default:
-                    if (context.Message.Content.ToLower() == "wake me up")
-                        context.Channel.SendMessageAsync($"_Wakes {context.User.Username} up inside._");
-                    else if (context.Message.Content.ToLower().StartsWith("wake") &&
-                             context.Message.Content.ToLower().EndsWith("up"))
+                    if (Context.Message.Content.ToLower() == "wake me up")
+                        Context.Channel.SendMessageAsync($"_Wakes {Context.User.Username} up inside._");
+                    else if (Context.Message.Content.ToLower().StartsWith("wake") &&
+                             Context.Message.Content.ToLower().EndsWith("up"))
                     {
-                        var messageArray = context.Message.Content.Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries)
+                        var messageArray = Context.Message.Content.Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries)
                             .Skip(1)
                             .Reverse()
                             .Skip(1)
                             .Reverse();
 
-                        context.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate("", (current, word) => current + (word + " ")).Trim()} up inside._");
+                        Context.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate("", (current, word) => current + (word + " ")).Trim()} up inside._");
                     }
                     break;
             }
@@ -73,9 +74,9 @@ namespace Shinoa.Modules
             }
 
             var rollsString = "";
-            foreach (int i in 1.To(multiplier))
+            foreach (var i in 1.To(multiplier))
             {
-                int roll = rng.Next(dieSize) + 1;
+                var roll = rng.Next(dieSize) + 1;
                 rollsString += $"{roll}, ";
                 total += roll;
             }
@@ -88,11 +89,12 @@ namespace Shinoa.Modules
            await ReplyAsync("", embed: embed);
         }
 
-        [@Command("lenny")]
+        [Command("lenny")]
         public async Task LennyFace()
         {
-            await c.Message.DeleteAsync();
+            var deleteAsync = Context.Message.DeleteAsync();
             await ReplyAsync("( ͡° ͜ʖ ͡°)");
+            await deleteAsync;
         }
     }
 }

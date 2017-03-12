@@ -24,12 +24,12 @@ namespace Shinoa
         public static readonly string VersionString = $"Shinoa v{Version}, built by OmegaVesko & Kazumi";
 
         public static dynamic Config;
-        static DiscordSocketClient client = new DiscordSocketClient();
-        static CommandService commands = new CommandService();
-        static OpaqueDependencyMap map = new OpaqueDependencyMap();
-        static SQLiteConnection databaseConnection;
-        static Timer globalRefreshTimer;
-        static List<Func<Task>> callbacks = new List<Func<Task>>();
+        public static readonly DiscordSocketClient Client = new DiscordSocketClient();
+        private static readonly CommandService Commands = new CommandService();
+        private static readonly OpaqueDependencyMap Map = new OpaqueDependencyMap();
+        private static SQLiteConnection databaseConnection;
+        private static Timer globalRefreshTimer;
+        private static readonly List<Func<Task>> Callbacks = new List<Func<Task>>();
 
         public static void Main(string[] args) =>
             StartAsync().GetAwaiter().GetResult();
@@ -56,9 +56,9 @@ namespace Shinoa
             if (Alpha) await Logging.Log("Running in Alpha configuration.");
 
             #region Modules
-            map.Add(client);
-            map.Add(commands);
-            map.Add(databaseConnection);
+            Map.Add(Client);
+            Map.Add(Commands);
+            Map.Add(databaseConnection);
 
             #region Services
 
@@ -69,36 +69,36 @@ namespace Shinoa
                     .Where(t => t.GetInterfaces().Contains(typeof(IService)) && !(t.IsAbstract || t.IsInterface));
             #endregion
 
-            var modules = await commands.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
+            var modules = await Commands.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
 
             foreach(var module in modules)
             {
                 await Logging.Log($"Loaded module \"{module.Name}\"");
                 foreach (var command in module.Commands) await Logging.Log($"Loaded command \"{command.Name}\"");
             }
-            Logging.Log($"Loaded {commands.Modules.Count()} module(s) with {commands.Commands.Count()} command(s)");
+            await Logging.Log($"Loaded {Commands.Modules.Count()} module(s) with {Commands.Commands.Count()} command(s)");
             #endregion
 
             #region Event handlers
-            client.Connected += async () =>
+            Client.Connected += async () =>
             {
-                Logging.Log($"Connected to Discord as {client.CurrentUser.Username}#{client.CurrentUser.Discriminator}.");
-                await client.SetGameAsync(Config["global"]["default_game"]);
+                await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
+                await Client.SetGameAsync(Config["global"]["default_game"]);
                 await Logging.InitLoggingToChannel();
 
                 await Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
             };
-            client.MessageReceived += async (message) =>
+            Client.MessageReceived += async (message) =>
             {
                 var userMessage = message as SocketUserMessage;
-                int argPos = 0;
+                var argPos = 0;
                 if (userMessage == null 
-                || userMessage.Author.Id == client.CurrentUser.Id 
+                || userMessage.Author.Id == Client.CurrentUser.Id 
                 || !userMessage.HasStringPrefix((string)Config["global"]["command_prefix"], ref argPos)) return;
                 
-                var contextSock = new SocketCommandContext(client, userMessage);
-                Logging.LogMessage(contextSock);
-                var res = await commands.ExecuteAsync(contextSock, argPos, map);
+                var contextSock = new SocketCommandContext(Client, userMessage);
+                await Logging.LogMessage(contextSock);
+                var res = await Commands.ExecuteAsync(contextSock, argPos, Map);
                 if (res.IsSuccess) return;
 
                 await Logging.LogError(res.ErrorReason);
@@ -124,7 +124,7 @@ namespace Shinoa
                     await contextSock.Channel.SendMessageAsync(responseMessage);
                 }
             };
-            client.Ready += () =>
+            Client.Ready += async () =>
             {
                 foreach (var service in services)
                 {
@@ -136,19 +136,19 @@ namespace Shinoa
                     }
                     catch(Exception) { }
                     var instance = (IService) Activator.CreateInstance(service.UnderlyingSystemType);
-                    instance.Init(config, map);
+                    instance.Init(config, Map);
                     if (instance is ITimedService timedService)
                     {
-                        callbacks.Add(timedService.Callback);
+                        Callbacks.Add(timedService.Callback);
                         await Logging.Log($"Service \"{service.Name}\" added to callbacks");
                     }
                     await Logging.Log($"Loaded service \"{service.Name}\"");
-                    map.AddOpaque(instance);
+                    Map.AddOpaque(instance);
                 }
 
                 globalRefreshTimer = new Timer(async (s) =>
                 {
-                    foreach (var callback in callbacks)
+                    foreach (var callback in Callbacks)
                     {
                         try
                         {
@@ -160,15 +160,14 @@ namespace Shinoa
                         }
                     }
                 }, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string) Config["global"]["refresh_rate"])));
-                return Task.CompletedTask;
             };
             #endregion
 
             #region Connection establishment
-            Logging.Log("Connecting to Discord...");
-            await client.LoginAsync(TokenType.Bot, Config["global"]["token"]);
-            await client.StartAsync();
-            await client.WaitForGuildsAsync();
+            await Logging.Log("Connecting to Discord...");
+            await Client.LoginAsync(TokenType.Bot, Config["global"]["token"]);
+            await Client.StartAsync();
+            await Client.WaitForGuildsAsync();
             await Task.Delay(-1); 
             #endregion
         }
