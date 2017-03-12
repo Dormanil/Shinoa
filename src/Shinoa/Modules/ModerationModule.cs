@@ -12,7 +12,7 @@ namespace Shinoa.Modules
 {
     public class ModerationModule : ModuleBase<SocketCommandContext>
     {
-        static readonly Dictionary<string, int> TimeUnits = new Dictionary<string, int>()
+        private static readonly Dictionary<string, int> TimeUnits = new Dictionary<string, int>()
         {
             { "seconds",    1000 },
             { "minutes",    1000 * 60 },

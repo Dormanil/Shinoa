@@ -1,4 +1,6 @@
-﻿using Discord.Commands;
+﻿using System;
+using System.Linq;
+using Discord.Commands;
 using Discord.WebSocket;
 
 namespace Shinoa.Services
@@ -25,6 +27,21 @@ namespace Shinoa.Services
                         break;
                     case @"\o\":
                         await m.Channel.SendMessageAsync(@"/o/");
+                        break;
+                    default:
+                        if (m.Content.ToLower() == "wake me up")
+                            await m.Channel.SendMessageAsync($"_Wakes {m.Author.Username} up inside._");
+                        else if (m.Content.ToLower().StartsWith("wake") &&
+                                 m.Content.ToLower().EndsWith("up"))
+                        {
+                            var messageArray = m.Content.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
+                                .Skip(1)
+                                .Reverse()
+                                .Skip(1)
+                                .Reverse();
+
+                            await m.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate("", (current, word) => current + (word + " ")).Trim()} up inside._");
+                        }
                         break;
                 }
             };

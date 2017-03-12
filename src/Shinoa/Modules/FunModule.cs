@@ -9,43 +9,7 @@ namespace Shinoa.Modules
     public class FunModule : ModuleBase<SocketCommandContext>
     {
         public static Color MODULE_COLOR = new Color(63, 81, 181);
-
-        //TODO: Migrate
-        public void HandleMessage()
-        {
-            if (Context.User.Id == Shinoa.Client.CurrentUser.Id) return;
-            switch (Context.Message.Content)
-            {
-                case @"o/":
-                    Context.Channel.SendMessageAsync(@"\o");
-                    break;
-                case @"\o":
-                    Context.Channel.SendMessageAsync(@"o/");
-                    break;
-                case @"/o/":
-                    Context.Channel.SendMessageAsync(@"\o\");
-                    break;
-                case @"\o\":
-                    Context.Channel.SendMessageAsync(@"/o/");
-                    break;
-                default:
-                    if (Context.Message.Content.ToLower() == "wake me up")
-                        Context.Channel.SendMessageAsync($"_Wakes {Context.User.Username} up inside._");
-                    else if (Context.Message.Content.ToLower().StartsWith("wake") &&
-                             Context.Message.Content.ToLower().EndsWith("up"))
-                    {
-                        var messageArray = Context.Message.Content.Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries)
-                            .Skip(1)
-                            .Reverse()
-                            .Skip(1)
-                            .Reverse();
-
-                        Context.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate("", (current, word) => current + (word + " ")).Trim()} up inside._");
-                    }
-                    break;
-            }
-        }
-
+        
         [Command("pick"), Alias("choose")]
         public async Task Pick([Remainder]string args)
         {
