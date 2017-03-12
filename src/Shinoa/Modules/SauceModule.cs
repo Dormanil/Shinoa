@@ -58,14 +58,14 @@ namespace Shinoa.Modules
         }
 
         [@Command("sauce", "source", "saucenao")]
-        public void SAOWikiaSearch(CommandContext c, params string[] args)
+        public async Task SAOWikiaSearch(CommandContext c, params string[] args)
         {
             var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
             var imageUrl = FindRelevantImageURL(c);
 
             if (imageUrl == null)
             {
-                responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
+                await responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
                     .WithTitle("Found no suitable image to look up.")
                     .WithColor(new Color(244, 67, 54)));
 
@@ -75,11 +75,11 @@ namespace Shinoa.Modules
             try
             {
                 var sauceResult = GetSauce(imageUrl);
-                responseMessage.ModifyToEmbedAsync(sauceResult.GetEmbed());
+                await responseMessage.ModifyToEmbedAsync(sauceResult.GetEmbed());
             }
             catch (SauceNotFoundException)
             {
-                responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
+                await responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
                     .WithTitle("No match found.")
                     .WithColor(new Color(244, 67, 54)));
 

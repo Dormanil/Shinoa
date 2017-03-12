@@ -21,14 +21,14 @@ namespace Shinoa.Modules
         };
 
         [@Command("ban", "gulag", "getout")]
-        public void Ban(CommandContext c, params string[] args)
+        public async Task Ban(CommandContext c, params string[] args)
         {
             if ((c.User as SocketGuildUser).GuildPermissions.BanMembers)
             {
-                c.Message.DeleteAsync();
+                await c.Message.DeleteAsync();
 
                 var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
-                c.Guild.AddBanAsync(user);
+                await c.Guild.AddBanAsync(user);
                 var banmessage = c.Message.Content;
                 string blurb;
                 if (banmessage.StartsWith($"{Shinoa.Config["command_prefix"]}gulag"))
@@ -43,28 +43,28 @@ namespace Shinoa.Modules
                 {
                     blurb = "was banned by";
                 }
-                c.Channel.SendMessageAsync($"User {user.Username} {blurb} {c.User.Mention}.");
+                await c.Channel.SendMessageAsync($"User {user.Username} {blurb} {c.User.Mention}.");
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Ban Members");
+                await c.Channel.SendPermissionErrorAsync("Ban Members");
             }
         }
 
         [@Command("kick")]
-        public void Kick(CommandContext c, params string[] args)
+        public async Task Kick(CommandContext c, params string[] args)
         {
             if ((c.User as SocketGuildUser).GuildPermissions.KickMembers)
             {
-                c.Message.DeleteAsync();
+                await c.Message.DeleteAsync();
 
                 var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
-                user.KickAsync();
-                c.Channel.SendMessageAsync($"User {user.Username} has been kicked by {c.User.Mention}.");
+                await user.KickAsync();
+                await c.Channel.SendMessageAsync($"User {user.Username} has been kicked by {c.User.Mention}.");
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Kick Members");
+                await c.Channel.SendPermissionErrorAsync("Kick Members");
             }
         }
 
@@ -107,16 +107,16 @@ namespace Shinoa.Modules
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Mute Members");
+                await c.Channel.SendPermissionErrorAsync("Mute Members");
             }
         }
 
         [@Command("unmute")]
-        public void Unmute(CommandContext c, params string[] args)
+        public async Task Unmute(CommandContext c, params string[] args)
         {
             if ((c.User as SocketGuildUser).GuildPermissions.MuteMembers)
             {
-                c.Message.DeleteAsync();
+                await c.Message.DeleteAsync();
                 IRole mutedRole = null;
                 foreach (var role in c.Guild.Roles)
                 {
@@ -128,21 +128,21 @@ namespace Shinoa.Modules
                 }
 
                 var user = c.Guild.GetUserAsync(Util.IdFromMention(args[0])).Result;
-                user.RemoveRolesAsync(mutedRole);
+                await user.RemoveRolesAsync(mutedRole);
 
                 if (args.Count() == 1)
                 {
-                    c.Channel.SendMessageAsync($"User {user.Mention} has been unmuted by {c.User.Mention}.");
+                    await c.Channel.SendMessageAsync($"User {user.Mention} has been unmuted by {c.User.Mention}.");
                 }
             }
             else
             {
-                c.Channel.SendPermissionErrorAsync("Mute Members");
+                await c.Channel.SendPermissionErrorAsync("Mute Members");
             }
         }
 
         [@Command("stop")]
-        public async void StopChannel(CommandContext c, params string[] args)
+        public async Task StopChannel(CommandContext c, params string[] args)
         {
             if ((c.User as SocketGuildUser).GuildPermissions.ManageChannels)
             {

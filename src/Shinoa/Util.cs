@@ -11,9 +11,9 @@ namespace Shinoa
 {
     public static class Util
     {
-        public static void SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
+        public static async Task SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
         {
-            channel.SendMessageAsync($"Sorry, but you need the `{permissionName}` permission to do that.");
+            await channel.SendMessageAsync($"Sorry, but you need the `{permissionName}` permission to do that.");
         }
 
         public static ulong IdFromMention(string mentionString)

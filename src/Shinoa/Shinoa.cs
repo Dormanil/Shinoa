@@ -21,7 +21,7 @@ namespace Shinoa
         public static readonly string VersionString = $"Shinoa v{Version}, built by OmegaVesko & Kazumi";
 
         public static dynamic Config;
-        public static DiscordSocketClient DiscordClient;
+        public static DiscordSocketClient DiscordClient = new DiscordSocketClient();
         public static SQLiteConnection DatabaseConnection;
 
         public static Timer GlobalUpdateTimer;
@@ -70,14 +70,6 @@ namespace Shinoa
 
             if (Alpha) Logging.Log("Running in Alpha configuration.");
 
-            Logging.Log("Connecting to Discord...");
-            DiscordClient = new DiscordSocketClient();
-            await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
-            await DiscordClient.ConnectAsync();
-            Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
-
-            await DiscordClient.SetGameAsync(Config["default_game"]);
-
             foreach (var module in RunningModules)
             {
                 Logging.Log($"Initializing module {module.GetType().Name}.");
@@ -105,6 +97,11 @@ namespace Shinoa
 
             Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
 
+            DiscordClient.Connected += async () =>
+            {
+                Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
+                await DiscordClient.SetGameAsync(Config["default_game"]);
+            };
             DiscordClient.MessageReceived += async (message) =>
             {
                 var userMessage = message as SocketUserMessage;
@@ -114,11 +111,6 @@ namespace Shinoa
 
                 if (context.User.Id != DiscordClient.CurrentUser.Id)
                 {
-                    if (context.IsPrivate)
-                    {
-                        Logging.Log($"[PM] {context.User.Username}: {context.Message.Content.ToString()}");
-                    }
-
                     foreach (var moduleInstance in RunningModules)
                     {
                         moduleInstance.HandleMessage(context);
@@ -137,7 +129,7 @@ namespace Shinoa
 
                         try
                         {
-                            command.methodInfo.Invoke(command.moduleInstance, paramsObject);
+                            await InvokeCommandMethod(command.methodInfo, command.moduleInstance, paramsObject);
                         }
                         catch (Exception ex)
                         {
@@ -148,7 +140,16 @@ namespace Shinoa
                 }
             };
 
+            Logging.Log("Connecting to Discord...");
+            await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
+            await DiscordClient.StartAsync();
+            await DiscordClient.WaitForGuildsAsync();
             await Task.Delay(-1);
+        }
+
+        static async Task InvokeCommandMethod(MethodInfo methodInfo, object obj, object[] parameters)
+        {
+            await (Task) methodInfo.Invoke(obj, parameters);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Shinoa.Modules
         HttpClient httpClient = new HttpClient();
 
         [@Command("jp", "jisho", "jpdict", "japanese")]
-        public void JishoSearch(CommandContext c, params string[] args)
+        public async Task JishoSearch(CommandContext c, params string[] args)
         {
             var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
 
@@ -71,11 +71,11 @@ namespace Shinoa.Modules
 
                 responseText += $"\nSee more: <http://jisho.org/search/{System.Uri.EscapeUriString(args.ToRemainderString())}>";
 
-                responseMessage.ModifyAsync(p => p.Content = responseText);
+                await responseMessage.ModifyAsync(p => p.Content = responseText);
             }
             catch (Exception)
             {
-                responseMessage.ModifyAsync(p => p.Content = "Not found.");
+                await responseMessage.ModifyAsync(p => p.Content = "Not found.");
             }
         }
     }

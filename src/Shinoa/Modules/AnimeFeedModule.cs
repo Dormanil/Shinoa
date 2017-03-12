@@ -44,7 +44,7 @@ namespace Shinoa.Modules
         }
 
         [@Command("animefeed")]
-        public void AnimeFeedManagement(CommandContext c, params string[] args)
+        public async Task AnimeFeedManagement(CommandContext c, params string[] args)
         {
             if (c.Channel is IPrivateChannel || (c.User as IGuildUser).GuildPermissions.ManageGuild)
             {
@@ -62,16 +62,16 @@ namespace Shinoa.Modules
                         });
 
                         if (!(c.Channel is IPrivateChannel))
-                            c.Channel.SendMessageAsync($"Anime notifications have been bound to this channel (#{c.Channel.Name}).");
+                            await c.Channel.SendMessageAsync($"Anime notifications have been bound to this channel (#{c.Channel.Name}).");
                         else
-                            c.Channel.SendMessageAsync($"You will now receive anime notifications via PM.");
+                            await c.Channel.SendMessageAsync($"You will now receive anime notifications via PM.");
                     }
                     else
                     {
                         if (!(c.Channel is IPrivateChannel))
-                            c.Channel.SendMessageAsync($"Anime notifications are already bound to this channel (#{c.Channel.Name}).");
+                            await c.Channel.SendMessageAsync($"Anime notifications are already bound to this channel (#{c.Channel.Name}).");
                         else
-                            c.Channel.SendMessageAsync($"You are already receiving anime notifications.");
+                            await c.Channel.SendMessageAsync($"You are already receiving anime notifications.");
                     }
                 }
                 else if (args[0] == "disable")
@@ -85,16 +85,16 @@ namespace Shinoa.Modules
                         Shinoa.DatabaseConnection.Delete(new AnimeFeedBinding() { ChannelId = channelIdString });
 
                         if (!(c.Channel is IPrivateChannel))
-                            c.Channel.SendMessageAsync($"Anime notifications have been unbound from this channel (#{c.Channel.Name}).");
+                            await c.Channel.SendMessageAsync($"Anime notifications have been unbound from this channel (#{c.Channel.Name}).");
                         else
-                            c.Channel.SendMessageAsync($"You will no lonnger receive anime notifications.");
+                            await c.Channel.SendMessageAsync($"You will no lonnger receive anime notifications.");
                     }
                     else
                     {
                         if (!(c.Channel is IPrivateChannel))
-                            c.Channel.SendMessageAsync($"Anime notifications are not currently bound to this channel (#{c.Channel.Name}).");
+                            await c.Channel.SendMessageAsync($"Anime notifications are not currently bound to this channel (#{c.Channel.Name}).");
                         else
-                            c.Channel.SendMessageAsync($"You are not currently receiving anime notifications.");
+                            await c.Channel.SendMessageAsync($"You are not currently receiving anime notifications.");
                     }
                 }
             }

@@ -17,7 +17,7 @@ namespace Shinoa.Modules
         HttpClient httpClient = new HttpClient();
         
         [@Command("wiki", "wikipedia", "wikisearch")]
-        public void WikipediaSearch(CommandContext c, params string[] args)
+        public async Task WikipediaSearch(CommandContext c, params string[] args)
         {
             var queryText = GetCommandParametersAsString(c.Message.Content);
             var responseMessage = c.Channel.SendMessageAsync("Searching...").Result;
@@ -37,11 +37,11 @@ namespace Shinoa.Modules
                     .WithDescription(firstParagraph)
                     .WithColor(MODULE_COLOR);
 
-                responseMessage.ModifyToEmbedAsync(embed.Build());
+                await responseMessage.ModifyToEmbedAsync(embed.Build());
             }
             catch (ArgumentException)
             {
-                responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
+                await responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
                     .WithTitle($"Search returned no results.")
                     .WithColor(MODULE_COLOR)
                     .Build());
@@ -49,7 +49,7 @@ namespace Shinoa.Modules
             }
             catch (RuntimeBinderException)
             {
-                responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
+                await responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
                     .WithTitle($"Search returned no results.")
                     .WithColor(MODULE_COLOR)
                     .Build());
