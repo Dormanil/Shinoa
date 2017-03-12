@@ -71,7 +71,7 @@ namespace Shinoa.Modules
         [Command("invite"), RequireOwner]
         public async Task GetInviteLink()
         {
-            await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot&permissions=8");
+            await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot");
         }
 
         string GenerateStatsMessage()
