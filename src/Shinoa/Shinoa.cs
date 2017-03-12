@@ -93,9 +93,6 @@ namespace Shinoa
                 Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
                 (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
             }
-            Logging.InitLoggingToChannel();
-
-            Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
 
             DiscordClient.Connected += async () =>
             {
@@ -144,6 +141,9 @@ namespace Shinoa
             await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
             await DiscordClient.StartAsync();
             await DiscordClient.WaitForGuildsAsync();
+            Logging.InitLoggingToChannel();
+
+            Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
             await Task.Delay(-1);
         }
 
