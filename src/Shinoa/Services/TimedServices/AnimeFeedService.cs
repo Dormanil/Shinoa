@@ -30,7 +30,7 @@ namespace Shinoa.Services.TimedServices
         private SQLiteConnection db;
         private DiscordSocketClient client;
 
-        private Color moduleColor;
+        private static readonly Color moduleColor = new Color(0, 150, 136);
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
