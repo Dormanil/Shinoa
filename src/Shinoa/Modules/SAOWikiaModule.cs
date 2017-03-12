@@ -51,7 +51,7 @@ namespace Shinoa.Modules
             catch (Exception ex)
             {
                 await responseMessage.ModifyAsync(p => p.Content = "Error encountered, article not found.");
-                Logging.Log(ex.ToString());
+                await Logging.Log(ex.ToString());
             }
         }
     }

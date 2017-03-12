@@ -20,7 +20,7 @@ namespace Shinoa.Modules.Abstract
                 }
                 catch (Exception e)
                 {
-                    Logging.Log(e.ToString());
+                    await Logging.Log(e.ToString());
                 }
             },
             null,

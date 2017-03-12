@@ -3,6 +3,7 @@
     using System;
     using Discord;
     using Discord.Commands;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Niceties for logging of commands and errors.
@@ -15,7 +16,7 @@
         /// Logs a specific string, as given in message.
         /// </summary>
         /// <param name="message">The message to log.</param>
-        public static async void Log(string message)
+        public static async Task Log(string message)
         {
             PrintWithTime(message);
             var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
@@ -26,7 +27,7 @@
         /// Logs a specific string, as given in message, as an error.
         /// </summary>
         /// <param name="message">The message to log.</param>
-        public static async void LogError(string message)
+        public static async Task LogError(string message)
         {
             PrintErrorWithTime(message);
             var embed = new EmbedBuilder
@@ -54,9 +55,9 @@
         /// Logs a specific Discord message as specified by the CommandContext.
         /// </summary>
         /// <param name="context">The context of the command.</param>
-        public static void LogMessage(CommandContext context)
+        public static async Task LogMessage(CommandContext context)
         {
-            Log(!context.IsPrivate
+            await Log(!context.IsPrivate
                 ? $"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content}"
                 : $"[PM] {context.User.Username}: {context.Message.Content}");
         }
@@ -64,12 +65,12 @@
         /// <summary>
         /// Initialises logging to a specific Discord Channel.
         /// </summary>
-        public static void InitLoggingToChannel()
+        public static async Task InitLoggingToChannel()
         {
             var loggingChannelId = Shinoa.Config["logging_channel_id"];
-            loggingChannel = Shinoa.DiscordClient.GetChannel(ulong.Parse(loggingChannelId));
+            loggingChannel = Shinoa.DiscordClient?.GetChannel(ulong.Parse(loggingChannelId));
 
-            loggingChannel.SendMessageAsync("Logging initialized.");
+            await loggingChannel?.SendMessageAsync("Logging initialized.");
         }
 
         private static void PrintWithTime(string line)

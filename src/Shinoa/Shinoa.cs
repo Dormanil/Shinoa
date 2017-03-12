@@ -63,23 +63,23 @@ namespace Shinoa
             {
                 var deserializer = new YamlDotNet.Serialization.Deserializer();
                 Shinoa.Config = deserializer.Deserialize(streamReader);
-                Logging.Log("Config parsed and loaded.");
+                await Logging.Log("Config parsed and loaded.");
             }
 
             Console.Title = $"Shinoa v{Version}";
 
-            if (Alpha) Logging.Log("Running in Alpha configuration.");
+            if (Alpha) await Logging.Log("Running in Alpha configuration.");
 
             foreach (var module in RunningModules)
             {
-                Logging.Log($"Initializing module {module.GetType().Name}.");
+                await Logging.Log($"Initializing module {module.GetType().Name}.");
                 module.Init();
 
                 foreach (var method in module.GetType().GetTypeInfo().DeclaredMethods)
                 {
                     var commandAttribute = method.GetCustomAttribute<Attributes.Command>();
                     if (commandAttribute == null) continue;
-                    Logging.Log($"Found command: '{commandAttribute.CommandString}'");
+                    await Logging.Log($"Found command: '{commandAttribute.CommandString}'");
 
                     var definition = new CommandDefinition();
                     definition.commandStrings.Add(commandAttribute.CommandString);
@@ -90,14 +90,17 @@ namespace Shinoa
                 }
 
                 if (!(module is Modules.Abstract.UpdateLoopModule)) continue;
-                Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
+                await Logging.Log($"Initializing update loop for module {module.GetType().Name}.");
                 (module as Modules.Abstract.UpdateLoopModule).InitUpdateLoop();
             }
 
             DiscordClient.Connected += async () =>
             {
-                Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
+                await Logging.Log($"Connected to Discord as {DiscordClient.CurrentUser.Username}#{DiscordClient.CurrentUser.Discriminator}.");
                 await DiscordClient.SetGameAsync(Config["default_game"]);
+                await Logging.InitLoggingToChannel();
+
+                await Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
             };
             DiscordClient.MessageReceived += async (message) =>
             {
@@ -119,7 +122,7 @@ namespace Shinoa
                         if (!message.Content.StartsWith(Config["command_prefix"]) ||
                             !command.commandStrings.Contains(splitMessage[0].Replace(Config["command_prefix"], "")))
                             continue;
-                        Logging.LogMessage(context);
+                        await Logging.LogMessage(context);
 
                         splitMessage.RemoveAt(0);
                         var paramsObject = new object[] { context, splitMessage.ToArray() };
@@ -131,19 +134,16 @@ namespace Shinoa
                         catch (Exception ex)
                         {
                             await context.Channel.SendMessageAsync("There was an error. Please check the command syntax and try again.");
-                            Logging.Log(ex.ToString());
+                            await Logging.Log(ex.ToString());
                         }
                     }
                 }
             };
 
-            Logging.Log("Connecting to Discord...");
+            await Logging.Log("Connecting to Discord...");
             await DiscordClient.LoginAsync(TokenType.Bot, Config["token"]);
             await DiscordClient.StartAsync();
             await DiscordClient.WaitForGuildsAsync();
-            Logging.InitLoggingToChannel();
-
-            Logging.Log($"All modules initialized successfully. Shinoa is up and running.");
             await Task.Delay(-1);
         }
 
