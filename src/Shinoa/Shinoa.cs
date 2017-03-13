@@ -86,23 +86,6 @@ namespace Shinoa
             {
                 await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
                 await Client.SetGameAsync(Config["global"]["default_game"]);
-                try
-                {
-                    var loggingChannel =
-                        Client.GetChannel(ulong.Parse(Config["global"]["logging_channel_id"])) as IMessageChannel;
-                    await Logging.InitLoggingToChannel(loggingChannel);
-                }
-                catch (KeyNotFoundException)
-                {
-                    await Logging.LogError("The property was not found on the dynamic object. No logging channel was supplied.");
-                }
-                catch (Exception e)
-                {
-                    await Logging.LogError(e.ToString());
-                }
-                
-
-                await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
             };
             Client.MessageReceived += async (message) =>
             {
@@ -181,6 +164,25 @@ namespace Shinoa
                     }
                 }, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string) Config["global"]["refresh_rate"])));
                 return Task.CompletedTask;
+            };
+            Client.GuildAvailable += async (g) =>
+            {
+                try
+                {
+                    var loggingChannel =
+                        Client.GetChannel(ulong.Parse(Config["global"]["logging_channel_id"])) as IMessageChannel;
+                    if (loggingChannel == null) return;
+                    var result = await Logging.InitLoggingToChannel(loggingChannel);
+                    if (result) await Logging.Log($"Now logging to channel \"{loggingChannel.Name}\"");
+                }
+                catch (KeyNotFoundException)
+                {
+                    await Logging.LogError("The property was not found on the dynamic object. No logging channel was supplied.");
+                }
+                catch (Exception e)
+                {
+                    await Logging.LogError(e.ToString());
+                }
             };
             #endregion
 

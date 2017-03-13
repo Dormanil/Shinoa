@@ -65,12 +65,14 @@
         /// <summary>
         /// Initialises logging to a specific Discord Channel.
         /// </summary>
-        public static async Task InitLoggingToChannel(IMessageChannel channel)
+        public static async Task<bool> InitLoggingToChannel(IMessageChannel channel)
         {
+            if (loggingChannel != null) return false;
             loggingChannel = channel;
             var sendMessageAsync = loggingChannel?.SendMessageAsync("Logging initialized.");
             if (sendMessageAsync != null)
                 await sendMessageAsync;
+            return true;
         }
 
         private static void PrintWithTime(string line)
