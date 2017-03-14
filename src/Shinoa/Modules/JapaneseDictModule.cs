@@ -16,6 +16,12 @@ namespace Shinoa.Modules
             var responseMessageTask = ReplyAsync("Searching...");
 
             var httpResponseText = httpClient.HttpGet($"words?keyword={term}");
+            if (httpResponseText == null)
+            {
+                var responseMsg = await responseMessageTask;
+                await responseMsg.ModifyAsync(p => p.Content = "Not found.");
+                return;
+            }
             dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 
             var responseMessage = await responseMessageTask;

@@ -12,7 +12,7 @@ namespace Shinoa.Modules
 {
     public class SauceModule : ModuleBase<SocketCommandContext>
     {
-        static HttpClient httpClient = new HttpClient();
+        static readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://saucenao.com/") };
 
         public class SauceNotFoundException : Exception
         {
@@ -151,7 +151,8 @@ namespace Shinoa.Modules
                     new KeyValuePair<string, string>("database", "5")
                 });
 
-            var resultPageHtml = httpClient.HttpPost("https://saucenao.com/search.php", postContent);
+            var resultPageHtml = httpClient.HttpPost("search.php", postContent);
+            if (resultPageHtml == null) throw new SauceNotFoundException();
             
             try
             {

@@ -81,6 +81,8 @@ namespace Shinoa.Services.TimedServices
             foreach (var subreddit in GetFromDb())
             {
                 var responseText = httpClient.HttpGet($"{subreddit.Name}/new/.json");
+                if (responseText == null) continue;
+
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
                 dynamic posts = responseObject["data"]["children"];
                 var newestCreationTime = DateTimeOffset.FromUnixTimeSeconds((int) posts[0]["data"]["created_utc"]);
