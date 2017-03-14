@@ -129,8 +129,7 @@ namespace Shinoa.Services.TimedServices
         {
             try
             {
-                var client = new HttpClient();
-                var responseText = await (await client.GetAsync($"{query}?access_token={accessToken}")).Content.ReadAsStringAsync();
+                var responseText = await (await httpClient.GetAsync($"{query}?access_token={accessToken}")).Content.ReadAsStringAsync();
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
 
                 dynamic firstResult = responseObject[0];
