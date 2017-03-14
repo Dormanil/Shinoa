@@ -1,14 +1,21 @@
-﻿using Discord;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿// <copyright file="Util.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+    using Discord;
+
     public static class Util
     {
         public static async Task SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
@@ -20,10 +27,10 @@ namespace Shinoa
         {
             var idString = mentionString
                 .Trim()
-                .Replace("<", "")
-                .Replace(">", "")
-                .Replace("@", "")
-                .Replace("!", "");
+                .Replace("<", string.Empty)
+                .Replace(">", string.Empty)
+                .Replace("@", string.Empty)
+                .Replace("!", string.Empty);
 
             return ulong.Parse(idString);
         }
@@ -33,19 +40,19 @@ namespace Shinoa
             var mentionRegexPattern = @"<@.*>";
             var mentionRegex = new Regex(mentionRegexPattern);
 
-            return mentionRegex.Replace(message, "");
+            return mentionRegex.Replace(message, string.Empty);
         }
 
         public static Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, Embed embed)
         {
-            return channel.SendMessageAsync("", embed: embed);
+            return channel.SendMessageAsync(string.Empty, embed: embed);
         }
 
         public static Task ModifyToEmbedAsync(this IUserMessage message, Embed embed)
         {
             return message.ModifyAsync(p =>
             {
-                p.Content = "";
+                p.Content = string.Empty;
                 p.Embed = embed;
             });
         }
@@ -87,7 +94,7 @@ namespace Shinoa
 
         public static string ToRemainderString(this string[] array)
         {
-            var output = array.Aggregate("", (current, word) => current + (word + " "));
+            var output = array.Aggregate(string.Empty, (current, word) => current + word + " ");
 
             output = output.Trim();
 
@@ -119,7 +126,7 @@ namespace Shinoa
                 throw new ArgumentOutOfRangeException(nameof(step), "Parameter cannot be zero.");
             }
 
-            return source.Where((x, i) => (i % step) == 0);
+            return source.Where((x, i) => i % step == 0);
         }
     }
 }

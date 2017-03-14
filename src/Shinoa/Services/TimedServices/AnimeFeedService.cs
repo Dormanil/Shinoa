@@ -1,48 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using SQLite;
+﻿// <copyright file="AnimeFeedService.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa.Services.TimedServices
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.IO;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+    using System.Xml.Linq;
+    using Discord;
+    using Discord.Commands;
+    using Discord.WebSocket;
+    using SQLite;
+
     public class AnimeFeedService : ITimedService
     {
-        class AnimeFeedBinding
-        {
-            [PrimaryKey]
-            public string ChannelId { get; set; }
-
-            public static DateTimeOffset LatestPost = DateTimeOffset.UtcNow;
-        }
-
-        private HttpClient httpClient = new HttpClient {BaseAddress = new Uri("http://www.nyaa.se/")};
+        private static readonly Color ModuleColor = new Color(0, 150, 136);
+        private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.se/") };
         private SQLiteConnection db;
         private DiscordSocketClient client;
 
-        private static readonly Color moduleColor = new Color(0, 150, 136);
+        public bool AddBinding(IMessageChannel channel)
+        {
+            if (this.db.Table<AnimeFeedBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
+
+            this.db.Insert(new AnimeFeedBinding
+            {
+                ChannelId = channel.Id.ToString(),
+            });
+            return true;
+        }
+
+        public bool RemoveBinding(IMessageChannel channel)
+        {
+            return this.db.Delete<AnimeFeedBinding>(channel.Id.ToString()) != 0;
+        }
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            if(!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<AnimeFeedBinding>();
+            if (!map.TryGet(out this.db)) this.db = new SQLiteConnection(config["db_path"]);
+            this.db.CreateTable<AnimeFeedBinding>();
 
-            client = map.Get<DiscordSocketClient>();
+            this.client = map.Get<DiscordSocketClient>();
         }
 
         async Task ITimedService.Callback()
         {
-            var responseText = httpClient.HttpGet("?page=rss&user=64513");
+            var responseText = this.httpClient.HttpGet("?page=rss&user=64513");
             if (responseText == null) return;
 
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
@@ -53,28 +66,28 @@ namespace Shinoa.Services.TimedServices
                     .Where(i => i.Name.LocalName == "item").ToList();
 
             var newestCreationTimeString = entries[0].Elements()
-                .First(i => i.Name.LocalName == "pubDate").Value.Replace(" GMT", "").Replace(" +0000", "");
-            var newestCreationTime = new DateTimeOffset(DateTime.ParseExact
-                (newestCreationTimeString, "ddd, dd MMM yyyy H:m:s", CultureInfo.InvariantCulture));
-            Stack<Embed> postStack = new Stack<Embed>();
+                .First(i => i.Name.LocalName == "pubDate").Value.Replace(" GMT", string.Empty).Replace(" +0000", string.Empty);
+            var newestCreationTime = new DateTimeOffset(DateTime.ParseExact(
+                newestCreationTimeString, "ddd, dd MMM yyyy H:m:s", CultureInfo.InvariantCulture));
+            var postStack = new Stack<Embed>();
 
             foreach (var entry in entries)
             {
-                var creationTime = new DateTimeOffset(DateTime.ParseExact
-                    (entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value, "ddd, dd MMM yyyy H:m:s zzz", CultureInfo.InvariantCulture));
+                var creationTime = new DateTimeOffset(DateTime.ParseExact(
+                    entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value, "ddd, dd MMM yyyy H:m:s zzz", CultureInfo.InvariantCulture));
                 if (creationTime <= AnimeFeedBinding.LatestPost) break;
 
                 var title = entry.Elements().First(i => i.Name.LocalName == "title").Value;
 
                 var match = Regex.Match(title, @"^\[.*\] (?<title>.*) - (?<ep>.*) \[.*$");
-                if(!match.Success) continue;
+                if (!match.Success) continue;
 
                 var showTitle = match.Groups["title"].Value;
                 var episodeNumber = match.Groups["ep"].Value;
 
                 var embed = new EmbedBuilder()
                     .AddField(f => f.WithName("New Episode").WithValue($"{showTitle} ep. {episodeNumber}"))
-                    .WithColor(moduleColor);
+                    .WithColor(ModuleColor);
 
                 postStack.Push(embed.Build());
             }
@@ -82,36 +95,31 @@ namespace Shinoa.Services.TimedServices
             if (newestCreationTime > AnimeFeedBinding.LatestPost) AnimeFeedBinding.LatestPost = newestCreationTime;
 
             foreach (var embed in postStack)
-            foreach (var channel in GetFromDb())
             {
-                await channel.SendEmbedAsync(embed);
+                foreach (var channel in this.GetFromDb())
+                {
+                    await channel.SendEmbedAsync(embed);
+                }
             }
         }
 
-        IEnumerable<IMessageChannel> GetFromDb()
+        private IEnumerable<IMessageChannel> GetFromDb()
         {
-            List<IMessageChannel> ret = new List<IMessageChannel>();
-            foreach (var binding in db.Table<AnimeFeedBinding>())
+            var ret = new List<IMessageChannel>();
+            foreach (var binding in this.db.Table<AnimeFeedBinding>())
             {
-                if(client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel channel) ret.Add(channel);
+                if (this.client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel channel) ret.Add(channel);
             }
+
             return ret;
         }
 
-        public bool AddBinding(IMessageChannel channel)
+        private class AnimeFeedBinding
         {
-            if (db.Table<AnimeFeedBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
+            public static DateTimeOffset LatestPost { get; set; } = DateTimeOffset.UtcNow;
 
-            db.Insert(new AnimeFeedBinding
-            {
-                ChannelId = channel.Id.ToString()
-            });
-            return true;
-        }
-
-        public bool RemoveBinding(IMessageChannel channel)
-        {
-            return db.Delete<AnimeFeedBinding>(channel.Id.ToString()) != 0;
+            [PrimaryKey]
+            public string ChannelId { get; set; }
         }
     }
 }

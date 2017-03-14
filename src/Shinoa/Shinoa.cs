@@ -1,37 +1,45 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using SQLite;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.CSharp.RuntimeBinder;
-using Shinoa.Attributes;
-using Shinoa.Services;
-using Shinoa.Services.TimedServices;
-using SQLite.Extensions;
+﻿// <copyright file="Shinoa.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Attributes;
+    using Discord;
+    using Discord.Commands;
+    using Discord.WebSocket;
+    using Services;
+    using Services.TimedServices;
+    using SQLite;
+    using SQLite.Extensions;
+
     public static class Shinoa
     {
-        private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
-
-        public static DateTime StartTime = DateTime.Now;
         public const string Version = "2.5.1K";
         public static readonly string VersionString = $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
-
-        public static dynamic Config;
-        public static readonly DiscordSocketClient Client = new DiscordSocketClient();
+        private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
         private static readonly CommandService Commands = new CommandService();
         private static readonly OpaqueDependencyMap Map = new OpaqueDependencyMap();
+        private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
         private static SQLiteConnection databaseConnection;
         private static Timer globalRefreshTimer;
-        private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
+
+        public static dynamic Config { get; private set; }
+
+        public static DiscordSocketClient Client { get; } = new DiscordSocketClient();
+
+        public static DateTime StartTime { get; } = DateTime.Now;
 
         public static void Main(string[] args) =>
             StartAsync().GetAwaiter().GetResult();
@@ -73,11 +81,12 @@ namespace Shinoa
 
             var modules = await Commands.AddModulesAsync(typeof(Shinoa).GetTypeInfo().Assembly);
 
-            foreach(var module in modules)
+            foreach (var module in modules)
             {
                 await Logging.Log($"Loaded module \"{module.Name}\"");
                 foreach (var command in module.Commands) await Logging.Log($"Loaded command \"{command.Name}\"");
             }
+
             await Logging.Log($"Loaded {Commands.Modules.Count()} module(s) with {Commands.Commands.Count()} command(s)");
             #endregion
 
@@ -86,7 +95,6 @@ namespace Shinoa
             {
                 await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
                 await Client.SetGameAsync(Config["global"]["default_game"]);
-                
 
                 await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
             };
@@ -109,17 +117,17 @@ namespace Shinoa
             {
                 var userMessage = message as SocketUserMessage;
                 var argPos = 0;
-                if (userMessage == null 
-                || userMessage.Author.Id == Client.CurrentUser.Id 
+                if (userMessage == null
+                || userMessage.Author.Id == Client.CurrentUser.Id
                 || !userMessage.HasStringPrefix((string)Config["global"]["command_prefix"], ref argPos)) return;
-                
+
                 var contextSock = new SocketCommandContext(Client, userMessage);
                 await Logging.LogMessage(contextSock);
                 var res = await Commands.ExecuteAsync(contextSock, argPos, Map);
                 if (res.IsSuccess) return;
 
                 await Logging.LogError(res.ErrorReason);
-                string responseMessage = string.Empty;
+                var responseMessage = string.Empty;
                 switch (res.Error)
                 {
                     case CommandError.ParseFailed:
@@ -132,6 +140,7 @@ namespace Shinoa
                         responseMessage = "You are not allowed to execute this command.";
                         break;
                 }
+
                 if (responseMessage != string.Empty)
                 {
                     responseMessage += $"\n\nReason: ```\n{res.ErrorReason}```";
@@ -142,8 +151,8 @@ namespace Shinoa
             {
                 foreach (var service in services)
                 {
-                    var instance = (IService) Activator.CreateInstance(service.UnderlyingSystemType);
-                    if(!Map.TryAddOpaque(instance)) continue;
+                    var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
+                    if (!Map.TryAddOpaque(instance)) continue;
 
                     var configAttr = service.GetCustomAttribute<ConfigAttribute>();
                     dynamic config = null;
@@ -171,15 +180,14 @@ namespace Shinoa
                     Logging.Log($"Loaded service \"{service.Name}\"").Wait();
                 }
 
-                int refreshRate = 30;
+                var refreshRate = 30;
                 try
                 {
                     refreshRate = int.Parse(Config["global"]["refresh_rate"]);
                 }
                 catch (KeyNotFoundException)
                 {
-                    Logging.LogError(
-                            "The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.")
+                    Logging.LogError("The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.")
                         .Wait();
                 }
                 catch (Exception e)
@@ -187,20 +195,24 @@ namespace Shinoa
                     Logging.LogError(e.ToString()).Wait();
                 }
 
-                globalRefreshTimer = new Timer(async (s) =>
-                {
-                    foreach (var callback in Callbacks.Values)
+                globalRefreshTimer = new Timer(
+                    async (s) =>
                     {
-                        try
+                        foreach (var callback in Callbacks.Values)
                         {
-                            await callback();
+                            try
+                            {
+                                await callback();
+                            }
+                            catch (Exception e)
+                            {
+                                await Logging.LogError(e.ToString());
+                            }
                         }
-                        catch (Exception e)
-                        {
-                            await Logging.LogError(e.ToString());
-                        }
-                    }
-                }, null, TimeSpan.Zero, TimeSpan.FromSeconds(refreshRate));
+                    },
+                    null,
+                    TimeSpan.Zero,
+                    TimeSpan.FromSeconds(refreshRate));
                 return Task.CompletedTask;
             };
             #endregion
@@ -209,8 +221,7 @@ namespace Shinoa
             await Logging.Log("Connecting to Discord...");
             await Client.LoginAsync(TokenType.Bot, Config["global"]["token"]);
             await Client.StartAsync();
-            await Client.WaitForGuildsAsync();
-            await Task.Delay(-1); 
+            await Task.Delay(-1);
             #endregion
         }
     }
