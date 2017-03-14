@@ -67,10 +67,9 @@
         /// </summary>
         public static async Task InitLoggingToChannel(IMessageChannel channel)
         {
+            if (loggingChannel != null || channel == null) return;
             loggingChannel = channel;
-            var sendMessageAsync = loggingChannel?.SendMessageAsync("Logging initialized.");
-            if (sendMessageAsync != null)
-                await sendMessageAsync;
+            await loggingChannel.SendMessageAsync($"Now logging to channel \"{channel.Name}\".");
         }
 
         private static void PrintWithTime(string line)
