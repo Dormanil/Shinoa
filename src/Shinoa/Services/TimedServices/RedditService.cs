@@ -10,6 +10,7 @@ namespace Shinoa.Services.TimedServices
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Attributes;
@@ -36,19 +37,19 @@ namespace Shinoa.Services.TimedServices
         {
             var name = subredditName.ToLower();
 
-            if (this.db.Table<RedditChannelBinding>()
+            if (db.Table<RedditChannelBinding>()
                     .Any(b => b.ChannelId == channel.Id.ToString() && b.SubredditName == name)) return false;
 
-            if (this.db.Table<RedditBinding>().All(b => b.SubredditName != name))
+            if (db.Table<RedditBinding>().All(b => b.SubredditName != name))
             {
-                this.db.Insert(new RedditBinding
+                db.Insert(new RedditBinding
                 {
                     SubredditName = name,
                     LatestPost = DateTimeOffset.UtcNow,
                 });
             }
 
-            this.db.Insert(new RedditChannelBinding
+            db.Insert(new RedditChannelBinding
             {
                 SubredditName = name,
                 ChannelId = channel.Id.ToString(),
@@ -61,13 +62,13 @@ namespace Shinoa.Services.TimedServices
             var name = subredditName.ToLower();
             var idString = channel.Id.ToString();
 
-            var found = this.db.Table<RedditChannelBinding>()
+            var found = db.Table<RedditChannelBinding>()
                         .Delete(b => b.ChannelId == idString && b.SubredditName == name) != 0;
             if (!found) return false;
 
-            if (this.db.Table<RedditChannelBinding>().All(b => b.SubredditName != name))
+            if (db.Table<RedditChannelBinding>().All(b => b.SubredditName != name))
             {
-                this.db.Delete(new RedditBinding
+                db.Delete(new RedditBinding
                 {
                     SubredditName = name,
                 });
@@ -79,23 +80,23 @@ namespace Shinoa.Services.TimedServices
         public IEnumerable<RedditChannelBinding> GetBindings(IMessageChannel channel)
         {
             var idString = channel.Id.ToString();
-            return this.db.Table<RedditChannelBinding>().Where(b => b.ChannelId == idString);
+            return db.Table<RedditChannelBinding>().Where(b => b.ChannelId == idString);
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            if (!map.TryGet(out this.db)) this.db = new SQLiteConnection(config["db_path"]);
-            this.db.CreateTable<RedditBinding>();
-            this.db.CreateTable<RedditChannelBinding>();
-            this.client = map.Get<DiscordSocketClient>();
+            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
+            db.CreateTable<RedditBinding>();
+            db.CreateTable<RedditChannelBinding>();
+            client = map.Get<DiscordSocketClient>();
 
-            this.compactKeywords = ((List<object>)config["compact_keywords"]).Cast<string>().ToArray();
-            this.filterKeywords = ((List<object>)config["filter_keywords"]).Cast<string>().ToArray();
+            compactKeywords = ((List<object>)config["compact_keywords"]).Cast<string>().ToArray();
+            filterKeywords = ((List<object>)config["filter_keywords"]).Cast<string>().ToArray();
 
-            this.ModuleColor = new Color(255, 152, 0);
+            ModuleColor = new Color(255, 152, 0);
             try
             {
-                this.ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
             }
             catch (KeyNotFoundException)
             {
@@ -111,9 +112,9 @@ namespace Shinoa.Services.TimedServices
 
         async Task ITimedService.Callback()
         {
-            foreach (var subreddit in this.GetFromDb())
+            foreach (var subreddit in GetFromDb())
             {
-                var responseText = this.httpClient.HttpGet($"{subreddit.Name}/new/.json");
+                var responseText = httpClient.HttpGet($"{subreddit.Name}/new/.json");
                 if (responseText == null) continue;
 
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
@@ -127,15 +128,15 @@ namespace Shinoa.Services.TimedServices
                     if (creationTime <= subreddit.LatestPost)
                         break;
 
-                    var title = System.Net.WebUtility.HtmlDecode((string)post["data"]["title"]);
+                    var title = WebUtility.HtmlDecode((string)post["data"]["title"]);
                     string username = post["data"]["author"];
                     string id = post["data"]["id"];
                     string url = post["data"]["url"];
                     string selftext = post["data"]["selftext"];
 
-                    if (this.filterKeywords.Any(kw => title.ToLower().Contains(kw))) continue;
+                    if (filterKeywords.Any(kw => title.ToLower().Contains(kw))) continue;
 
-                    var compact = this.compactKeywords.Any(kw => title.ToLower().Contains(kw));
+                    var compact = compactKeywords.Any(kw => title.ToLower().Contains(kw));
 
                     string imageUrl = null;
                     try
@@ -154,7 +155,7 @@ namespace Shinoa.Services.TimedServices
                         .AddField(f => f.WithName("Submitted By").WithValue($"/u/{username}").WithIsInline(true))
                         .AddField(f => f.WithName("Subreddit").WithValue($"/r/{subreddit.Name}").WithIsInline(true))
                         .AddField(f => f.WithName("Shortlink").WithValue($"http://redd.it/{id}").WithIsInline(true))
-                        .WithColor(this.ModuleColor);
+                        .WithColor(ModuleColor);
 
                     if (!url.Contains("reddit.com")) embed.AddField(f => f.WithName("URL").WithValue(url));
 
@@ -191,7 +192,7 @@ namespace Shinoa.Services.TimedServices
 
                 if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;
 
-                this.db.Update(new RedditBinding
+                db.Update(new RedditBinding
                 {
                     SubredditName = subreddit.Name,
                     LatestPost = subreddit.LatestPost,
@@ -202,16 +203,16 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<SubscribedSubreddit> GetFromDb()
         {
             var ret = new List<SubscribedSubreddit>();
-            foreach (var binding in this.db.Table<RedditBinding>())
+            foreach (var binding in db.Table<RedditBinding>())
             {
                 var tmpSub = new SubscribedSubreddit
                 {
                     Name = binding.SubredditName,
                     LatestPost = binding.LatestPost,
                 };
-                foreach (var channelBinding in this.db.Table<RedditChannelBinding>().Where(b => b.SubredditName == tmpSub.Name))
+                foreach (var channelBinding in db.Table<RedditChannelBinding>().Where(b => b.SubredditName == tmpSub.Name))
                 {
-                    var tmpChannel = this.client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
+                    var tmpChannel = client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
                     if (tmpChannel == null) continue;
                     tmpSub.Channels.Add(tmpChannel);
                 }

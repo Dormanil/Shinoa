@@ -10,6 +10,7 @@ namespace Shinoa.Services
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Xml.Linq;
@@ -30,7 +31,7 @@ namespace Shinoa.Services
             {
                 var result = new AnimeResult();
 
-                var responseText = this.httpClient.HttpGet($"anime/search.xml?q={searchQuery}");
+                var responseText = httpClient.HttpGet($"anime/search.xml?q={searchQuery}");
                 if (responseText == null)
                 {
                     Logging.LogError($"Could not find anime \"{searchQuery}\"").Wait();
@@ -79,7 +80,7 @@ namespace Shinoa.Services
             {
                 var result = new MangaResult();
 
-                var responseText = this.httpClient.HttpGet($"manga/search.xml?q={searchQuery}");
+                var responseText = httpClient.HttpGet($"manga/search.xml?q={searchQuery}");
                 if (responseText == null)
                 {
                     Logging.LogError($"Could not find manga \"{searchQuery}\"").Wait();
@@ -125,12 +126,12 @@ namespace Shinoa.Services
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            this.httpClient.SetBasicHttpCredentials((string)config["username"], (string)config["password"]);
+            httpClient.SetBasicHttpCredentials((string)config["username"], (string)config["password"]);
 
-            this.ModuleColor = new Color(63, 81, 181);
+            ModuleColor = new Color(63, 81, 181);
             try
             {
-                this.ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
             }
             catch (KeyNotFoundException)
             {
@@ -146,7 +147,7 @@ namespace Shinoa.Services
 
         private static string GenerateSynopsisString(string rawValue)
         {
-            var synopsisString = System.Net.WebUtility.HtmlDecode(rawValue)
+            var synopsisString = WebUtility.HtmlDecode(rawValue)
                 .Replace("<br />", string.Empty);
 
             if (synopsisString.ParagraphCount() > 1)
@@ -190,32 +191,32 @@ namespace Shinoa.Services
 
             public Embed GetEmbed(Color color)
             {
-                var embed = new EmbedBuilder()
+                var embed = new EmbedBuilder
                 {
-                    Title = this.Title,
-                    Url = $"\nhttp://myanimelist.net/anime/{this.Id}",
+                    Title = Title,
+                    Url = $"\nhttp://myanimelist.net/anime/{Id}",
                 };
-                if (this.EnglishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(this.EnglishTitle));
-                if (this.Synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(this.Synonyms));
-                embed.AddField(f => f.WithName("Type").WithValue(this.Type).WithIsInline(true));
-                embed.AddField(f => f.WithName("Status").WithValue(this.Status).WithIsInline(true));
-                embed.AddField(f => f.WithName("Score (max. 10)").WithValue(this.Score.ToString()).WithIsInline(true));
+                if (EnglishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(EnglishTitle));
+                if (Synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(Synonyms));
+                embed.AddField(f => f.WithName("Type").WithValue(Type).WithIsInline(true));
+                embed.AddField(f => f.WithName("Status").WithValue(Status).WithIsInline(true));
+                embed.AddField(f => f.WithName("Score (max. 10)").WithValue(Score.ToString()).WithIsInline(true));
                 embed.AddField(
                     f =>
                         f.WithName("Episode Count")
-                            .WithValue(this.EpisodeCount == 0 ? "?" : this.EpisodeCount.ToString())
+                            .WithValue(EpisodeCount == 0 ? "?" : EpisodeCount.ToString())
                             .WithIsInline(true));
                 embed.AddField(
                     f =>
                         f.WithName("Start Date")
-                            .WithValue(this.StartDate.ToString("MMMM dd, yyyy"))
+                            .WithValue(StartDate.ToString("MMMM dd, yyyy"))
                             .WithIsInline(true)
                             .WithIsInline(true));
 
-                if (this.EndDate != null && this.EndDate.Year != 1)
+                if (EndDate != null && EndDate.Year != 1)
                 {
-                    if (this.StartDate != this.EndDate)
-                        embed.AddField(f => f.WithName("End Date").WithValue(this.EndDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+                    if (StartDate != EndDate)
+                        embed.AddField(f => f.WithName("End Date").WithValue(EndDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
                     else
                         embed.AddField(f => f.WithName("End Date").WithValue("N/A").WithIsInline(true));
                 }
@@ -224,8 +225,8 @@ namespace Shinoa.Services
                     embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
                 }
 
-                embed.ThumbnailUrl = this.ThumbnailUrl;
-                embed.AddField(f => f.WithName("Synopsis").WithValue(this.Synopsis));
+                embed.ThumbnailUrl = ThumbnailUrl;
+                embed.AddField(f => f.WithName("Synopsis").WithValue(Synopsis));
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
                 embed.WithColor(color);
                 return embed.Build();
@@ -260,33 +261,33 @@ namespace Shinoa.Services
 
             public Embed GetEmbed(Color color)
             {
-                var embed = new EmbedBuilder()
+                var embed = new EmbedBuilder
                 {
-                    Title = this.Title,
-                    Url = $"\nhttp://myanimelist.net/manga/{this.Id}",
+                    Title = Title,
+                    Url = $"\nhttp://myanimelist.net/manga/{Id}",
                 };
 
                 ////embed.AddField(f => f.WithName("Title").WithValue(title));
-                if (this.EnglishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(this.EnglishTitle));
-                if (this.Synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(this.Synonyms));
-                embed.AddField(f => f.WithName("Type").WithValue(this.Type).WithIsInline(true));
-                embed.AddField(f => f.WithName("Status").WithValue(this.Status).WithIsInline(true));
-                embed.AddField(f => f.WithName("Score (max. 10)").WithValue(this.Score.ToString()).WithIsInline(true));
+                if (EnglishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(EnglishTitle));
+                if (Synonyms != null) embed.AddField(f => f.WithName("Synonyms").WithValue(Synonyms));
+                embed.AddField(f => f.WithName("Type").WithValue(Type).WithIsInline(true));
+                embed.AddField(f => f.WithName("Status").WithValue(Status).WithIsInline(true));
+                embed.AddField(f => f.WithName("Score (max. 10)").WithValue(Score.ToString()).WithIsInline(true));
 
-                if (this.ChapterCount.HasValue)
-                    embed.AddField(f => f.WithName("Chapters").WithValue(this.ChapterCount.ToString()).WithIsInline(true));
+                if (ChapterCount.HasValue)
+                    embed.AddField(f => f.WithName("Chapters").WithValue(ChapterCount.ToString()).WithIsInline(true));
                 else
                     embed.AddField(f => f.WithName("Chapters").WithValue("?").WithIsInline(true));
 
-                if (this.VolumeCount.HasValue)
-                    embed.AddField(f => f.WithName("Volumes").WithValue(this.VolumeCount.ToString()).WithIsInline(true));
+                if (VolumeCount.HasValue)
+                    embed.AddField(f => f.WithName("Volumes").WithValue(VolumeCount.ToString()).WithIsInline(true));
                 else
                     embed.AddField(f => f.WithName("Volumes").WithValue("?").WithIsInline(true));
 
-                embed.AddField(f => f.WithName("Published").WithValue(this.DateString).WithIsInline(true));
+                embed.AddField(f => f.WithName("Published").WithValue(DateString).WithIsInline(true));
                 ////embed.AddField(f => f.WithName("MyAnimeList Page").WithValue($"\nhttp://myanimelist.net/manga/{id}"));
-                embed.ThumbnailUrl = this.ThumbnailUrl;
-                embed.AddField(f => f.WithName("Synopsis").WithValue(this.Synopsis));
+                embed.ThumbnailUrl = ThumbnailUrl;
+                embed.AddField(f => f.WithName("Synopsis").WithValue(Synopsis));
                 embed.WithFooter(f => f.WithText("Source: MyAnimeList"));
                 embed.WithColor(color);
                 return embed.Build();

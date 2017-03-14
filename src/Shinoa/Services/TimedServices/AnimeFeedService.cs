@@ -31,9 +31,9 @@ namespace Shinoa.Services.TimedServices
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (this.db.Table<AnimeFeedBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
+            if (db.Table<AnimeFeedBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
 
-            this.db.Insert(new AnimeFeedBinding
+            db.Insert(new AnimeFeedBinding
             {
                 ChannelId = channel.Id.ToString(),
             });
@@ -42,20 +42,20 @@ namespace Shinoa.Services.TimedServices
 
         public bool RemoveBinding(IMessageChannel channel)
         {
-            return this.db.Delete<AnimeFeedBinding>(channel.Id.ToString()) != 0;
+            return db.Delete<AnimeFeedBinding>(channel.Id.ToString()) != 0;
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            if (!map.TryGet(out this.db)) this.db = new SQLiteConnection(config["db_path"]);
-            this.db.CreateTable<AnimeFeedBinding>();
+            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
+            db.CreateTable<AnimeFeedBinding>();
 
-            this.client = map.Get<DiscordSocketClient>();
+            client = map.Get<DiscordSocketClient>();
         }
 
         async Task ITimedService.Callback()
         {
-            var responseText = this.httpClient.HttpGet("?page=rss&user=64513");
+            var responseText = httpClient.HttpGet("?page=rss&user=64513");
             if (responseText == null) return;
 
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
@@ -96,7 +96,7 @@ namespace Shinoa.Services.TimedServices
 
             foreach (var embed in postStack)
             {
-                foreach (var channel in this.GetFromDb())
+                foreach (var channel in GetFromDb())
                 {
                     await channel.SendEmbedAsync(embed);
                 }
@@ -106,9 +106,9 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<IMessageChannel> GetFromDb()
         {
             var ret = new List<IMessageChannel>();
-            foreach (var binding in this.db.Table<AnimeFeedBinding>())
+            foreach (var binding in db.Table<AnimeFeedBinding>())
             {
-                if (this.client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel channel) ret.Add(channel);
+                if (client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel channel) ret.Add(channel);
             }
 
             return ret;

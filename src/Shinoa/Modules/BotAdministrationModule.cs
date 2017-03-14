@@ -11,6 +11,7 @@ namespace Shinoa.Modules
     using System.Linq;
     using System.Net;
     using System.Net.Http;
+    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
@@ -23,8 +24,8 @@ namespace Shinoa.Modules
 
         public BotAdministrationModule(DiscordSocketClient clnt, CommandService commandSvc)
         {
-            this.client = clnt;
-            this.commandService = commandSvc;
+            client = clnt;
+            commandService = commandSvc;
         }
 
         [Command("setavatar")]
@@ -32,7 +33,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task SetAvatar(string url)
         {
-            var splitLink = System.Text.RegularExpressions.Regex.Match(url, @"(\S+)\/(\S+)").Groups;
+            var splitLink = Regex.Match(url, @"(\S+)\/(\S+)").Groups;
             if (!splitLink[0].Success) return;
             var handler = new HttpClientHandler
             {
@@ -40,7 +41,7 @@ namespace Shinoa.Modules
             };
             var stream = await (await new HttpClient(handler) { BaseAddress = new Uri(splitLink[1].Value) }.GetAsync(splitLink[2].Value))
                 .Content.ReadAsStreamAsync();
-            await this.client.CurrentUser.ModifyAsync(p =>
+            await client.CurrentUser.ModifyAsync(p =>
             {
                 p.Avatar = new Image(stream);
             });
@@ -51,7 +52,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task SetPlaying([Remainder]string game)
         {
-            await this.client.SetGameAsync(game);
+            await client.SetGameAsync(game);
         }
 
         [Command("stats")]
@@ -59,7 +60,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task GetStats()
         {
-            await this.ReplyAsync(this.GenerateStatsMessage());
+            await ReplyAsync(GenerateStatsMessage());
         }
 
         [Command("announce")]
@@ -67,7 +68,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task Announce([Remainder]string announcement)
         {
-            foreach (IGuild server in this.client.Guilds)
+            foreach (IGuild server in client.Guilds)
             {
                 await (await server.GetDefaultChannelAsync()).SendMessageAsync($"**Announcement:** {announcement}");
             }
@@ -78,8 +79,8 @@ namespace Shinoa.Modules
         [RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task Say([Remainder]string message)
         {
-            var replyTask = this.ReplyAsync(message);
-            if (this.Context.Channel is IGuildChannel) await this.Context.Message.DeleteAsync();
+            var replyTask = ReplyAsync(message);
+            if (Context.Channel is IGuildChannel) await Context.Message.DeleteAsync();
             await replyTask;
         }
 
@@ -87,7 +88,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task GetInviteLink()
         {
-            await this.ReplyAsync($"Invite link for {this.client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={this.client.CurrentUser.Id}&scope=bot");
+            await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot");
         }
 
         private string GenerateStatsMessage()
@@ -103,7 +104,7 @@ namespace Shinoa.Modules
             output += $"Uptime: {uptimeString}\n\n";
 
             output += "Running modules:\n\n```";
-            output = this.commandService.Modules.Aggregate(output, (current, module) => current + $"{module.Name}\n");
+            output = commandService.Modules.Aggregate(output, (current, module) => current + $"{module.Name}\n");
             output += "```";
 
             return output;

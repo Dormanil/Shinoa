@@ -20,25 +20,25 @@ namespace Shinoa.Modules
 
         public MalModule(MalService svc, AnilistService fallbackSvc)
         {
-            this.service = svc;
-            this.fallbackService = fallbackSvc;
+            service = svc;
+            fallbackService = fallbackSvc;
         }
 
         [Command("anime")]
         [Alias("mal", "malanime")]
         public async Task MalAnimeSearch([Remainder]string name)
         {
-            var responseMessageTask = this.ReplyAsync("Searching...");
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = this.service.GetAnime(name);
+            var result = service.GetAnime(name);
             var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(this.service.ModuleColor));
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(service.ModuleColor));
             }
             else
             {
-                var fallbackResult = await this.fallbackService.GetEmbed(name);
+                var fallbackResult = await fallbackService.GetEmbed(name);
                 await responseMessage.ModifyToEmbedAsync(fallbackResult);
             }
         }
@@ -47,13 +47,13 @@ namespace Shinoa.Modules
         [Alias("ln", "malmanga")]
         public async Task MalMangaSearch([Remainder]string name)
         {
-            var responseMessageTask = this.ReplyAsync("Searching...");
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = this.service.GetManga(name);
+            var result = service.GetManga(name);
             var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(this.service.ModuleColor));
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(service.ModuleColor));
             }
             else
             {

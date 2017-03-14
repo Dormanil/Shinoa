@@ -18,7 +18,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task RunLua([Remainder]string code)
         {
-            var messageTask = this.ReplyAsync($"Running...");
+            var messageTask = ReplyAsync($"Running...");
 
             var output = Script.RunString(code).ToString();
 

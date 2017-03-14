@@ -17,44 +17,44 @@ namespace Shinoa
 
         public void Add<T>(T obj)
             where T : class
-            => this.AddFactory(() => obj);
+            => AddFactory(() => obj);
 
         public void AddTransient<T>()
             where T : class, new()
-            => this.AddFactory(() => new T());
+            => AddFactory(() => new T());
 
         public T Get<T>()
-            => (T)this.Get(typeof(T));
+            => (T)Get(typeof(T));
 
         public bool TryAdd<T>(T obj)
             where T : class
-            => this.TryAddFactory(() => obj);
+            => TryAddFactory(() => obj);
 
         public bool TryAddTransient<T>()
             where T : class, new()
-            => this.TryAddFactory(() => new T());
+            => TryAddFactory(() => new T());
 
         public void AddTransient<TKey, TImpl>()
             where TKey : class
             where TImpl : class, TKey, new()
-            => this.AddFactory<TKey>(() => new TImpl());
+            => AddFactory<TKey>(() => new TImpl());
 
         public bool TryAddTransient<TKey, TImpl>()
             where TKey : class
             where TImpl : class, TKey, new()
-            => this.TryAddFactory<TKey>(() => new TImpl());
+            => TryAddFactory<TKey>(() => new TImpl());
 
         public void AddFactory<T>(Func<T> factory)
             where T : class
         {
             var t = typeof(T);
-            if (this.map.ContainsKey(t)) throw new InvalidOperationException($"The dependency map already contains \"{t.FullName}\"");
-            this.map.Add(t, factory);
+            if (map.ContainsKey(t)) throw new InvalidOperationException($"The dependency map already contains \"{t.FullName}\"");
+            map.Add(t, factory);
         }
 
         public object Get(Type t)
         {
-            if (!this.TryGet(t, out object res))
+            if (!TryGet(t, out object res))
                 throw new KeyNotFoundException($"The dependency map does not contain \"{t.FullName}\"");
             return res;
         }
@@ -63,15 +63,15 @@ namespace Shinoa
             where T : class
         {
             var t = typeof(T);
-            if (this.map.ContainsKey(t)) return false;
-            this.map.Add(t, factory);
+            if (map.ContainsKey(t)) return false;
+            map.Add(t, factory);
             return true;
         }
 
         public bool TryGet<T>(out T result)
         {
             var t = typeof(T);
-            if (this.TryGet(t, out object res))
+            if (TryGet(t, out object res))
             {
                 result = (T)res;
                 return true;
@@ -83,7 +83,7 @@ namespace Shinoa
 
         public bool TryGet(Type t, out object result)
         {
-            if (this.map.TryGetValue(t, out Func<object> factory))
+            if (map.TryGetValue(t, out Func<object> factory))
             {
                 result = factory();
                 return true;
@@ -97,16 +97,16 @@ namespace Shinoa
         {
             if (obj == null) return;
             var t = obj.GetType();
-            if (this.map.ContainsKey(t)) throw new InvalidOperationException($"The dependency map already contains \"{t.FullName}\"");
-            this.map.Add(t, () => obj);
+            if (map.ContainsKey(t)) throw new InvalidOperationException($"The dependency map already contains \"{t.FullName}\"");
+            map.Add(t, () => obj);
         }
 
         public bool TryAddOpaque(object obj)
         {
             if (obj == null) return false;
             var t = obj.GetType();
-            if (this.map.ContainsKey(t)) return false;
-            this.map.Add(t, () => obj);
+            if (map.ContainsKey(t)) return false;
+            map.Add(t, () => obj);
             return true;
         }
     }

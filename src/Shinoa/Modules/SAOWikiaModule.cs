@@ -22,9 +22,9 @@ namespace Shinoa.Modules
         [Alias("saowiki", "saowikia")]
         public async Task SaoWikiaSearch([Remainder]string queryText)
         {
-            var responseMessageTask = this.ReplyAsync("Searching...");
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var httpResponseText = this.httpClient.HttpGet($"Search/List/?query={queryText}");
+            var httpResponseText = httpClient.HttpGet($"Search/List/?query={queryText}");
             dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 
             var responseMessage = await responseMessageTask;

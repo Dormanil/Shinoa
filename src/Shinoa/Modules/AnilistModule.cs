@@ -17,16 +17,16 @@ namespace Shinoa.Modules
 
         public AnilistModule(AnilistService svc)
         {
-            this.service = svc;
+            service = svc;
         }
 
         [Command("anilist")]
         [Alias("al", "ani")]
         public async Task AnilistCommand([Remainder]string name)
         {
-            var responseMessageTask = this.ReplyAsync("Searching...");
+            var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = await this.service.GetEmbed(name);
+            var result = await service.GetEmbed(name);
             var responseMessage = await responseMessageTask;
             await responseMessage.ModifyToEmbedAsync(result);
         }

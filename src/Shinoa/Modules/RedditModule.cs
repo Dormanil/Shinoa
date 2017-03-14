@@ -21,20 +21,20 @@ namespace Shinoa.Modules
 
         public RedditModule(RedditService svc)
         {
-            this.service = svc;
+            service = svc;
         }
 
         [Command("add")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string subredditName)
         {
-            if (this.service.AddBinding(subredditName, this.Context.Channel))
+            if (service.AddBinding(subredditName, Context.Channel))
             {
-                await this.ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{this.Context.Channel.Name}).");
+                await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
             }
             else
             {
-                await this.ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{this.Context.Channel.Name}).");
+                await ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
             }
         }
 
@@ -42,29 +42,29 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string subredditName)
         {
-            if (this.service.RemoveBinding(subredditName, this.Context.Channel))
+            if (service.RemoveBinding(subredditName, Context.Channel))
             {
-                await this.ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{this.Context.Channel.Name}).");
+                await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
             }
             else
             {
-                await this.ReplyAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{this.Context.Channel.Name}).");
+                await ReplyAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{Context.Channel.Name}).");
             }
         }
 
         [Command("list")]
         public async Task List()
         {
-            var response = this.service.GetBindings(this.Context.Channel)
+            var response = service.GetBindings(Context.Channel)
                         .Aggregate(string.Empty, (current, binding) => current + $"/r/{binding.SubredditName}\n");
 
             if (response == string.Empty) response = "N/A";
 
             var embed = new EmbedBuilder()
                 .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
-                .WithColor(this.service.ModuleColor);
+                .WithColor(service.ModuleColor);
 
-            await this.ReplyAsync(string.Empty, embed: embed.Build());
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
     }
 }

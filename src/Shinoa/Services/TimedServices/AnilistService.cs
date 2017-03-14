@@ -28,9 +28,9 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<Embed> GetEmbed(string query)
         {
-            return (await this.GetAnime(query))?.GetEmbed(this.moduleColor) ??
+            return (await GetAnime(query))?.GetEmbed(moduleColor) ??
                    new EmbedBuilder().AddField(f => f.WithName("Error").WithValue("Anime not found"))
-                       .WithColor(this.moduleColor);
+                       .WithColor(moduleColor);
         }
 
         async Task ITimedService.Callback()
@@ -40,23 +40,23 @@ namespace Shinoa.Services.TimedServices
             var postContent = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("grant_type", "client_credentials"),
-                new KeyValuePair<string, string>("client_id", this.clientId),
-                new KeyValuePair<string, string>("client_secret", this.clientSecret),
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("client_secret", clientSecret),
             });
 
             var responseString = await (await client.PostAsync("https://anilist.co/api/auth/access_token", postContent)).Content.ReadAsStringAsync();
             dynamic responseObject = JsonConvert.DeserializeObject(responseString);
-            this.accessToken = responseObject.access_token;
+            accessToken = responseObject.access_token;
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            this.clientId = config["client_id"];
-            this.clientSecret = config["client_secret"];
+            clientId = config["client_id"];
+            clientSecret = config["client_secret"];
 
             try
             {
-                this.moduleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                moduleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
             }
             catch (KeyNotFoundException)
             {
@@ -74,7 +74,7 @@ namespace Shinoa.Services.TimedServices
         {
             try
             {
-                var responseText = await (await this.httpClient.GetAsync($"{query}?access_token={this.accessToken}")).Content.ReadAsStringAsync();
+                var responseText = await (await httpClient.GetAsync($"{query}?access_token={accessToken}")).Content.ReadAsStringAsync();
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
 
                 dynamic firstResult = responseObject[0];
@@ -164,44 +164,44 @@ namespace Shinoa.Services.TimedServices
             {
                 var embed = new EmbedBuilder
                 {
-                    Title = this.RomanizedTitle,
-                    Url = $"http://anilist.co/anime/{this.Id}",
-                    ThumbnailUrl = this.ThumbnailUrl,
+                    Title = RomanizedTitle,
+                    Url = $"http://anilist.co/anime/{Id}",
+                    ThumbnailUrl = ThumbnailUrl,
                 };
-                if (this.EnglishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(this.EnglishTitle).WithIsInline(true));
-                if (this.JpTitle != null) embed.AddField(f => f.WithName("Japanese Title").WithValue(this.JpTitle).WithIsInline(true));
+                if (EnglishTitle != null) embed.AddField(f => f.WithName("English Title").WithValue(EnglishTitle).WithIsInline(true));
+                if (JpTitle != null) embed.AddField(f => f.WithName("Japanese Title").WithValue(JpTitle).WithIsInline(true));
 
-                this.Synonyms.RemoveAll(s => s == string.Empty);
-                if (this.Synonyms.Count > 0)
+                Synonyms.RemoveAll(s => s == string.Empty);
+                if (Synonyms.Count > 0)
                 {
                     var synonymsString = string.Empty;
-                    foreach (var synonym in this.Synonyms) synonymsString += synonym + ", ";
+                    foreach (var synonym in Synonyms) synonymsString += synonym + ", ";
                     synonymsString = synonymsString.TrimEnd(',', ' ');
                     embed.AddField(f => f.WithName("Synonyms").WithValue(synonymsString));
                 }
 
-                embed.AddField(f => f.WithName("Type").WithValue(this.Type).WithIsInline(true));
-                embed.AddField(f => f.WithName("Status").WithValue(this.Status).WithIsInline(true));
+                embed.AddField(f => f.WithName("Type").WithValue(Type).WithIsInline(true));
+                embed.AddField(f => f.WithName("Status").WithValue(Status).WithIsInline(true));
 
-                embed.AddField(f => f.WithName("Avg. Score (max. 100)").WithValue(this.AverageScore == 0 ? "?" : this.AverageScore.ToString()).WithIsInline(true));
-                embed.AddField(f => f.WithName("Episodes").WithValue(this.TotalEpisodes == 0 ? "?" : this.TotalEpisodes.ToString()).WithIsInline(true));
+                embed.AddField(f => f.WithName("Avg. Score (max. 100)").WithValue(AverageScore == 0 ? "?" : AverageScore.ToString()).WithIsInline(true));
+                embed.AddField(f => f.WithName("Episodes").WithValue(TotalEpisodes == 0 ? "?" : TotalEpisodes.ToString()).WithIsInline(true));
 
-                embed.AddField(f => f.WithName("Source Material").WithValue(this.SourceMaterial ?? "Unknown").WithIsInline(true));
-                embed.AddField(f => f.WithName("Duration").WithValue(this.Duration == 0 ? "?" : $"{this.Duration} min.").WithIsInline(true));
+                embed.AddField(f => f.WithName("Source Material").WithValue(SourceMaterial ?? "Unknown").WithIsInline(true));
+                embed.AddField(f => f.WithName("Duration").WithValue(Duration == 0 ? "?" : $"{Duration} min.").WithIsInline(true));
 
-                embed.AddField(f => f.WithName("Start Date").WithValue(this.StartDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
-                embed.AddField(f => f.WithName("End Date").WithValue(this.EndDate.Year == 1 ? "?" : this.EndDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+                embed.AddField(f => f.WithName("Start Date").WithValue(StartDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+                embed.AddField(f => f.WithName("End Date").WithValue(EndDate.Year == 1 ? "?" : EndDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
 
-                this.Genres.RemoveAll(s => s == string.Empty);
-                if (this.Genres.Count > 0)
+                Genres.RemoveAll(s => s == string.Empty);
+                if (Genres.Count > 0)
                 {
                     var genresString = string.Empty;
-                    foreach (var genre in this.Genres) genresString += genre + ", ";
+                    foreach (var genre in Genres) genresString += genre + ", ";
                     genresString = genresString.TrimEnd(',', ' ');
                     embed.AddField(f => f.WithName("Genres").WithValue(genresString));
                 }
 
-                embed.AddField(f => f.WithName("Description").WithValue(this.Description));
+                embed.AddField(f => f.WithName("Description").WithValue(Description));
                 embed.WithFooter(f => f.WithText("Source: AniList"));
                 embed.WithColor(color);
                 return embed.Build();

@@ -45,13 +45,13 @@ namespace Shinoa
                 Color = new Color(200, 0, 0),
                 Description = message,
                 Author =
-                    new EmbedAuthorBuilder()
+                    new EmbedAuthorBuilder
                     {
                         IconUrl = Shinoa.Client.CurrentUser.GetAvatarUrl(),
                         Name = nameof(Shinoa),
                     },
                 Timestamp = DateTimeOffset.Now,
-                Footer = new EmbedFooterBuilder()
+                Footer = new EmbedFooterBuilder
                 {
                     Text = Shinoa.VersionString,
                 },

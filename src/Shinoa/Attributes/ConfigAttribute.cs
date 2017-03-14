@@ -21,7 +21,7 @@ namespace Shinoa.Attributes
         /// <param name="configName">The name of the configuration item.</param>
         public ConfigAttribute(string configName)
         {
-            this.ConfigName = configName;
+            ConfigName = configName;
         }
 
         /// <summary>

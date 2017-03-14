@@ -11,6 +11,7 @@ namespace Shinoa
     using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
+    using System.Net.Http.Headers;
     using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
@@ -60,7 +61,7 @@ namespace Shinoa
         public static void SetBasicHttpCredentials(this HttpClient client, string username, string password)
         {
             var byteArray = Encoding.ASCII.GetBytes($"{username}:{password}");
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
         }
 
         public static string HttpGet(this HttpClient client, string relativeUrl)
@@ -84,12 +85,12 @@ namespace Shinoa
 
         public static string FirstParagraph(this string value)
         {
-            return value.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
+            return value.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
         }
 
         public static int ParagraphCount(this string value)
         {
-            return value.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Length;
+            return value.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Length;
         }
 
         public static string ToRemainderString(this string[] array)

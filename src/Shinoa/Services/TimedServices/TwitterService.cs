@@ -32,19 +32,19 @@ namespace Shinoa.Services.TimedServices
         {
             var name = username.ToLower();
 
-            if (this.db.Table<TwitterChannelBinding>()
+            if (db.Table<TwitterChannelBinding>()
                     .Any(b => b.ChannelId == channel.Id.ToString() && b.TwitterUsername == name)) return false;
 
-            if (this.db.Table<TwitterBinding>().All(b => b.TwitterUsername != name))
+            if (db.Table<TwitterBinding>().All(b => b.TwitterUsername != name))
             {
-                this.db.Insert(new TwitterBinding
+                db.Insert(new TwitterBinding
                 {
                     TwitterUsername = name,
                     LatestPost = DateTimeOffset.UtcNow,
                 });
             }
 
-            this.db.Insert(new TwitterChannelBinding
+            db.Insert(new TwitterChannelBinding
             {
                 TwitterUsername = name,
                 ChannelId = channel.Id.ToString(),
@@ -57,13 +57,13 @@ namespace Shinoa.Services.TimedServices
             var name = username.ToLower();
             var idString = channel.Id.ToString();
 
-            var found = this.db.Table<TwitterChannelBinding>()
+            var found = db.Table<TwitterChannelBinding>()
                 .Delete(b => b.ChannelId == idString && b.TwitterUsername == name) != 0;
             if (!found) return false;
 
-            if (this.db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != name))
+            if (db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != name))
             {
-                this.db.Delete(new TwitterBinding
+                db.Delete(new TwitterBinding
                 {
                     TwitterUsername = name,
                 });
@@ -75,21 +75,21 @@ namespace Shinoa.Services.TimedServices
         public IEnumerable<TwitterChannelBinding> GetBindings(IMessageChannel channel)
         {
             var idString = channel.Id.ToString();
-            return this.db.Table<TwitterChannelBinding>().Where(b => b.ChannelId == idString);
+            return db.Table<TwitterChannelBinding>().Where(b => b.ChannelId == idString);
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            if (!map.TryGet(out this.db)) this.db = new SQLiteConnection(config["db_path"]);
-            this.db.CreateTable<TwitterBinding>();
-            this.db.CreateTable<TwitterChannelBinding>();
+            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
+            db.CreateTable<TwitterBinding>();
+            db.CreateTable<TwitterChannelBinding>();
 
-            this.client = map.Get<DiscordSocketClient>();
+            client = map.Get<DiscordSocketClient>();
 
-            this.ModuleColor = new Color(33, 155, 243);
+            ModuleColor = new Color(33, 155, 243);
             try
             {
-                this.ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
+                ModuleColor = new Color(byte.Parse(config["color"][0]), byte.Parse(config["color"][1]), byte.Parse(config["color"][2]));
             }
             catch (KeyNotFoundException)
             {
@@ -102,14 +102,14 @@ namespace Shinoa.Services.TimedServices
                 Logging.LogError(e.ToString()).Wait();
             }
 
-            this.twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
+            twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
         }
 
         async Task ITimedService.Callback()
         {
-            foreach (var user in this.GetFromDb())
+            foreach (var user in GetFromDb())
             {
-                var response = await this.twitterSession.GetUserTimeline(user.Username);
+                var response = await twitterSession.GetUserTimeline(user.Username);
                 var newestCreationTime = response.FirstOrDefault()?.Time ?? DateTimeOffset.FromUnixTimeSeconds(0);
                 var postStack = new Stack<Embed>();
 
@@ -122,7 +122,7 @@ namespace Shinoa.Services.TimedServices
                         .WithUrl($"https://twitter.com/{tweet.User.ScreenName}/status/{tweet.Id}")
                         .WithDescription(tweet.Text)
                         .WithThumbnailUrl(tweet.User.Avatar)
-                        .WithColor(this.ModuleColor);
+                        .WithColor(ModuleColor);
 
                     embed.Title = tweet.IsARetweet() ? $"{tweet.RetweetedStatus.User.Name} (retweeted by @{tweet.User.ScreenName})" : $"{tweet.User.Name} (@{tweet.User.ScreenName})";
 
@@ -139,7 +139,7 @@ namespace Shinoa.Services.TimedServices
                     }
                 }
 
-                this.db.Update(new TwitterBinding
+                db.Update(new TwitterBinding
                 {
                     TwitterUsername = user.Username,
                     LatestPost = user.LatestPost,
@@ -150,16 +150,16 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<SubscribedUser> GetFromDb()
         {
             var ret = new List<SubscribedUser>();
-            foreach (var binding in this.db.Table<TwitterBinding>())
+            foreach (var binding in db.Table<TwitterBinding>())
             {
                 var tmpSub = new SubscribedUser
                 {
                     Username = binding.TwitterUsername,
                     LatestPost = binding.LatestPost,
                 };
-                foreach (var channelBinding in this.db.Table<TwitterChannelBinding>().Where(b => b.TwitterUsername == tmpSub.Username))
+                foreach (var channelBinding in db.Table<TwitterChannelBinding>().Where(b => b.TwitterUsername == tmpSub.Username))
                 {
-                    var tmpChannel = this.client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
+                    var tmpChannel = client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
                     if (tmpChannel == null) continue;
                     tmpSub.Channels.Add(tmpChannel);
                 }

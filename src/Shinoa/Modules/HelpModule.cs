@@ -21,7 +21,7 @@ namespace Shinoa.Modules
                     .AddField(f => f.WithName("GitHub").WithValue("https://github.com/Dormanil/Shinoa"))
                     .WithFooter(f => f.WithText(Shinoa.VersionString));
 
-            await this.Context.Channel.SendMessageAsync($"{this.Context.User.Mention}", embed: embed.Build());
+            await Context.Channel.SendMessageAsync($"{Context.User.Mention}", embed: embed.Build());
         }
     }
 }

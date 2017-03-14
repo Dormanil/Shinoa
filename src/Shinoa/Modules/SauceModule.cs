@@ -57,8 +57,8 @@ namespace Shinoa.Modules
         [Alias("source", "saucenao")]
         public async Task SauceSearch(string url = "")
         {
-            var responseMessage = this.ReplyAsync("Searching...").Result;
-            var imageUrl = url == string.Empty ? await this.FindRelevantImageUrlAsync() : url;
+            var responseMessage = ReplyAsync("Searching...").Result;
+            var imageUrl = url == string.Empty ? await FindRelevantImageUrlAsync() : url;
 
             if (imageUrl == null)
             {
@@ -79,8 +79,6 @@ namespace Shinoa.Modules
                 await responseMessage.ModifyToEmbedAsync(new EmbedBuilder()
                     .WithTitle("No match found.")
                     .WithColor(new Color(244, 67, 54)));
-
-                return;
             }
         }
 
@@ -88,13 +86,13 @@ namespace Shinoa.Modules
         {
             var imageUrl = string.Empty;
 
-            if (this.Context.Message.Attachments.Count > 0)
+            if (Context.Message.Attachments.Count > 0)
             {
-                imageUrl = this.Context.Message.Attachments.First().Url;
+                imageUrl = Context.Message.Attachments.First().Url;
             }
             else
             {
-                var messages = await this.Context.Channel.GetMessagesAsync(limit: 30).Flatten();
+                var messages = await Context.Channel.GetMessagesAsync(limit: 30).Flatten();
                 foreach (var message in messages.OrderByDescending(o => o.Timestamp))
                 {
                     if (message.Attachments.Count > 0)
@@ -102,7 +100,8 @@ namespace Shinoa.Modules
                         imageUrl = message.Attachments.First().Url;
                         break;
                     }
-                    else if (Regex.IsMatch(message.Content, @"http\S*(png|jpg|jpeg)"))
+
+                    if (Regex.IsMatch(message.Content, @"http\S*(png|jpg|jpeg)"))
                     {
                         var match = Regex.Match(message.Content, @"http\S*(png|jpg|jpeg)");
                         if (match.Success)
@@ -144,11 +143,11 @@ namespace Shinoa.Modules
         {
             public SauceResult(string title, float similarityPercentage, string sourceUrl, string artistName, string thumbmnailImageUrl)
             {
-                this.Title = title;
-                this.SimilarityPercentage = similarityPercentage;
-                this.SourceUrl = sourceUrl;
-                this.ArtistName = artistName;
-                this.ThumbnailImageUrl = thumbmnailImageUrl;
+                Title = title;
+                SimilarityPercentage = similarityPercentage;
+                SourceUrl = sourceUrl;
+                ArtistName = artistName;
+                ThumbnailImageUrl = thumbmnailImageUrl;
             }
 
             public string Title { get; }
@@ -164,16 +163,16 @@ namespace Shinoa.Modules
             public Embed GetEmbed()
             {
                 var embed = new EmbedBuilder()
-                    .WithTitle(this.SimilarityPercentage > 90 ? this.Title : $"{this.Title} (unlikely match)")
-                    .AddField(f => f.WithName("Source").WithValue(this.SourceUrl))
-                    .AddField(f => f.WithName("Artist Name").WithValue(this.ArtistName).WithIsInline(true))
-                    .AddField(f => f.WithName("Similarity").WithValue($"{this.SimilarityPercentage}%").WithIsInline(true))
+                    .WithTitle(SimilarityPercentage > 90 ? Title : $"{Title} (unlikely match)")
+                    .AddField(f => f.WithName("Source").WithValue(SourceUrl))
+                    .AddField(f => f.WithName("Artist Name").WithValue(ArtistName).WithIsInline(true))
+                    .AddField(f => f.WithName("Similarity").WithValue($"{SimilarityPercentage}%").WithIsInline(true))
                     .WithFooter(f => f.WithText("Powered by SauceNAO"));
 
-                embed.Color = this.SimilarityPercentage > 90 ? new Color(139, 195, 74) : new Color(96, 125, 139);
+                embed.Color = SimilarityPercentage > 90 ? new Color(139, 195, 74) : new Color(96, 125, 139);
 
-                if (!this.ThumbnailImageUrl.Contains("blocked") && !this.ThumbnailImageUrl.Contains(".gif"))
-                    embed.ThumbnailUrl = this.ThumbnailImageUrl;
+                if (!ThumbnailImageUrl.Contains("blocked") && !ThumbnailImageUrl.Contains(".gif"))
+                    embed.ThumbnailUrl = ThumbnailImageUrl;
 
                 return embed.Build();
             }

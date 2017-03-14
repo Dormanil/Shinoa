@@ -17,7 +17,7 @@ namespace Shinoa.Services
         void IService.Init(dynamic config, IDependencyMap map)
         {
             var client = map.Get<DiscordSocketClient>();
-            client.MessageReceived += async (m) =>
+            client.MessageReceived += async m =>
             {
                 if (m.Author.Id == client.CurrentUser.Id) return;
 

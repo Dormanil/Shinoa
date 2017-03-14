@@ -20,20 +20,20 @@ namespace Shinoa.Modules
 
         public JoinPartModule(JoinPartService svc)
         {
-            this.service = svc;
+            service = svc;
         }
 
         [Command("enable")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
         {
-            if (this.service.AddBinding(this.Context.Guild, this.Context.Channel))
+            if (service.AddBinding(Context.Guild, Context.Channel))
             {
-                await this.ReplyAsync($"Greetings enabled for this server and bound to channel #{this.Context.Channel.Name}.");
+                await ReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.");
             }
             else
             {
-                await this.ReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
+                await ReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
             }
         }
 
@@ -41,13 +41,13 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
         {
-            if (this.service.RemoveBinding(this.Context.Guild))
+            if (service.RemoveBinding(Context.Guild))
             {
-                await this.ReplyAsync("Greetings disabled for this server.");
+                await ReplyAsync("Greetings disabled for this server.");
             }
             else
             {
-                await this.ReplyAsync("Greetings aren't enabled for this server.");
+                await ReplyAsync("Greetings aren't enabled for this server.");
             }
         }
 
@@ -55,13 +55,13 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Here()
         {
-            if (this.service.AddBinding(this.Context.Guild, this.Context.Channel, true))
+            if (service.AddBinding(Context.Guild, Context.Channel, true))
             {
-                await this.ReplyAsync($"Greetings moved to channel #{this.Context.Channel.Name}.");
+                await ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
             }
             else
             {
-                await this.ReplyAsync("Greetings aren't enabled for this server.");
+                await ReplyAsync("Greetings aren't enabled for this server.");
             }
         }
     }

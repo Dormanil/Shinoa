@@ -24,7 +24,7 @@ namespace Shinoa.Modules
         [Alias("wikipedia", "wikisearch")]
         public async Task WikipediaSearch([Remainder]string queryText)
         {
-            var responseMessageTask = this.ReplyAsync("Searching...");
+            var responseMessageTask = ReplyAsync("Searching...");
 
             var responseText = HttpClient.HttpGet($"api.php?action=opensearch&search={queryText}");
             if (responseText == null)

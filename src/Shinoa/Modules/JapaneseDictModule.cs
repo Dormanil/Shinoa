@@ -21,7 +21,7 @@ namespace Shinoa.Modules
         [Alias("jisho", "jpdict", "japanese")]
         public async Task JishoSearch([Remainder] string term)
         {
-            var responseMessageTask = this.ReplyAsync("Searching...");
+            var responseMessageTask = ReplyAsync("Searching...");
 
             var httpResponseText = HttpClient.HttpGet($"words?keyword={term}");
             if (httpResponseText == null)

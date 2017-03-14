@@ -22,9 +22,9 @@ namespace Shinoa.Services
 
         public bool AddBinding(ITextChannel channel)
         {
-            if (this.db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
+            if (db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
 
-            this.db.Insert(new ImageSpamBinding
+            db.Insert(new ImageSpamBinding
             {
                 ChannelId = channel.Id.ToString(),
             });
@@ -33,21 +33,21 @@ namespace Shinoa.Services
 
         public bool RemoveBinding(ITextChannel channel)
         {
-            return this.db.Delete<ImageSpamBinding>(channel.Id.ToString()) != 0;
+            return db.Delete<ImageSpamBinding>(channel.Id.ToString()) != 0;
         }
 
         public bool CheckBinding(ITextChannel channel)
         {
-            return this.db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString());
+            return db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString());
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
-            if (!map.TryGet(out this.db)) this.db = new SQLiteConnection(config["db_path"]);
-            this.db.CreateTable<ImageSpamBinding>();
+            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
+            db.CreateTable<ImageSpamBinding>();
 
             var client = map.Get<DiscordSocketClient>();
-            client.MessageReceived += this.Handler;
+            client.MessageReceived += Handler;
         }
 
         private async Task Handler(SocketMessage msg)
@@ -55,7 +55,7 @@ namespace Shinoa.Services
             try
             {
                 if (msg.Author is IGuildUser user &&
-                    this.db.Table<ImageSpamBinding>().Any(b => b.ChannelId == msg.Channel.Id.ToString()) &&
+                    db.Table<ImageSpamBinding>().Any(b => b.ChannelId == msg.Channel.Id.ToString()) &&
                     msg.Attachments.Count > 0)
                 {
                     var imagesCounter = 0;
@@ -88,7 +88,6 @@ namespace Shinoa.Services
             }
             catch (HttpException)
             {
-                return;
             }
         }
 

@@ -27,7 +27,7 @@ namespace Shinoa.Modules
             .WithTitle($"I choose '{choice}'.")
             .WithColor(ModuleColor);
 
-            await this.Context.Channel.SendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         [Command("roll")]
@@ -41,7 +41,7 @@ namespace Shinoa.Modules
 
             if (multiplier > 100)
             {
-                await this.ReplyAsync("Please stick to reasonable amounts of dice.");
+                await ReplyAsync("Please stick to reasonable amounts of dice.");
                 return;
             }
 
@@ -57,14 +57,14 @@ namespace Shinoa.Modules
                 .AddField(f => f.WithName("Total").WithValue(total.ToString()))
                 .AddField(f => f.WithName("Rolls").WithValue(rollsString.Trim(' ', ',')))
                 .WithColor(ModuleColor);
-            await this.Context.Channel.SendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         [Command("lenny")]
         public async Task LennyFace()
         {
-            var deleteAsync = this.Context.Message.DeleteAsync();
-            await this.ReplyAsync("( ͡° ͜ʖ ͡°)");
+            var deleteAsync = Context.Message.DeleteAsync();
+            await ReplyAsync("( ͡° ͜ʖ ͡°)");
             await deleteAsync;
         }
     }

@@ -12,9 +12,9 @@ namespace Shinoa
     using System.IO;
     using System.Linq;
     using System.Reflection;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-
     using Attributes;
     using Discord;
     using Discord.Commands;
@@ -23,6 +23,7 @@ namespace Shinoa
     using Services.TimedServices;
     using SQLite;
     using SQLite.Extensions;
+    using YamlDotNet.Serialization;
 
     public static class Shinoa
     {
@@ -51,12 +52,12 @@ namespace Shinoa
 
             var configurationFileStream = Alpha ? new FileStream("config_alpha.yaml", FileMode.Open) : new FileStream("config.yaml", FileMode.Open);
 
-            Console.OutputEncoding = System.Text.Encoding.Unicode;
+            Console.OutputEncoding = Encoding.Unicode;
 
             using (var streamReader = new StreamReader(configurationFileStream))
             {
-                var deserializer = new YamlDotNet.Serialization.Deserializer();
-                Shinoa.Config = deserializer.Deserialize(streamReader);
+                var deserializer = new Deserializer();
+                Config = deserializer.Deserialize(streamReader);
                 await Logging.Log("Config parsed and loaded.");
             }
             #endregion
@@ -98,7 +99,7 @@ namespace Shinoa
 
                 await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
             };
-            Client.GuildAvailable += async (g) =>
+            Client.GuildAvailable += async g =>
             {
                 try
                 {
@@ -113,7 +114,7 @@ namespace Shinoa
                     await Logging.LogError(e.ToString());
                 }
             };
-            Client.MessageReceived += async (message) =>
+            Client.MessageReceived += async message =>
             {
                 var userMessage = message as SocketUserMessage;
                 var argPos = 0;
@@ -196,7 +197,7 @@ namespace Shinoa
                 }
 
                 globalRefreshTimer = new Timer(
-                    async (s) =>
+                    async s =>
                     {
                         foreach (var callback in Callbacks.Values)
                         {
