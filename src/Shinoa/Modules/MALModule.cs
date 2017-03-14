@@ -1,58 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
-using System.Xml.Linq;
-using System.Threading;
-using System.Net.Http;
-using Discord.Commands;
-using System.Text.RegularExpressions;
-using Shinoa.Services;
-using Shinoa.Services.TimedServices;
+﻿// <copyright file="MALModule.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa.Modules
 {
-    //TODO: Improve migrate
-    public class MALModule : ModuleBase<SocketCommandContext>
+    using System.Threading.Tasks;
+    using Discord.Commands;
+    using Services;
+    using Services.TimedServices;
+
+    // TODO: Improve migrate
+    public class MalModule : ModuleBase<SocketCommandContext>
     {
-        private MALService service;
+        private MalService service;
         private AnilistService fallbackService;
 
-        public MALModule(MALService svc, AnilistService fallbackSvc)
+        public MalModule(MalService svc, AnilistService fallbackSvc)
         {
-            service = svc;
-            fallbackService = fallbackSvc;
+            this.service = svc;
+            this.fallbackService = fallbackSvc;
         }
 
-        [Command("anime"), Alias("mal", "malanime")]
-        public async Task MALAnimeSearch([Remainder]string name)
+        [Command("anime")]
+        [Alias("mal", "malanime")]
+        public async Task MalAnimeSearch([Remainder]string name)
         {
-            var responseMessageTask = ReplyAsync("Searching...");
+            var responseMessageTask = this.ReplyAsync("Searching...");
 
-            var result = service.GetAnime(name);
+            var result = this.service.GetAnime(name);
             var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(service.ModuleColor));
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(this.service.ModuleColor));
             }
             else
             {
-                var fallbackResult = await fallbackService.GetEmbed(name);
+                var fallbackResult = await this.fallbackService.GetEmbed(name);
                 await responseMessage.ModifyToEmbedAsync(fallbackResult);
             }
         }
 
-        [Command("manga"), Alias("ln", "malmanga")]
-        public async Task MALMangaSearch([Remainder]string name)
+        [Command("manga")]
+        [Alias("ln", "malmanga")]
+        public async Task MalMangaSearch([Remainder]string name)
         {
-            var responseMessageTask = ReplyAsync("Searching...");
+            var responseMessageTask = this.ReplyAsync("Searching...");
 
-            var result = service.GetManga(name);
+            var result = this.service.GetManga(name);
             var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(service.ModuleColor));
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(this.service.ModuleColor));
             }
             else
             {

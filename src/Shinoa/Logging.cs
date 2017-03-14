@@ -1,9 +1,16 @@
-﻿namespace Shinoa
+﻿// <copyright file="Logging.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
+
+namespace Shinoa
 {
     using System;
+    using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Niceties for logging of commands and errors.
@@ -16,6 +23,7 @@
         /// Logs a specific string, as given in message.
         /// </summary>
         /// <param name="message">The message to log.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task Log(string message)
         {
             PrintWithTime(message);
@@ -27,6 +35,7 @@
         /// Logs a specific string, as given in message, as an error.
         /// </summary>
         /// <param name="message">The message to log.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task LogError(string message)
         {
             PrintErrorWithTime(message);
@@ -55,6 +64,7 @@
         /// Logs a specific Discord message as specified by the CommandContext.
         /// </summary>
         /// <param name="context">The context of the command.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task LogMessage(SocketCommandContext context)
         {
             await Log(!(context.Channel is IPrivateChannel)
@@ -65,6 +75,8 @@
         /// <summary>
         /// Initialises logging to a specific Discord Channel.
         /// </summary>
+        /// <param name="channel">Reference to the channel in which we want to log.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task InitLoggingToChannel(IMessageChannel channel)
         {
             if (loggingChannel != null || channel == null) return;

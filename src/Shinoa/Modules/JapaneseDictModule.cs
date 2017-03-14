@@ -1,27 +1,36 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Discord.Commands;
-using Newtonsoft.Json;
+﻿// <copyright file="JapaneseDictModule.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa.Modules
 {
+    using System;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using Discord.Commands;
+    using Newtonsoft.Json;
+
     public class JapaneseDictModule : ModuleBase<SocketCommandContext>
     {
-        static readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };
+        private static readonly HttpClient HttpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };
 
-        [Command("jp"), Alias("jisho", "jpdict", "japanese")]
+        [Command("jp")]
+        [Alias("jisho", "jpdict", "japanese")]
         public async Task JishoSearch([Remainder] string term)
         {
-            var responseMessageTask = ReplyAsync("Searching...");
+            var responseMessageTask = this.ReplyAsync("Searching...");
 
-            var httpResponseText = httpClient.HttpGet($"words?keyword={term}");
+            var httpResponseText = HttpClient.HttpGet($"words?keyword={term}");
             if (httpResponseText == null)
             {
                 var responseMsg = await responseMessageTask;
                 await responseMsg.ModifyAsync(p => p.Content = "Not found.");
                 return;
             }
+
             dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 
             var responseMessage = await responseMessageTask;
@@ -30,7 +39,7 @@ namespace Shinoa.Modules
             {
                 dynamic firstResult = responseObject["data"][0];
 
-                var responseText = "";
+                var responseText = string.Empty;
 
                 foreach (var word in firstResult["japanese"])
                 {

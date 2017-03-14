@@ -1,15 +1,29 @@
-﻿using Discord;
-using Discord.Commands;
-using Shinoa.Attributes;
-using System.Linq;
-using System.Threading.Tasks;
-using Shinoa.Services.TimedServices;
+﻿// <copyright file="TwitterModule.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa.Modules
 {
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Attributes;
+    using Discord;
+    using Discord.Commands;
+    using Services.TimedServices;
+
     [Group("twitter")]
     public class TwitterModule : ModuleBase<SocketCommandContext>
     {
+        private readonly TwitterService service;
+
+        public TwitterModule(TwitterService svc)
+        {
+            this.service = svc;
+        }
+
         public enum TwitterOption
         {
             Add,
@@ -17,54 +31,49 @@ namespace Shinoa.Modules
             List
         }
 
-        public TwitterService service;
-
-        public TwitterModule(TwitterService svc)
-        {
-            service = svc;
-        }
-
-        [Command("add"), RequireGuildUserPermission(GuildPermission.ManageGuild)]
+        [Command("add")]
+        [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string user)
         {
-            var twitterName = user.Replace("@", "").ToLower().Trim();
-            if (service.AddBinding(twitterName, Context.Channel))
+            var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
+            if (this.service.AddBinding(twitterName, this.Context.Channel))
             {
-                await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
+                await this.ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{this.Context.Channel.Name}).");
             }
             else
             {
-                await ReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{Context.Channel.Name}).");
+                await this.ReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{this.Context.Channel.Name}).");
             }
         }
 
-        [Command("remove"), RequireGuildUserPermission(GuildPermission.ManageGuild)]
+        [Command("remove")]
+        [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string user)
         {
-            var twitterName = user.Replace("@", "").ToLower().Trim();
-            if (service.RemoveBinding(twitterName, Context.Channel))
+            var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
+            if (this.service.RemoveBinding(twitterName, this.Context.Channel))
             {
-                await ReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{Context.Channel.Name}).");
+                await this.ReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{this.Context.Channel.Name}).");
             }
             else
             {
-                await ReplyAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{Context.Channel.Name}).");
+                await this.ReplyAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{this.Context.Channel.Name}).");
             }
         }
 
         [Command("list")]
         public async Task List()
         {
-            var response = service.GetBindings(Context.Channel)
-                        .Aggregate("", (current, binding) => current + $"@{binding.TwitterUsername}\n");
+            var response = this.service.GetBindings(this.Context.Channel)
+                        .Aggregate(string.Empty, (current, binding) => current + $"@{binding.TwitterUsername}\n");
 
-            if (response == "") response = "N/A";
+            if (response == string.Empty) response = "N/A";
 
             var embed = new EmbedBuilder()
                 .AddField(f => f.WithName("Twitter users currently bound to this channel").WithValue(response))
-                .WithColor(service.ModuleColor);
+                .WithColor(this.service.ModuleColor);
 
-            await ReplyAsync("", embed: embed.Build());
+            await this.ReplyAsync(string.Empty, embed: embed.Build());
         }
     }
 }

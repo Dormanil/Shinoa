@@ -1,13 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
-using System.IO;
-using Discord.Commands;
+﻿// <copyright file="HelpModule.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
 
 namespace Shinoa.Modules
 {
+    using System.Threading.Tasks;
+    using Discord;
+    using Discord.Commands;
+
     public class HelpModule : ModuleBase<SocketCommandContext>
     {
         [Command("help")]
@@ -18,7 +21,7 @@ namespace Shinoa.Modules
                     .AddField(f => f.WithName("GitHub").WithValue("https://github.com/Dormanil/Shinoa"))
                     .WithFooter(f => f.WithText(Shinoa.VersionString));
 
-            await Context.Channel.SendMessageAsync($"{Context.User.Mention}", embed: embed.Build());
+            await this.Context.Channel.SendMessageAsync($"{this.Context.User.Mention}", embed: embed.Build());
         }
     }
 }
