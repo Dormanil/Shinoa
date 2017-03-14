@@ -60,14 +60,14 @@ namespace Shinoa
         {
             var response = client.GetAsync(relativeUrl).Result;
             var content = response.Content;
-            return content.ReadAsStringAsync().Result;
+            return response.IsSuccessStatusCode ? content.ReadAsStringAsync().Result : null;
         }
 
         public static string HttpPost(this HttpClient client, string relativeUrl, HttpContent httpContent)
         {
             var response = client.PostAsync(relativeUrl, httpContent).Result;
             var content = response.Content;
-            return content.ReadAsStringAsync().Result;
+            return response.IsSuccessStatusCode ? content.ReadAsStringAsync().Result : null;
         }
 
         public static string Truncate(this string value, int maxChars)

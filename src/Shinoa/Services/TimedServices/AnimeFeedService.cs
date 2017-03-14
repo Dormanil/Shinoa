@@ -43,6 +43,8 @@ namespace Shinoa.Services.TimedServices
         async Task ITimedService.Callback()
         {
             var responseText = httpClient.HttpGet("?page=rss&user=64513");
+            if (responseText == null) return;
+
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
             var entries =
                 document.Root.Descendants()

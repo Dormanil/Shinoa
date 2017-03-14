@@ -13,14 +13,23 @@ namespace Shinoa.Modules
     public class WikipediaModule : ModuleBase<SocketCommandContext>
     {
         public static Color MODULE_COLOR = new Color(33, 150, 243);
-        HttpClient httpClient = new HttpClient();
+        static readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://en.wikipedia.org/w/") };
         
         [Command("wiki"), Alias("wikipedia", "wikisearch")]
         public async Task WikipediaSearch([Remainder]string queryText)
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var responseText = httpClient.HttpGet($"https://en.wikipedia.org/w/api.php?action=opensearch&search={queryText}");
+            var responseText = httpClient.HttpGet($"api.php?action=opensearch&search={queryText}");
+            if (responseText == null)
+            {
+                var responseMsg = await responseMessageTask;
+                await responseMsg.ModifyToEmbedAsync(new EmbedBuilder()
+                    .WithTitle("Search returned no results.")
+                    .WithColor(MODULE_COLOR)
+                    .Build());
+                return;
+            }
             dynamic responseObject = JsonConvert.DeserializeObject(responseText);
 
             var responseMessage = await responseMessageTask;

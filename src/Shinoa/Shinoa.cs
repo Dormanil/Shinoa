@@ -86,6 +86,24 @@ namespace Shinoa
             {
                 await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
                 await Client.SetGameAsync(Config["global"]["default_game"]);
+                
+
+                await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
+            };
+            Client.GuildAvailable += async (g) =>
+            {
+                try
+                {
+                    if (Client.GetChannel(ulong.Parse((string)Config["global"]["logging_channel_id"])) is IMessageChannel loggingChannel) await Logging.InitLoggingToChannel(loggingChannel);
+                }
+                catch (KeyNotFoundException)
+                {
+                    await Logging.LogError("The property was not found on the dynamic object. No logging channel was supplied.");
+                }
+                catch (Exception e)
+                {
+                    await Logging.LogError(e.ToString());
+                }
             };
             Client.MessageReceived += async (message) =>
             {
@@ -124,6 +142,9 @@ namespace Shinoa
             {
                 foreach (var service in services)
                 {
+                    var instance = (IService) Activator.CreateInstance(service.UnderlyingSystemType);
+                    if(!Map.TryAddOpaque(instance)) continue;
+
                     var configAttr = service.GetCustomAttribute<ConfigAttribute>();
                     dynamic config = null;
                     try
@@ -136,17 +157,34 @@ namespace Shinoa
                     }
                     catch (Exception e)
                     {
-                        Logging.LogError(e.ToString()).GetAwaiter().GetResult();
+                        Logging.LogError(e.ToString()).Wait();
                     }
-                    var instance = (IService) Activator.CreateInstance(service.UnderlyingSystemType);
+
                     instance.Init(config, Map);
+
                     if (instance is ITimedService timedService)
                     {
                         Callbacks.TryAdd(service.UnderlyingSystemType, timedService.Callback);
-                        Logging.Log($"Service \"{service.Name}\" added to callbacks").GetAwaiter().GetResult();
+                        Logging.Log($"Service \"{service.Name}\" added to callbacks").Wait();
                     }
-                    Logging.Log($"Loaded service \"{service.Name}\"").GetAwaiter().GetResult();
-                    Map.TryAddOpaque(instance);
+
+                    Logging.Log($"Loaded service \"{service.Name}\"").Wait();
+                }
+
+                int refreshRate = 30;
+                try
+                {
+                    refreshRate = int.Parse(Config["global"]["refresh_rate"]);
+                }
+                catch (KeyNotFoundException)
+                {
+                    Logging.LogError(
+                            "The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.")
+                        .Wait();
+                }
+                catch (Exception e)
+                {
+                    Logging.LogError(e.ToString()).Wait();
                 }
 
                 globalRefreshTimer = new Timer(async (s) =>
@@ -162,27 +200,8 @@ namespace Shinoa
                             await Logging.LogError(e.ToString());
                         }
                     }
-                }, null, TimeSpan.Zero, TimeSpan.FromSeconds(int.Parse((string) Config["global"]["refresh_rate"])));
+                }, null, TimeSpan.Zero, TimeSpan.FromSeconds(refreshRate));
                 return Task.CompletedTask;
-            };
-            Client.GuildAvailable += async (g) =>
-            {
-                try
-                {
-                    var loggingChannel =
-                        Client.GetChannel(ulong.Parse(Config["global"]["logging_channel_id"])) as IMessageChannel;
-                    if (loggingChannel == null) return;
-                    var result = await Logging.InitLoggingToChannel(loggingChannel);
-                    if (result) await Logging.Log($"Now logging to channel \"{loggingChannel.Name}\"");
-                }
-                catch (KeyNotFoundException)
-                {
-                    await Logging.LogError("The property was not found on the dynamic object. No logging channel was supplied.");
-                }
-                catch (Exception e)
-                {
-                    await Logging.LogError(e.ToString());
-                }
             };
             #endregion
 
