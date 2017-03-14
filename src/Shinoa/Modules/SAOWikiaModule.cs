@@ -14,10 +14,18 @@ namespace Shinoa.Modules
     using Microsoft.CSharp.RuntimeBinder;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// Module for SAO Wikia services.
+    /// </summary>
     public class SaoWikiaModule : ModuleBase<SocketCommandContext>
     {
-        private HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/") };
+        private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/") };
 
+        /// <summary>
+        /// Command to search the SAO Wiki for a query.
+        /// </summary>
+        /// <param name="queryText">The query to search for.</param>
+        /// <returns></returns>
         [Command("sao")]
         [Alias("saowiki", "saowikia")]
         public async Task SaoWikiaSearch([Remainder]string queryText)

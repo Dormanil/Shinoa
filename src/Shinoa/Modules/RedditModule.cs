@@ -14,16 +14,28 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using Services.TimedServices;
 
+    /// <summary>
+    /// Module for reddit services.
+    /// </summary>
     [Group("reddit")]
     public class RedditModule : ModuleBase<SocketCommandContext>
     {
         private readonly RedditService service;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RedditModule"/> class.
+        /// </summary>
+        /// <param name="svc">Backing service instance.</param>
         public RedditModule(RedditService svc)
         {
             service = svc;
         }
 
+        /// <summary>
+        /// Command to add reddit notifications to the channel.
+        /// </summary>
+        /// <param name="subredditName">Name of the subreddit to add.</param>
+        /// <returns></returns>
         [Command("add")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string subredditName)
@@ -38,6 +50,11 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to remove reddit notifications from the channel.
+        /// </summary>
+        /// <param name="subredditName">Name of the subreddit to remove.</param>
+        /// <returns></returns>
         [Command("remove")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string subredditName)
@@ -52,6 +69,10 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to list the subreddits bound to the channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("list")]
         public async Task List()
         {

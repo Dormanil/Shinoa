@@ -11,8 +11,15 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
 
+    /// <summary>
+    /// Module to get help using the bot.
+    /// </summary>
     public class HelpModule : ModuleBase<SocketCommandContext>
     {
+        /// <summary>
+        /// Command to print the help message.
+        /// </summary>
+        /// <returns></returns>
         [Command("help")]
         public async Task HelpMessage()
         {

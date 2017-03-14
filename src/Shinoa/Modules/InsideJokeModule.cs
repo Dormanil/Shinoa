@@ -13,8 +13,15 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
 
+    /// <summary>
+    /// Module containing commands for use on the FDoD server.
+    /// </summary>
     public class InsideJokeModule : ModuleBase<SocketCommandContext>
     {
+        /// <summary>
+        /// It is a mystery to everyone...
+        /// </summary>
+        /// <returns></returns>
         [Command("mystery")]
         public async Task MysteryMessage()
         {
@@ -27,6 +34,10 @@ namespace Shinoa.Modules
             await deleteAsync;
         }
 
+        /// <summary>
+        /// Shows a nice picture of a gentleman cactuar.
+        /// </summary>
+        /// <returns></returns>
         [Command("gentleman")]
         public async Task GentlemanMessage()
         {
@@ -39,6 +50,10 @@ namespace Shinoa.Modules
             await deleteAsync;
         }
 
+        /// <summary>
+        /// Displays information about Catsy.
+        /// </summary>
+        /// <returns></returns>
         [Command("catsy")]
         public async Task CatsyMessage()
         {
@@ -52,6 +67,10 @@ To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or 
             await Context.Channel.SendEmbedAsync(embed);
         }
 
+        /// <summary>
+        /// Displays information about Fairy Dance of Death.
+        /// </summary>
+        /// <returns></returns>
         [Command("fdd")]
         [Alias("fdod")]
         public async Task FdoDMessage()
@@ -64,6 +83,10 @@ To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or 
             await Context.Channel.SendEmbedAsync(embed);
         }
 
+        /// <summary>
+        /// Tells people that this is not how it works.
+        /// </summary>
+        /// <returns></returns>
         [Command("howitworks")]
         public async Task HowItWorksMessage()
         {
@@ -72,6 +95,10 @@ To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or 
             await deleteAsync;
         }
 
+        /// <summary>
+        /// Greets users in a unique fashion.
+        /// </summary>
+        /// <returns></returns>
         [Command("popo")]
         public async Task PopoMessage()
         {
@@ -84,13 +111,18 @@ To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or 
             await deleteAsync;
         }
 
+        /// <summary>
+        /// Tells the current time in Alfheim.
+        /// </summary>
+        /// <returns></returns>
         [Command("time")]
         public async Task TimeMessage()
         {
+            var alfheimTime = GetAlfheimTime();
             var embed = new EmbedBuilder()
                 .WithTitle("Current Date and Time in Alfheim")
-                .AddField(field => field.WithName("Date:").WithValue($"{GetAlfheimTime().ToString(new CultureInfo("en-US").DateTimeFormat.LongDatePattern)}"))
-                .AddField(field => field.WithName("Time:").WithValue($"{GetAlfheimTime().ToString(new CultureInfo("de-DE").DateTimeFormat.LongTimePattern)}"));
+                .AddField(field => field.WithName("Date:").WithValue($"{alfheimTime.ToString(new CultureInfo("en-US").DateTimeFormat.LongDatePattern)}"))
+                .AddField(field => field.WithName("Time:").WithValue($"{alfheimTime.ToString(new CultureInfo("de-DE").DateTimeFormat.LongTimePattern)}"));
             await Context.Channel.SendEmbedAsync(embed);
         }
 

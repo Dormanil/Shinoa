@@ -11,8 +11,16 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using MoonSharp.Interpreter;
 
+    /// <summary>
+    /// Module to access Lua capabilities.
+    /// </summary>
     public class LuaModule : ModuleBase<SocketCommandContext>
     {
+        /// <summary>
+        /// Command to run Lua code.
+        /// </summary>
+        /// <param name="code">The code to interpret and run.</param>
+        /// <returns></returns>
         [Command("lua")]
         [Alias("run", "eval", "exec")]
         [RequireOwner]

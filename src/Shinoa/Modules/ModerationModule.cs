@@ -14,17 +14,29 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using Services;
 
+    /// <summary>
+    /// Module for Moderative uses.
+    /// </summary>
     public class ModerationModule : ModuleBase<SocketCommandContext>
     {
         private static readonly Dictionary<string, int> TimeUnits = new Dictionary<string, int>
         {
-            { "seconds",    1000 },
-            { "minutes",    1000 * 60 },
-            { "hours",      1000 * 60 * 60 },
+            { "second",    1000 },
+            { "seconds",   1000 },
+            { "minute",    1000 * 60 },
+            { "minutes",   1000 * 60 },
+            { "hour",      1000 * 60 * 60 },
+            { "hours",     1000 * 60 * 60 },
         };
 
+        /// <summary>
+        /// Command to ban a user.
+        /// </summary>
+        /// <param name="user">The user in question.</param>
+        /// <returns></returns>
         [Command("ban")]
         [Alias("gulag", "getout")]
+        [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Ban(IUser user)
         {
@@ -36,7 +48,13 @@ namespace Shinoa.Modules
             await ReplyAsync($"User {user.Username} has been banned by {Context.User.Mention}.");
         }
 
+        /// <summary>
+        /// Command to kick a user.
+        /// </summary>
+        /// <param name="user">The user in question.</param>
+        /// <returns></returns>
         [Command("kick")]
+        [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task Kick(IGuildUser user)
         {
@@ -49,7 +67,15 @@ namespace Shinoa.Modules
             await ReplyAsync($"User {user.Username} has been kicked by {Context.User.Mention}.");
         }
 
+        /// <summary>
+        /// Command to mute a user.
+        /// </summary>
+        /// <param name="user">The user in question.</param>
+        /// <param name="amount">A timespan in full timeunits.</param>
+        /// <param name="unitName">The name of the unit.</param>
+        /// <returns></returns>
         [Command("mute")]
+        [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task Mute(IGuildUser user, int amount = 0, string unitName = "")
         {
@@ -74,7 +100,13 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to unmute a user.
+        /// </summary>
+        /// <param name="user">The user in question.</param>
+        /// <returns></returns>
         [Command("unmute")]
+        [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task Unmute(IGuildUser user)
         {
@@ -86,10 +118,18 @@ namespace Shinoa.Modules
             await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
         }
 
+        /// <summary>
+        /// Command group to manage temporary restrictions to channels.
+        /// </summary>
         [Group("stop")]
         public class StopModule : ModuleBase<SocketCommandContext>
         {
+            /// <summary>
+            /// Command to restrict sending messages to the channel.
+            /// </summary>
+            /// <returns></returns>
             [Command("on")]
+            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task On()
             {
@@ -101,72 +141,86 @@ namespace Shinoa.Modules
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
             }
 
+            /// <summary>
+            /// Command to revoke an earlier restriction to the channel.
+            /// </summary>
+            /// <returns></returns>
             [Command("off")]
+            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Off()
             {
                 var channel = Context.Channel as IGuildChannel;
 
-                await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Inherit));
-                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Inherit));
+                await channel.AddPermissionOverwriteAsync(Context.User, default(OverwritePermissions));
+                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, default(OverwritePermissions));
                 var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
                 await ReplyAsync(string.Empty, embed: embed.Build());
             }
         }
 
+        /// <summary>
+        /// Command group to manage image spamming.
+        /// </summary>
         [Group("imagespam")]
         public class ImageSpamModule : ModuleBase<SocketCommandContext>
         {
-            private ModerationService service;
+            private readonly ModerationService service;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ImageSpamModule"/> class.
+            /// </summary>
+            /// <param name="svc">Backing service instance.</param>
             public ImageSpamModule(ModerationService svc)
             {
                 service = svc;
             }
 
+            /// <summary>
+            /// Command to block image spam in this channel.
+            /// </summary>
+            /// <returns></returns>
             [Command("block")]
+            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Block()
             {
                 var channel = Context.Channel as ITextChannel;
                 if (service.AddBinding(channel))
-                {
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
-                }
                 else
-                {
                     await ReplyAsync("Image spam in this channel is already blocked.");
-                }
             }
 
+            /// <summary>
+            /// Command to revoke a prior image spam block.
+            /// </summary>
+            /// <returns></returns>
             [Command("unblock")]
+            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Unblock()
             {
                 var channel = Context.Channel as ITextChannel;
                 if (service.RemoveBinding(channel))
-                {
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
-                }
                 else
-                {
                     await ReplyAsync("Image spam in this channel was not blocked.");
-                }
             }
 
+            /// <summary>
+            /// Command to check if image spam is being blocked.
+            /// </summary>
+            /// <returns></returns>
             [Command("check")]
+            [RequireContext(ContextType.Guild)]
             public async Task Check()
             {
                 var channel = Context.Channel as ITextChannel;
                 if (service.CheckBinding(channel))
-                {
-                    await ReplyAsync(
-                        "Image spam in this channel is blocked. Send more than three images within 15 seconds will get you muted.");
-                }
+                    await ReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
                 else
-                {
                     await ReplyAsync("Image spam in this channel is not restricted.");
-                }
             }
         }
     }

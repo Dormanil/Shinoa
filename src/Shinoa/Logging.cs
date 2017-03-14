@@ -43,7 +43,7 @@ namespace Shinoa
             {
                 Title = "Error",
                 Color = new Color(200, 0, 0),
-                Description = message,
+                Description = $"```{message}```",
                 Author =
                     new EmbedAuthorBuilder
                     {

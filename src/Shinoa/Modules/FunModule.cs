@@ -12,10 +12,18 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
 
+    /// <summary>
+    /// Module for funny commands.
+    /// </summary>
     public class FunModule : ModuleBase<SocketCommandContext>
     {
         private static readonly Color ModuleColor = new Color(63, 81, 181);
 
+        /// <summary>
+        /// Command to pick arbitrarily between a number of choices.
+        /// </summary>
+        /// <param name="args">Option string</param>
+        /// <returns></returns>
         [Command("pick")]
         [Alias("choose")]
         public async Task Pick([Remainder]string args)
@@ -30,13 +38,28 @@ namespace Shinoa.Modules
             await Context.Channel.SendEmbedAsync(embed);
         }
 
+        /// <summary>
+        /// Command to roll a number of dice with a number of sides.
+        /// </summary>
+        /// <param name="arg">A string containing the roll in standard roll notation.</param>
+        /// <returns></returns>
         [Command("roll")]
         [Alias("rolldice")]
         public async Task RollDice(string arg)
         {
             var rng = new Random();
-            var multiplier = int.Parse(arg.Split('d')[0]);
-            var dieSize = int.Parse(arg.Split('d')[1]);
+            if (!int.TryParse(arg.Split('d')[0], out var multiplier))
+            {
+                await ReplyAsync("I could not understand how many dice you wanted to roll.");
+                return;
+            }
+
+            if (!int.TryParse(arg.Split('d')[1], out var dieSize))
+            {
+                await ReplyAsync("I could not understand how many sides your dice were supposed to have.");
+                return;
+            }
+
             var total = 0;
 
             if (multiplier > 100)
@@ -60,6 +83,10 @@ namespace Shinoa.Modules
             await Context.Channel.SendEmbedAsync(embed);
         }
 
+        /// <summary>
+        /// Command to print the lenny face in the chat.
+        /// </summary>
+        /// <returns></returns>
         [Command("lenny")]
         public async Task LennyFace()
         {

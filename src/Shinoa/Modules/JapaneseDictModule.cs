@@ -13,10 +13,18 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// Module for access to Jisho.
+    /// </summary>
     public class JapaneseDictModule : ModuleBase<SocketCommandContext>
     {
         private static readonly HttpClient HttpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };
 
+        /// <summary>
+        /// Command to search Jisho.org for a term and return the response.
+        /// </summary>
+        /// <param name="term">A search term.</param>
+        /// <returns></returns>
         [Command("jp")]
         [Alias("jisho", "jpdict", "japanese")]
         public async Task JishoSearch([Remainder] string term)

@@ -17,17 +17,30 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using Discord.WebSocket;
 
+    /// <summary>
+    /// Module for administrative tasks concerning the bot itself.
+    /// </summary>
     public class BotAdministrationModule : ModuleBase<SocketCommandContext>
     {
         private readonly DiscordSocketClient client;
         private readonly CommandService commandService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BotAdministrationModule"/> class.
+        /// </summary>
+        /// <param name="clnt">Client running the bot.</param>
+        /// <param name="commandSvc">Backing service instance.</param>
         public BotAdministrationModule(DiscordSocketClient clnt, CommandService commandSvc)
         {
             client = clnt;
             commandService = commandSvc;
         }
 
+        /// <summary>
+        /// Command to set the avatar of the bot.
+        /// </summary>
+        /// <param name="url">URL to the image.</param>
+        /// <returns></returns>
         [Command("setavatar")]
         [Alias("avatar")]
         [RequireOwner]
@@ -47,6 +60,11 @@ namespace Shinoa.Modules
             });
         }
 
+        /// <summary>
+        /// Command to set the status of the bot.
+        /// </summary>
+        /// <param name="game">Status message.</param>
+        /// <returns></returns>
         [Command("setplaying")]
         [Alias("setstatus", "game", "status")]
         [RequireOwner]
@@ -55,6 +73,10 @@ namespace Shinoa.Modules
             await client.SetGameAsync(game);
         }
 
+        /// <summary>
+        /// Command to get statistics.
+        /// </summary>
+        /// <returns></returns>
         [Command("stats")]
         [Alias("diag", "statistics")]
         [RequireOwner]
@@ -63,6 +85,11 @@ namespace Shinoa.Modules
             await ReplyAsync(GenerateStatsMessage());
         }
 
+        /// <summary>
+        /// Command to make a public announcement using the bot.
+        /// </summary>
+        /// <param name="announcement">An announcement message.</param>
+        /// <returns></returns>
         [Command("announce")]
         [Alias("announcement", "global")]
         [RequireOwner]
@@ -74,6 +101,11 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to say something using the bot's voice.
+        /// </summary>
+        /// <param name="message">The message to say.</param>
+        /// <returns></returns>
         [Command("say")]
         [RequireOwner]
         [RequireBotPermission(ChannelPermission.ManageMessages)]
@@ -84,6 +116,10 @@ namespace Shinoa.Modules
             await replyTask;
         }
 
+        /// <summary>
+        /// Command to print an invite link for the bot.
+        /// </summary>
+        /// <returns></returns>
         [Command("invite")]
         [RequireOwner]
         public async Task GetInviteLink()

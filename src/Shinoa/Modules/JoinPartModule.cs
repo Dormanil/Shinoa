@@ -12,17 +12,28 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using Services;
 
+    /// <summary>
+    /// Module for setting up greetings and parting messages.
+    /// </summary>
     [Group("greetings")]
     [Alias("joins", "welcome", "welcomes")]
     public class JoinPartModule : ModuleBase<SocketCommandContext>
     {
         private readonly JoinPartService service;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JoinPartModule"/> class.
+        /// </summary>
+        /// <param name="svc">Backing service instance.</param>
         public JoinPartModule(JoinPartService svc)
         {
             service = svc;
         }
 
+        /// <summary>
+        /// Command to enable greetings in this channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("enable")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
@@ -37,6 +48,10 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to disable greetings in this channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("disable")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
@@ -51,6 +66,10 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to move greetings to this channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("here")]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Here()

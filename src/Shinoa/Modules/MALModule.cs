@@ -13,17 +13,31 @@ namespace Shinoa.Modules
     using Services.TimedServices;
 
     // TODO: Improve migrate
+
+    /// <summary>
+    /// Module for MyAnimeList services.
+    /// </summary>
     public class MalModule : ModuleBase<SocketCommandContext>
     {
-        private MalService service;
-        private AnilistService fallbackService;
+        private readonly MalService service;
+        private readonly AnilistService fallbackService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MalModule"/> class.
+        /// </summary>
+        /// <param name="svc">Backing service instance.</param>
+        /// <param name="fallbackSvc">Backing fallback service instance.</param>
         public MalModule(MalService svc, AnilistService fallbackSvc)
         {
             service = svc;
             fallbackService = fallbackSvc;
         }
 
+        /// <summary>
+        /// Command for searching a specific anime using MyAnimeList.
+        /// </summary>
+        /// <param name="name">Name of the anime.</param>
+        /// <returns></returns>
         [Command("anime")]
         [Alias("mal", "malanime")]
         public async Task MalAnimeSearch([Remainder]string name)
@@ -43,6 +57,11 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command for searching for a specific Manga using MyAnimeList.
+        /// </summary>
+        /// <param name="name">Name of the manga.</param>
+        /// <returns></returns>
         [Command("manga")]
         [Alias("ln", "malmanga")]
         public async Task MalMangaSearch([Remainder]string name)

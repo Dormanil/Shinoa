@@ -13,16 +13,27 @@ namespace Shinoa.Modules
     using Discord.Commands;
     using Services.TimedServices;
 
+    /// <summary>
+    /// Module for automatic updates on airing anime.
+    /// </summary>
     [Group("animefeed")]
     public class AnimeFeedModule : ModuleBase<SocketCommandContext>
     {
-        private AnimeFeedService service;
+        private readonly AnimeFeedService service;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AnimeFeedModule"/> class.
+        /// </summary>
+        /// <param name="svc">Backing service instance.</param>
         public AnimeFeedModule(AnimeFeedService svc)
         {
             service = svc;
         }
 
+        /// <summary>
+        /// Command to enable the anime feed for the current channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("enable")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
@@ -43,6 +54,10 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command to disable the anime feed for the current channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("disable")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
