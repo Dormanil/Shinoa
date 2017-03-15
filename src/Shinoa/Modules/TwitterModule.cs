@@ -24,13 +24,6 @@ namespace Shinoa.Modules
             service = svc;
         }
 
-        public enum TwitterOption
-        {
-            Add,
-            Remove,
-            List
-        }
-
         [Command("add")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string user)
