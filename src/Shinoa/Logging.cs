@@ -84,6 +84,14 @@ namespace Shinoa
             await loggingChannel.SendMessageAsync($"Now logging to channel \"{channel.Name}\".");
         }
 
+        /// <summary>
+        /// Stops replicating the log to a specific channel.
+        /// </summary>
+        public static void StopLoggingToChannel()
+        {
+            loggingChannel = null;
+        }
+
         private static void PrintWithTime(string line)
         {
             Console.WriteLine($"[{DateTime.Now.Hour:D2}:{DateTime.Now.Minute:D2}:{DateTime.Now.Second:D2}] {line}");

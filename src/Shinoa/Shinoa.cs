@@ -99,11 +99,21 @@ namespace Shinoa
 
                 await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
             };
+            Client.Disconnected += async (e) =>
+            {
+                Logging.StopLoggingToChannel();
+                await Logging.Log("Disconnected from Discord.");
+                if (e != null)
+                {
+                    await Logging.LogError(e.ToString());
+                }
+            };
             Client.GuildAvailable += async g =>
             {
+                string loggingChannelIdString = null;
                 try
                 {
-                    if (Client.GetChannel(ulong.Parse((string)Config["global"]["logging_channel_id"])) is IMessageChannel loggingChannel) await Logging.InitLoggingToChannel(loggingChannel);
+                    loggingChannelIdString = (string)Config["global"]["logging_channel_id"];
                 }
                 catch (KeyNotFoundException)
                 {
@@ -112,6 +122,15 @@ namespace Shinoa
                 catch (Exception e)
                 {
                     await Logging.LogError(e.ToString());
+                }
+
+                if (loggingChannelIdString == null) return;
+                if (ulong.TryParse(loggingChannelIdString, out ulong loggingChannelId))
+                {
+                    if (Client.GetChannel(loggingChannelId) is IMessageChannel loggingChannel)
+                    {
+                        await Logging.InitLoggingToChannel(loggingChannel);
+                    }
                 }
             };
             Client.MessageReceived += async message =>
