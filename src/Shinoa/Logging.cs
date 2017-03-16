@@ -81,7 +81,7 @@ namespace Shinoa
         {
             if (loggingChannel != null || channel == null) return;
             loggingChannel = channel;
-            await loggingChannel.SendMessageAsync($"Now logging to channel \"{channel.Name}\".");
+            await Log($"Now logging to channel \"{channel.Name}\".");
         }
 
         /// <summary>
