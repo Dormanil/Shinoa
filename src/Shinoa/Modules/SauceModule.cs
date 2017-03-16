@@ -47,9 +47,9 @@ namespace Shinoa.Modules
                     artistName: document.DocumentNode.SelectNodes(@"//div[@class='resultcontentcolumn']/a")[1].InnerHtml,
                     thumbmnailImageUrl: document.DocumentNode.SelectNodes(@"//div[@class='resultimage']/a/img")[0].Attributes["src"].Value);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new SauceNotFoundException();
+                throw new SauceNotFoundException(string.Empty, e);
             }
         }
 
@@ -137,6 +137,15 @@ namespace Shinoa.Modules
 
         public class SauceNotFoundException : Exception
         {
+            public SauceNotFoundException()
+                : base()
+            {
+            }
+
+            public SauceNotFoundException(string message, Exception innerException)
+                : base(message, innerException)
+            {
+            }
         }
 
         public class SauceResult
