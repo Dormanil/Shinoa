@@ -27,6 +27,8 @@ namespace Shinoa.Modules
             { "minutes",   1000 * 60 },
             { "hour",      1000 * 60 * 60 },
             { "hours",     1000 * 60 * 60 },
+            { "day",       1000 * 60 * 60 * 24 },
+            { "days",      1000 * 60 * 60 * 24 },
         };
 
         /// <summary>
@@ -82,22 +84,35 @@ namespace Shinoa.Modules
             var delTask = Context.Message.DeleteAsync();
 
             IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
+            var duration = 0;
+            try
+            {
+                duration = amount * TimeUnits[unitName];
+            }
+            catch (KeyNotFoundException)
+            {
+            }
+
+            if (duration == 0)
+            {
+                await user.AddRolesAsync(mutedRole);
+                await delTask;
+                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
+                return;
+            }
+            else if (duration < 0)
+            {
+                await ReplyAsync($"User <@{user.Id}> has not been muted, since the duration of the mute was negative.");
+                return;
+            }
 
             await user.AddRolesAsync(mutedRole);
             await delTask;
+            await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
+            await Task.Delay(duration);
 
-            if (amount == 0)
-            {
-                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
-            }
-            else
-            {
-                var duration = amount * TimeUnits[unitName];
-                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
-                await Task.Delay(duration);
-                await user.RemoveRolesAsync(mutedRole);
-                await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
-            }
+            await user.RemoveRolesAsync(mutedRole);
+            await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
         }
 
         /// <summary>
