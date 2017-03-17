@@ -96,6 +96,8 @@ namespace Shinoa
         {
             if (loggingFilePath != null) return;
             loggingFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".logs", DateTime.UtcNow.ToString("yyyyMMddhhmmssfff") + ".log");
+            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs"));
         }
 
         /// <summary>
