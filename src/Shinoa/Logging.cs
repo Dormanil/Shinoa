@@ -103,7 +103,7 @@ namespace Shinoa
                 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs"));
             if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip")))
             {
-                using (var archive = new ZipArchive(new FileStream(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip"), FileMode.OpenOrCreate)))
+                using (var archive = new ZipArchive(new FileStream(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip"), FileMode.OpenOrCreate, FileAccess.ReadWrite), ZipArchiveMode.Update))
                 {
                     foreach (var path in Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
                     {
