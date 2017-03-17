@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using System.IO.Compression;
+
 namespace Shinoa
 {
     using System;
@@ -95,9 +97,18 @@ namespace Shinoa
         public static void InitLoggingToFile()
         {
             if (loggingFilePath != null) return;
-            loggingFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".logs", DateTime.UtcNow.ToString("yyyyMMddhhmmssfff") + ".log");
+            if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old")))
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old"));
             if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
                 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs"));
+
+            ZipFile.CreateFromDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs"), Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip"));
+            foreach (var path in Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
+            {
+                File.Delete(path);
+            }
+
+            loggingFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".logs", DateTime.UtcNow.ToString("yyyyMMddhhmmssfff") + ".log");
         }
 
         /// <summary>
@@ -124,6 +135,7 @@ namespace Shinoa
             {
                 using (var fileStream = new FileStream(loggingFilePath, FileMode.OpenOrCreate, FileAccess.Write))
                 {
+                    fileStream.Seek(0, SeekOrigin.End);
                     using (var streamWriter = new StreamWriter(fileStream, Encoding.Unicode))
                     {
                         await streamWriter.WriteLineAsync($"<{DateTime.UtcNow:u}> {(error ? "[ERROR]" : "[INFO]")} {line}");
