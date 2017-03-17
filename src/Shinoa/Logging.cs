@@ -101,11 +101,16 @@ namespace Shinoa
                 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old"));
             if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
                 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs"));
-
-            ZipFile.CreateFromDirectory(Path.Combine(Directory.GetCurrentDirectory(), ".logs"), Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip"));
-            foreach (var path in Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
+            if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip")))
             {
-                File.Delete(path);
+                using (var archive = new ZipArchive(new FileStream(Path.Combine(Directory.GetCurrentDirectory(), ".logs.old", "logs.zip"), FileMode.OpenOrCreate)))
+                {
+                    foreach (var path in Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
+                    {
+                        archive.CreateEntryFromFile(path, Path.GetFileName(path));
+                        File.Delete(path);
+                    }
+                }
             }
 
             loggingFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".logs", DateTime.UtcNow.ToString("yyyyMMddhhmmssfff") + ".log");
