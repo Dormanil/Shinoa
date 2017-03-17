@@ -69,7 +69,7 @@
                 <th>Command Description</th>
             </tr>
             <tr>
-                <td>!mute &lt;@user&gt; [x seconds/minutes/hours]</td>
+                <td>!mute &lt;@user&gt; [x second(s)/minute(s)/hour(s)/day(s)]</td>
                 <td>Mutes the given user, with an optional timespan. Requires the <b>Mute Members</b> permission.</td>
             </tr>
             <tr>
@@ -86,11 +86,18 @@
             </tr>
             <tr>
                 <td>!stop &lt;on/off&gt;</td>
-                <td>Enables/disables sending messages to the current channel for the @everyone role.</td>
+                <td>
+                    Enables/disables sending messages to the current channel for the @everyone role. Requires the
+                    <b>Manage Channels</b> permission.
+                </td>
             </tr>
 			<tr>
 				<td>!imagespam &lt;block/unblock/check&gt;</td>
-				<td>Blocks/unblocks image spam in the current channel, or checks if it already blocked.</td>
+				<td>
+                    Blocks/unblocks image spam in the current channel, or checks if it already blocked.
+                    Note that blocking and unblocking requires the <b>Manage Channels</b> permission, while
+                    anyone can check if image spamming is blocked.
+                </td>
 			</tr>
         </table>
     </div>
