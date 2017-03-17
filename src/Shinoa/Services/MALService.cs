@@ -21,7 +21,7 @@ namespace Shinoa.Services
     [Config("mal")]
     public class MalService : IService
     {
-        private HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://myanimelist.net/api/") };
+        private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://myanimelist.net/api/") };
 
         public Color ModuleColor { get; private set; }
 
@@ -54,13 +54,15 @@ namespace Shinoa.Services
                 result.Score = float.Parse(firstResult.Descendants("score").First().Value);
                 result.EpisodeCount = int.Parse(firstResult.Descendants("episodes").First().Value);
 
-                result.StartDate = DateTime.Parse(firstResult.Descendants("start_date").First().Value);
+                var startDateString = firstResult.Descendants("start_date").First().Value;
+
+                if (startDateString != "0000-00-00")
+                    result.StartDate = DateTime.Parse(startDateString);
+
                 var endDateString = firstResult.Descendants("end_date").First().Value;
 
                 if (endDateString != "0000-00-00")
-                {
                     result.EndDate = DateTime.Parse(endDateString);
-                }
 
                 result.Id = int.Parse(firstResult.Descendants("id").First().Value);
                 result.ThumbnailUrl = firstResult.Descendants("image").First().Value;
@@ -135,8 +137,7 @@ namespace Shinoa.Services
             }
             catch (KeyNotFoundException)
             {
-                Logging.LogError(
-                        "MALService.Init: The property was not found on the dynamic object. No colors were supplied.")
+                Logging.LogError("MALService.Init: The property was not found on the dynamic object. No colors were supplied.")
                     .Wait();
             }
             catch (Exception e)
@@ -201,27 +202,26 @@ namespace Shinoa.Services
                 embed.AddField(f => f.WithName("Type").WithValue(Type).WithIsInline(true));
                 embed.AddField(f => f.WithName("Status").WithValue(Status).WithIsInline(true));
                 embed.AddField(f => f.WithName("Score (max. 10)").WithValue(Score.ToString()).WithIsInline(true));
-                embed.AddField(
-                    f =>
-                        f.WithName("Episode Count")
-                            .WithValue(EpisodeCount == 0 ? "?" : EpisodeCount.ToString())
-                            .WithIsInline(true));
-                embed.AddField(
-                    f =>
-                        f.WithName("Start Date")
-                            .WithValue(StartDate.ToString("MMMM dd, yyyy"))
-                            .WithIsInline(true)
-                            .WithIsInline(true));
-
-                if (EndDate != null && EndDate.Year != 1)
+                embed.AddField(f => f.WithName("Episode Count").WithValue(EpisodeCount == 0 ? "?" : EpisodeCount.ToString()).WithIsInline(true));
+                if (StartDate.Year != 1)
                 {
-                    if (StartDate != EndDate)
-                        embed.AddField(f => f.WithName("End Date").WithValue(EndDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+                    embed.AddField(f => f.WithName("Start Date").WithValue(StartDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+
+                    if (EndDate.Year != 1)
+                    {
+                        if (StartDate != EndDate)
+                            embed.AddField(f => f.WithName("End Date").WithValue(EndDate.ToString("MMMM dd, yyyy")).WithIsInline(true));
+                        else
+                            embed.AddField(f => f.WithName("End Date").WithValue("N/A").WithIsInline(true));
+                    }
                     else
-                        embed.AddField(f => f.WithName("End Date").WithValue("N/A").WithIsInline(true));
+                    {
+                        embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
+                    }
                 }
                 else
                 {
+                    embed.AddField(f => f.WithName("Start Date").WithValue("?").WithIsInline(true));
                     embed.AddField(f => f.WithName("End Date").WithValue("?").WithIsInline(true));
                 }
 
