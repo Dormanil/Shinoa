@@ -8,6 +8,8 @@
 namespace Shinoa
 {
     using System;
+    using System.IO;
+    using System.Text;
     using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
@@ -18,6 +20,7 @@ namespace Shinoa
     public static class Logging
     {
         private static IMessageChannel loggingChannel;
+        private static string loggingFilePath;
 
         /// <summary>
         /// Logs a specific string, as given in message.
@@ -27,6 +30,7 @@ namespace Shinoa
         public static async Task Log(string message)
         {
             PrintWithTime(message);
+            if (loggingFilePath != null) await WriteLogWithTime(message, false);
             var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
             if (sendMessageAsync != null) await sendMessageAsync;
         }
@@ -56,6 +60,7 @@ namespace Shinoa
                     Text = Shinoa.VersionString,
                 },
             };
+            if (loggingFilePath != null) await WriteLogWithTime(message, true);
             var sendEmbedAsync = loggingChannel?.SendEmbedAsync(embed);
             if (sendEmbedAsync != null) await sendEmbedAsync;
         }
@@ -85,6 +90,15 @@ namespace Shinoa
         }
 
         /// <summary>
+        /// Initiates logging to the file system. This method can be called inherently earlier than the <see cref="InitLoggingToChannel"/> Task.
+        /// </summary>
+        public static void InitLoggingToFile()
+        {
+            if (loggingFilePath != null) return;
+            loggingFilePath = Path.Combine(Directory.GetCurrentDirectory(), ".logs", DateTime.UtcNow.ToString("yyyyMMddhhmmssfff") + ".log");
+        }
+
+        /// <summary>
         /// Stops replicating the log to a specific channel.
         /// </summary>
         public static void StopLoggingToChannel()
@@ -100,6 +114,26 @@ namespace Shinoa
         private static void PrintErrorWithTime(string line)
         {
             Console.Error.WriteLine($"[{DateTime.Now.Hour:D2}:{DateTime.Now.Minute:D2}:{DateTime.Now.Second:D2}] {line}");
+        }
+
+        private static async Task WriteLogWithTime(string line, bool error)
+        {
+            try
+            {
+                using (var fileStream = new FileStream(loggingFilePath, FileMode.OpenOrCreate, FileAccess.Write))
+                {
+                    using (var streamWriter = new StreamWriter(fileStream, Encoding.Unicode))
+                    {
+                        await streamWriter.WriteLineAsync($"<{DateTime.UtcNow:u}> {(error ? "[ERROR]" : "[INFO]")} {line}");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                loggingFilePath = null;
+                await Logging.LogError(e.ToString());
+                throw;
+            }
         }
     }
 }

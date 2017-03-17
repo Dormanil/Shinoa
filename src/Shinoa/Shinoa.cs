@@ -25,6 +25,8 @@ namespace Shinoa
     using SQLite.Extensions;
     using YamlDotNet.Serialization;
 
+    using static Logging;
+
     public static class Shinoa
     {
         public const string Version = "2.5.1K";
@@ -54,17 +56,19 @@ namespace Shinoa
 
             Console.OutputEncoding = Encoding.Unicode;
 
+            InitLoggingToFile();
+
+            Console.Title = $"Shinoa v{Version}";
+
             using (var streamReader = new StreamReader(configurationFileStream))
             {
                 var deserializer = new Deserializer();
                 Config = deserializer.Deserialize(streamReader);
-                await Logging.Log("Config parsed and loaded.");
+                await Log("Config parsed and loaded.");
             }
+
+            if (Alpha) await Log("Running in Alpha configuration.");
             #endregion
-
-            Console.Title = $"Shinoa v{Version}";
-
-            if (Alpha) await Logging.Log("Running in Alpha configuration.");
 
             #region Modules
             Map.Add(Client);
@@ -84,28 +88,28 @@ namespace Shinoa
 
             foreach (var module in modules)
             {
-                await Logging.Log($"Loaded module \"{module.Name}\"");
-                foreach (var command in module.Commands) await Logging.Log($"Loaded command \"{command.Name}\"");
+                await Log($"Loaded module \"{module.Name}\"");
+                foreach (var command in module.Commands) await Log($"Loaded command \"{command.Name}\"");
             }
 
-            await Logging.Log($"Loaded {Commands.Modules.Count()} module(s) with {Commands.Commands.Count()} command(s)");
+            await Log($"Loaded {Commands.Modules.Count()} module(s) with {Commands.Commands.Count()} command(s)");
             #endregion
 
             #region Event handlers
             Client.Connected += async () =>
             {
-                await Logging.Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
+                await Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
                 await Client.SetGameAsync(Config["global"]["default_game"]);
 
-                await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
+                await Log("All modules initialized successfully. Shinoa is up and running.");
             };
             Client.Disconnected += async (e) =>
             {
-                Logging.StopLoggingToChannel();
-                await Logging.Log("Disconnected from Discord.");
+                StopLoggingToChannel();
+                await Log("Disconnected from Discord.");
                 if (e != null)
                 {
-                    await Logging.LogError(e.ToString());
+                    await LogError(e.ToString());
                 }
             };
             Client.GuildAvailable += async g =>
@@ -117,11 +121,11 @@ namespace Shinoa
                 }
                 catch (KeyNotFoundException)
                 {
-                    await Logging.LogError("The property was not found on the dynamic object. No logging channel was supplied.");
+                    await LogError("The property was not found on the dynamic object. No logging channel was supplied.");
                 }
                 catch (Exception e)
                 {
-                    await Logging.LogError(e.ToString());
+                    await LogError(e.ToString());
                 }
 
                 if (loggingChannelIdString == null) return;
@@ -129,7 +133,7 @@ namespace Shinoa
                 {
                     if (Client.GetChannel(loggingChannelId) is IMessageChannel loggingChannel)
                     {
-                        await Logging.InitLoggingToChannel(loggingChannel);
+                        await InitLoggingToChannel(loggingChannel);
                     }
                 }
             };
@@ -142,11 +146,11 @@ namespace Shinoa
                 || !userMessage.HasStringPrefix((string)Config["global"]["command_prefix"], ref argPos)) return;
 
                 var contextSock = new SocketCommandContext(Client, userMessage);
-                await Logging.LogMessage(contextSock);
+                await LogMessage(contextSock);
                 var res = await Commands.ExecuteAsync(contextSock, argPos, Map);
                 if (res.IsSuccess) return;
 
-                await Logging.LogError(res.ErrorReason);
+                await LogError(res.ErrorReason);
                 var responseMessage = string.Empty;
                 switch (res.Error)
                 {
@@ -182,11 +186,11 @@ namespace Shinoa
                     }
                     catch (KeyNotFoundException)
                     {
-                        Logging.LogError($"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.").Wait();
+                        LogError($"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.").Wait();
                     }
                     catch (Exception e)
                     {
-                        Logging.LogError(e.ToString()).Wait();
+                        LogError(e.ToString()).Wait();
                     }
 
                     instance.Init(config, Map);
@@ -194,10 +198,10 @@ namespace Shinoa
                     if (instance is ITimedService timedService)
                     {
                         Callbacks.TryAdd(service.UnderlyingSystemType, timedService.Callback);
-                        Logging.Log($"Service \"{service.Name}\" added to callbacks").Wait();
+                        Log($"Service \"{service.Name}\" added to callbacks").Wait();
                     }
 
-                    Logging.Log($"Loaded service \"{service.Name}\"").Wait();
+                    Log($"Loaded service \"{service.Name}\"").Wait();
                 }
 
                 var refreshRate = 30;
@@ -207,12 +211,11 @@ namespace Shinoa
                 }
                 catch (KeyNotFoundException)
                 {
-                    Logging.LogError("The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.")
-                        .Wait();
+                    LogError("The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.").Wait();
                 }
                 catch (Exception e)
                 {
-                    Logging.LogError(e.ToString()).Wait();
+                    LogError(e.ToString()).Wait();
                 }
 
                 globalRefreshTimer = new Timer(
@@ -226,7 +229,7 @@ namespace Shinoa
                             }
                             catch (Exception e)
                             {
-                                await Logging.LogError(e.ToString());
+                                await LogError(e.ToString());
                             }
                         }
                     },
@@ -238,7 +241,7 @@ namespace Shinoa
             #endregion
 
             #region Connection establishment
-            await Logging.Log("Connecting to Discord...");
+            await Log("Connecting to Discord...");
             await Client.LoginAsync(TokenType.Bot, Config["global"]["token"]);
             await Client.StartAsync();
             await Task.Delay(-1);
