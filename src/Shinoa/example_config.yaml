@@ -10,6 +10,9 @@ global:
     ### Refresh rate for timed services
     refresh_rate: 30
 
+    ### Channel id for logging to a Discord channel
+    logging_channel_id: "282667861455929344"
+
 ### Module configuration
 anilist:
     client_id: "id"
