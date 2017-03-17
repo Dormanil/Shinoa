@@ -243,7 +243,13 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 
+# Shinoa testing configs, logs, and databases
 src/Shinoa/config.yaml
 src/Shinoa/config_alpha.yaml
 src/Shinoa/db.sqlite
 src/Shinoa/db_alpha.sqlite
+src/Shinoa/.logs/
+
+# JetBrains Web/PHPStorm workspace info
+docs/.idea/workspace.xml
+
