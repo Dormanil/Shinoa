@@ -61,7 +61,7 @@ namespace Shinoa.Modules
             embed.WithTitle("Catsy:")
                 .WithDescription(@"Catsy is the author of the original story of ""Fairy Dance of Death"" (FDD/FDoD).
 He is here in an advisory function and it is a great honour for us to have him.
-To learn more about FDoD, type `" + Shinoa.Config["command_prefix"] + "fdod` or `" + Shinoa.Config["command_prefix"] + "fdd`, whatever suits you more.")
+To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + "fdod` or `" + Shinoa.Config["global"]["command_prefix"] + "fdd`, whatever suits you more.")
                 .WithUrl("https://www.fanfiction.net/u/46508/Catsy");
 
             await Context.Channel.SendEmbedAsync(embed);

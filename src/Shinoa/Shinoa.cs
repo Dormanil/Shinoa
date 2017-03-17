@@ -40,7 +40,12 @@ namespace Shinoa
 
         public static dynamic Config { get; private set; }
 
-        public static DiscordSocketClient Client { get; } = new DiscordSocketClient();
+        public static CancellationTokenSource Cts { get; } = new CancellationTokenSource();
+
+        public static DiscordSocketClient Client { get; } = new DiscordSocketClient(new DiscordSocketConfig
+        {
+            LogLevel = LogSeverity.Error, // Can't do LogSeverity.Warning because the continuous ratelimit warnings cause a StackOverflow
+        });
 
         public static DateTime StartTime { get; } = DateTime.Now;
 
@@ -99,9 +104,14 @@ namespace Shinoa
             Client.Connected += async () =>
             {
                 await Log($"Connected to Discord as {Client.CurrentUser.Username}#{Client.CurrentUser.Discriminator}.");
-                await Client.SetGameAsync(Config["global"]["default_game"]);
-
-                await Log("All modules initialized successfully. Shinoa is up and running.");
+                try
+                {
+                    await Client.SetGameAsync((string)Config["global"]["default_game"]);
+                }
+                catch (KeyNotFoundException)
+                {
+                    await Log("The property was not found on the dynamic object. No default game was supplied.");
+                }
             };
             Client.Disconnected += async (e) =>
             {
@@ -111,6 +121,11 @@ namespace Shinoa
                 {
                     await LogError(e.ToString());
                 }
+            };
+            Client.Log += async msg =>
+            {
+                await Log($"{msg.Severity}: {msg.Message}");
+                if (msg.Exception != null) await LogError($"{msg.Source}: {msg.Exception.ToString()}");
             };
             Client.GuildAvailable += async g =>
             {
@@ -171,7 +186,7 @@ namespace Shinoa
                     await contextSock.Channel.SendMessageAsync(responseMessage);
                 }
             };
-            Client.Ready += () =>
+            Client.Ready += async () =>
             {
                 foreach (var service in services)
                 {
@@ -186,11 +201,11 @@ namespace Shinoa
                     }
                     catch (KeyNotFoundException)
                     {
-                        LogError($"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.").Wait();
+                        await LogError($"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.");
                     }
                     catch (Exception e)
                     {
-                        LogError(e.ToString()).Wait();
+                        await LogError(e.ToString());
                     }
 
                     instance.Init(config, Map);
@@ -198,10 +213,10 @@ namespace Shinoa
                     if (instance is ITimedService timedService)
                     {
                         Callbacks.TryAdd(service.UnderlyingSystemType, timedService.Callback);
-                        Log($"Service \"{service.Name}\" added to callbacks").Wait();
+                        await Log($"Service \"{service.Name}\" added to callbacks");
                     }
 
-                    Log($"Loaded service \"{service.Name}\"").Wait();
+                    await Log($"Loaded service \"{service.Name}\"");
                 }
 
                 var refreshRate = 30;
@@ -211,11 +226,11 @@ namespace Shinoa
                 }
                 catch (KeyNotFoundException)
                 {
-                    LogError("The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.").Wait();
+                   await LogError("The property was not found on the dynamic object. No global refresh rate was supplied. Defaulting to once every 30 seconds.");
                 }
                 catch (Exception e)
                 {
-                    LogError(e.ToString()).Wait();
+                    await LogError(e.ToString());
                 }
 
                 globalRefreshTimer = new Timer(
@@ -236,15 +251,23 @@ namespace Shinoa
                     null,
                     TimeSpan.Zero,
                     TimeSpan.FromSeconds(refreshRate));
-                return Task.CompletedTask;
+
+                await Logging.Log("All modules initialized successfully. Shinoa is up and running.");
             };
             #endregion
 
             #region Connection establishment
             await Log("Connecting to Discord...");
-            await Client.LoginAsync(TokenType.Bot, Config["global"]["token"]);
+            await Client.LoginAsync(TokenType.Bot, (string)Config["global"]["token"]);
             await Client.StartAsync();
-            await Task.Delay(-1);
+
+            var completionSource = new TaskCompletionSource<object>();
+            Cts.Token.Register(() => completionSource.TrySetCanceled());
+            var blockTask = Task.Delay(-1, Cts.Token);
+            await Task.WhenAny(blockTask, completionSource.Task);
+            await Client.LogoutAsync();
+            await Client.StopAsync();
+            await Logging.Log("Exiting.");
             #endregion
         }
     }

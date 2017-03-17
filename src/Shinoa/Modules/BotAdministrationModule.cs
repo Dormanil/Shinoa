@@ -127,6 +127,15 @@ namespace Shinoa.Modules
             await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot");
         }
 
+        [Command("shutdown")]
+        [Alias("kill")]
+        [RequireOwner]
+        public async Task Shutdown()
+        {
+            await ReplyAsync("Shutting down.");
+            Shinoa.Cts.CancelAfter(2000);
+        }
+
         private string GenerateStatsMessage()
         {
             var output = string.Empty;
