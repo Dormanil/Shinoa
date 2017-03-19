@@ -208,7 +208,16 @@ namespace Shinoa
                         await LogError(e.ToString());
                     }
 
-                    instance.Init(config, Map);
+                    try
+                    {
+                        instance.Init(config, Map);
+                    }
+                    catch (Exception e)
+                    {
+                        await LogError($"Initialization of service \"{service.Name}\" failed.");
+                        await LogError(e.ToString());
+                        Map.TryRemove(service.UnderlyingSystemType);
+                    }
 
                     if (instance is ITimedService timedService)
                     {

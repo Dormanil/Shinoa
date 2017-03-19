@@ -109,5 +109,11 @@ namespace Shinoa
             map.Add(t, () => obj);
             return true;
         }
+
+        public bool TryRemove(Type t)
+        {
+            if (t == null) return false;
+            return map.Remove(t);
+        }
     }
 }
