@@ -108,7 +108,7 @@ namespace Shinoa.Modules
         /// <returns></returns>
         [Command("say")]
         [RequireOwner]
-        [RequireBotPermission(ChannelPermission.ManageMessages)]
+        [RequireBotPermission(GuildPermission.ManageMessages)]
         public async Task Say([Remainder]string message)
         {
             var replyTask = ReplyAsync(message);

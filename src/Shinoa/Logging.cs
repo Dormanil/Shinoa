@@ -5,12 +5,11 @@
 // Licensed under the MIT license.
 // </copyright>
 
-using System.IO.Compression;
-
 namespace Shinoa
 {
     using System;
     using System.IO;
+    using System.IO.Compression;
     using System.Text;
     using System.Threading.Tasks;
     using Discord;
@@ -32,7 +31,7 @@ namespace Shinoa
         public static async Task Log(string message)
         {
             PrintWithTime(message);
-            if (loggingFilePath != null) await WriteLogWithTime(message, false);
+            if (loggingFilePath != null) WriteLogWithTime(message, false);
             var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
             if (sendMessageAsync != null) await sendMessageAsync;
         }
@@ -62,7 +61,7 @@ namespace Shinoa
                     Text = Shinoa.VersionString,
                 },
             };
-            if (loggingFilePath != null) await WriteLogWithTime(message, true);
+            if (loggingFilePath != null) WriteLogWithTime(message, true);
             var sendEmbedAsync = loggingChannel?.SendEmbedAsync(embed);
             if (sendEmbedAsync != null) await sendEmbedAsync;
         }
@@ -134,7 +133,7 @@ namespace Shinoa
             Console.Error.WriteLine($"[{DateTime.Now.Hour:D2}:{DateTime.Now.Minute:D2}:{DateTime.Now.Second:D2}] {line}");
         }
 
-        private static async Task WriteLogWithTime(string line, bool error)
+        private static void WriteLogWithTime(string line, bool error)
         {
             try
             {
@@ -143,15 +142,14 @@ namespace Shinoa
                     fileStream.Seek(0, SeekOrigin.End);
                     using (var streamWriter = new StreamWriter(fileStream, Encoding.Unicode))
                     {
-                        await streamWriter.WriteLineAsync($"<{DateTime.UtcNow:u}> {(error ? "[ERROR]" : "[INFO]")} {line}");
+                        streamWriter.WriteLine($"<{DateTime.UtcNow:u}> {(error ? "[ERROR]" : "[INFO]")} {line}");
                     }
                 }
             }
             catch (Exception e)
             {
                 loggingFilePath = null;
-                await Logging.LogError(e.ToString());
-                throw;
+                Logging.LogError(e.ToString()).GetAwaiter().GetResult();
             }
         }
     }

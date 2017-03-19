@@ -73,16 +73,14 @@ namespace Shinoa.Services
                     if (imagesCounter > 2)
                     {
                         await msg.DeleteAsync();
-                        await msg.Channel.SendMessageAsync(
-                            $"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
+                        await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
 
                         var mutedRole = user.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
-                        await user.AddRolesAsync(mutedRole);
+                        await user.AddRoleAsync(mutedRole);
                         await Task.Delay(5 * 60 * 1000);
-                        await user.RemoveRolesAsync(mutedRole);
-                        await msg.Channel.SendMessageAsync(
-                            $"User {user.Mention} has been unmuted automatically.");
+                        await user.RemoveRoleAsync(mutedRole);
+                        await msg.Channel.SendMessageAsync($"User {user.Mention} has been unmuted automatically.");
                     }
                 }
             }

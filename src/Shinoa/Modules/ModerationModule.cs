@@ -95,7 +95,7 @@ namespace Shinoa.Modules
 
             if (duration == 0)
             {
-                await user.AddRolesAsync(mutedRole);
+                await user.AddRoleAsync(mutedRole);
                 await delTask;
                 await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
                 return;
@@ -106,12 +106,12 @@ namespace Shinoa.Modules
                 return;
             }
 
-            await user.AddRolesAsync(mutedRole);
+            await user.AddRoleAsync(mutedRole);
             await delTask;
             await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
             await Task.Delay(duration);
 
-            await user.RemoveRolesAsync(mutedRole);
+            await user.RemoveRoleAsync(mutedRole);
             await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
         }
 
@@ -128,7 +128,7 @@ namespace Shinoa.Modules
             var delTask = Context.Message.DeleteAsync();
             IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
-            await user.RemoveRolesAsync(mutedRole);
+            await user.RemoveRoleAsync(mutedRole);
             await delTask;
             await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
         }
