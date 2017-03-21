@@ -142,7 +142,7 @@ namespace Shinoa.Services
             }
             catch (Exception e)
             {
-                Logging.LogError(e.ToString()).Wait();
+                Logging.LogError(e).Wait();
             }
         }
 

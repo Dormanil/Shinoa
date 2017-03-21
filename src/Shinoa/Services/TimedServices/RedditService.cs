@@ -100,13 +100,12 @@ namespace Shinoa.Services.TimedServices
             }
             catch (KeyNotFoundException)
             {
-                Logging.LogError(
-                        "RedditService.Init: The property was not found on the dynamic object. No colors were supplied.")
+                Logging.LogError("RedditService.Init: The property was not found on the dynamic object. No colors were supplied.")
                     .Wait();
             }
             catch (Exception e)
             {
-                Logging.LogError(e.ToString()).Wait();
+                Logging.LogError(e).Wait();
             }
         }
 
@@ -182,7 +181,7 @@ namespace Shinoa.Services.TimedServices
                         }
                         catch (SauceModule.SauceNotFoundException sauceNotFoundException)
                         {
-                            await Logging.LogError(sauceNotFoundException.ToString());
+                            await Logging.LogError(sauceNotFoundException);
                         }
                     }
 
@@ -193,7 +192,7 @@ namespace Shinoa.Services.TimedServices
                 {
                     foreach (var channel in subreddit.Channels)
                     {
-                        await channel.SendEmbedAsync(embed);
+                        await channel.TrySendEmbedAsync(embed);
                     }
                 }
 

@@ -98,7 +98,7 @@ namespace Shinoa.Services.TimedServices
             {
                 foreach (var channel in GetFromDb())
                 {
-                    await channel.SendEmbedAsync(embed);
+                    await channel.TrySendEmbedAsync(embed);
                 }
             }
         }

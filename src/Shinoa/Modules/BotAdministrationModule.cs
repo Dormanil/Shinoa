@@ -82,7 +82,8 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task GetStats()
         {
-            await ReplyAsync(GenerateStatsMessage());
+            this.TryReplyAsync(GenerateStatsMessage(), out var replyTask);
+            await replyTask;
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace Shinoa.Modules
         [RequireBotPermission(GuildPermission.ManageMessages)]
         public async Task Say([Remainder]string message)
         {
-            var replyTask = ReplyAsync(message);
+            this.TryReplyAsync(message, out var replyTask);
             if (Context.Channel is IGuildChannel) await Context.Message.DeleteAsync();
             await replyTask;
         }
@@ -124,7 +125,8 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task GetInviteLink()
         {
-            await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot");
+            this.TryReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot", out var replyTask);
+            await replyTask;
         }
 
         /// <summary>
@@ -136,7 +138,8 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task Shutdown()
         {
-            await ReplyAsync("Shutting down.");
+            this.TryReplyAsync("Shutting down.", out var replyTask);
+            await replyTask;
             Shinoa.Cts.CancelAfter(2000);
         }
 

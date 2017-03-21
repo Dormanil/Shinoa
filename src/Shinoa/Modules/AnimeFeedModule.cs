@@ -41,16 +41,28 @@ namespace Shinoa.Modules
             if (service.AddBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
-                    await ReplyAsync($"Anime notifications have been bound to this channel (#{Context.Channel.Name}).");
+                {
+                    this.TryReplyAsync($"Anime notifications have been bound to this channel (#{Context.Channel.Name}).", out var replyTask);
+                    await replyTask;
+                }
                 else
-                    await ReplyAsync("You will now receive anime notifications via PM.");
+                {
+                    this.TryReplyAsync("You will now receive anime notifications via PM.", out var replyTask);
+                    await replyTask;
+                }
             }
             else
             {
                 if (!(Context.Channel is IPrivateChannel))
-                    await ReplyAsync($"Anime notifications are already bound to this channel (#{Context.Channel.Name}).");
+                {
+                    this.TryReplyAsync($"Anime notifications are already bound to this channel (#{Context.Channel.Name}).", out var replyTask);
+                    await replyTask;
+                }
                 else
-                    await ReplyAsync("You are already receiving anime notifications.");
+                {
+                    this.TryReplyAsync("You are already receiving anime notifications.", out var replyTask);
+                    await replyTask;
+                }
             }
         }
 
@@ -65,16 +77,28 @@ namespace Shinoa.Modules
             if (service.RemoveBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
-                    await ReplyAsync($"Anime notifications have been unbound from this channel (#{Context.Channel.Name}).");
+                {
+                    this.TryReplyAsync($"Anime notifications have been unbound from this channel (#{Context.Channel.Name}).", out var replyTask);
+                    await replyTask;
+                }
                 else
-                    await ReplyAsync("You will no lonnger receive anime notifications.");
+                {
+                    this.TryReplyAsync("You will no lonnger receive anime notifications.", out var replyTask);
+                    await replyTask;
+                }
             }
             else
             {
                 if (!(Context.Channel is IPrivateChannel))
-                    await ReplyAsync($"Anime notifications are currently not bound to this channel (#{Context.Channel.Name}).");
+                {
+                    this.TryReplyAsync($"Anime notifications are currently not bound to this channel (#{Context.Channel.Name}).", out var replyTask);
+                    await replyTask;
+                }
                 else
-                    await ReplyAsync("You are currently not receiving anime notifications.");
+                {
+                    this.TryReplyAsync("You are currently not receiving anime notifications.", out var replyTask);
+                    await replyTask;
+                }
             }
         }
     }

@@ -40,11 +40,13 @@ namespace Shinoa.Modules
         {
             if (service.AddBinding(Context.Guild, Context.Channel))
             {
-                await ReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.");
+                this.TryReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.", out var replyTask);
+                await replyTask;
             }
             else
             {
-                await ReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
+                this.TryReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?", out var replyTask);
+                await replyTask;
             }
         }
 
@@ -58,11 +60,13 @@ namespace Shinoa.Modules
         {
             if (service.RemoveBinding(Context.Guild))
             {
-                await ReplyAsync("Greetings disabled for this server.");
+                this.TryReplyAsync("Greetings disabled for this server.", out var replyTask);
+                await replyTask;
             }
             else
             {
-                await ReplyAsync("Greetings aren't enabled for this server.");
+                this.TryReplyAsync("Greetings aren't enabled for this server.", out var replyTask);
+                await replyTask;
             }
         }
 
@@ -76,11 +80,13 @@ namespace Shinoa.Modules
         {
             if (service.AddBinding(Context.Guild, Context.Channel, true))
             {
-                await ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
+                this.TryReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.", out var replyTask);
+                await replyTask;
             }
             else
             {
-                await ReplyAsync("Greetings aren't enabled for this server.");
+                this.TryReplyAsync("Greetings aren't enabled for this server.", out var replyTask);
+                await replyTask;
             }
         }
     }
