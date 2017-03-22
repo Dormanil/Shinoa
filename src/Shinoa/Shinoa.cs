@@ -129,6 +129,7 @@ namespace Shinoa
             };
             Client.GuildAvailable += async g =>
             {
+                await Log($"Connected to guild \"{g.Name}\".");
                 string loggingChannelIdString = null;
                 try
                 {
