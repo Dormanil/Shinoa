@@ -5,14 +5,13 @@
 // Licensed under the MIT license.
 // </copyright>
 
-using System.Threading;
-
 namespace Shinoa
 {
     using System;
     using System.IO;
     using System.IO.Compression;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
@@ -22,9 +21,9 @@ namespace Shinoa
     /// </summary>
     public static class Logging
     {
+        private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private static IMessageChannel loggingChannel;
         private static string loggingFilePath;
-        private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Logs a specific string, as given in message.
@@ -36,7 +35,18 @@ namespace Shinoa
             PrintWithTime(message);
             if (loggingFilePath != null) await WriteLogWithTime(message, false);
             var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
-            if (sendMessageAsync != null) await sendMessageAsync;
+            if (sendMessageAsync == null) return;
+            try
+            {
+                await sendMessageAsync;
+            }
+            catch (Exception e)
+            {
+                StopLoggingToChannel();
+                await LogError(e.ToString());
+                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Shinoa.TryReenableLogging();
+            }
         }
 
         /// <summary>
@@ -65,8 +75,19 @@ namespace Shinoa
                 },
             };
             if (loggingFilePath != null) await WriteLogWithTime(message, true);
-            var sendEmbedAsync = loggingChannel?.SendEmbedAsync(embed);
-            if (sendEmbedAsync != null) await sendEmbedAsync;
+            var sendMessageAsync = loggingChannel?.SendEmbedAsync(embed);
+            if (sendMessageAsync == null) return;
+            try
+            {
+                await sendMessageAsync;
+            }
+            catch (Exception e)
+            {
+                StopLoggingToChannel();
+                await LogError(e.ToString());
+                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Shinoa.TryReenableLogging();
+            }
         }
 
         /// <summary>
@@ -138,7 +159,7 @@ namespace Shinoa
 
         private static async Task WriteLogWithTime(string line, bool error)
         {
-            await semaphore.WaitAsync();
+            await Semaphore.WaitAsync();
             try
             {
                 using (var fileStream = new FileStream(loggingFilePath, FileMode.OpenOrCreate, FileAccess.Write))
@@ -157,7 +178,7 @@ namespace Shinoa
             }
             finally
             {
-                semaphore.Release();
+                Semaphore.Release();
             }
         }
     }
