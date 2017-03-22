@@ -93,12 +93,13 @@ namespace Shinoa.Services.TimedServices
             }
             catch (KeyNotFoundException)
             {
-                Logging.LogError("TwitterService.Init(): The property was not found on the dynamic object. No colors were supplied.")
+                Logging.LogError(
+                        "TwitterService.Init(): The property was not found on the dynamic object. No colors were supplied.")
                     .Wait();
             }
             catch (Exception e)
             {
-                Logging.LogError(e).Wait();
+                Logging.LogError(e.ToString()).Wait();
             }
 
             twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
@@ -134,7 +135,7 @@ namespace Shinoa.Services.TimedServices
                 {
                     foreach (var channel in user.Channels)
                     {
-                        await channel.TrySendEmbedAsync(embed);
+                        await channel.SendEmbedAsync(embed);
                     }
                 }
 

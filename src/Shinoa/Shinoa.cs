@@ -119,7 +119,7 @@ namespace Shinoa
                 await Log("Disconnected from Discord.");
                 if (e != null)
                 {
-                    await LogError(e);
+                    await LogError(e.ToString());
                 }
             };
             Client.Log += async msg =>
@@ -140,7 +140,7 @@ namespace Shinoa
                 }
                 catch (Exception e)
                 {
-                    await LogError(e);
+                    await LogError(e.ToString());
                 }
 
                 if (loggingChannelIdString == null) return;
@@ -205,7 +205,7 @@ namespace Shinoa
                     }
                     catch (Exception e)
                     {
-                        await LogError(e);
+                        await LogError(e.ToString());
                     }
 
                     instance.Init(config, Map);
@@ -230,7 +230,7 @@ namespace Shinoa
                 }
                 catch (Exception e)
                 {
-                    await LogError(e);
+                    await LogError(e.ToString());
                 }
 
                 globalRefreshTimer = new Timer(
@@ -244,7 +244,7 @@ namespace Shinoa
                             }
                             catch (Exception e)
                             {
-                                await LogError(e);
+                                await LogError(e.ToString());
                             }
                         }
                     },

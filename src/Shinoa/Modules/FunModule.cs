@@ -45,8 +45,7 @@ namespace Shinoa.Modules
         {
             if (Service.CheckBinding(Context.Channel as ITextChannel))
             {
-                this.TryReplyAsync("This command is currently not available.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("This command is currently not available.");
                 return;
             }
 
@@ -57,7 +56,7 @@ namespace Shinoa.Modules
             .WithTitle($"I choose '{choice}'.")
             .WithColor(ModuleColor);
 
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         /// <summary>
@@ -71,23 +70,20 @@ namespace Shinoa.Modules
         {
             if (Service.CheckBinding(Context.Channel as ITextChannel))
             {
-                this.TryReplyAsync("This command is currently not available.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("This command is currently not available.");
                 return;
             }
 
             var rng = new Random();
             if (!int.TryParse(arg.Split('d')[0], out var multiplier))
             {
-                this.TryReplyAsync("I could not understand how many dice you wanted to roll.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("I could not understand how many dice you wanted to roll.");
                 return;
             }
 
             if (!int.TryParse(arg.Split('d')[1], out var dieSize))
             {
-                this.TryReplyAsync("I could not understand how many sides your dice were supposed to have.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("I could not understand how many sides your dice were supposed to have.");
                 return;
             }
 
@@ -95,8 +91,7 @@ namespace Shinoa.Modules
 
             if (multiplier > 100)
             {
-                this.TryReplyAsync("Please stick to reasonable amounts of dice.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("Please stick to reasonable amounts of dice.");
                 return;
             }
 
@@ -112,7 +107,7 @@ namespace Shinoa.Modules
                 .AddField(f => f.WithName("Total").WithValue(total.ToString()))
                 .AddField(f => f.WithName("Rolls").WithValue(rollsString.Trim(' ', ',')))
                 .WithColor(ModuleColor);
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         /// <summary>
@@ -124,14 +119,12 @@ namespace Shinoa.Modules
         {
             if (Service.CheckBinding(Context.Channel as ITextChannel))
             {
-                this.TryReplyAsync("This command is currently not available.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("This command is currently not available.");
                 return;
             }
 
             var deleteAsync = Context.Message.DeleteAsync();
-            this.TryReplyAsync("( ͡° ͜ʖ ͡°)", out var reply);
-            await reply;
+            await ReplyAsync("( ͡° ͜ʖ ͡°)");
             await deleteAsync;
         }
 
@@ -161,15 +154,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (Service.AddBinding(channel))
-                {
-                    this.TryReplyAsync($"Usage of fun commands and responses in this channel (#{channel.Name}) is no longer blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync($"Usage of fun commands and responses in this channel (#{channel.Name}) is no longer blocked.");
                 else
-                {
-                    this.TryReplyAsync("Usage of fun commands and responses in this channel was not blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Usage of fun commands and responses in this channel was not blocked.");
             }
 
             /// <summary>
@@ -183,15 +170,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (Service.RemoveBinding(channel))
-                {
-                    this.TryReplyAsync($"Usage of fun commands and responses in this channel (#{channel.Name}) is now blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync($"Usage of fun commands and responses in this channel (#{channel.Name}) is now blocked.");
                 else
-                {
-                    this.TryReplyAsync("Usage of fun commands and responses in this channel is already blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Usage of fun commands and responses in this channel is already blocked.");
             }
 
             /// <summary>
@@ -204,15 +185,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (Service.CheckBinding(channel))
-                {
-                    this.TryReplyAsync("Usage of fun commands and responses in this channel is blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Usage of fun commands and responses in this channel is blocked.");
                 else
-                {
-                    this.TryReplyAsync("Usage of fun commands and responses in this channel is not restricted.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Usage of fun commands and responses in this channel is not restricted.");
             }
         }
     }

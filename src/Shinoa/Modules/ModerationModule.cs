@@ -47,8 +47,7 @@ namespace Shinoa.Modules
 
             await Context.Guild.AddBanAsync(user);
             await delTask;
-            this.TryReplyAsync($"User {user.Username} has been banned by {Context.User.Mention}.", out var replyTask);
-            await replyTask;
+            await ReplyAsync($"User {user.Username} has been banned by {Context.User.Mention}.");
         }
 
         /// <summary>
@@ -67,8 +66,7 @@ namespace Shinoa.Modules
             await delTask;
             if (kickTask == null) return;
             await kickTask;
-            this.TryReplyAsync($"User {user.Username} has been kicked by {Context.User.Mention}.", out var replyTask);
-            await replyTask;
+            await ReplyAsync($"User {user.Username} has been kicked by {Context.User.Mention}.");
         }
 
         /// <summary>
@@ -99,26 +97,22 @@ namespace Shinoa.Modules
             {
                 await user.AddRoleAsync(mutedRole);
                 await delTask;
-                this.TryReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
                 return;
             }
             else if (duration < 0)
             {
-                this.TryReplyAsync($"User <@{user.Id}> has not been muted, since the duration of the mute was negative.", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"User <@{user.Id}> has not been muted, since the duration of the mute was negative.");
                 return;
             }
 
             await user.AddRoleAsync(mutedRole);
             await delTask;
-            this.TryReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.", out var reply);
-            await reply;
+            await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
             await Task.Delay(duration);
 
             await user.RemoveRoleAsync(mutedRole);
-            this.TryReplyAsync($"User <@{user.Id}> has been unmuted automatically.", out var anotherReply);
-            await anotherReply;
+            await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
         }
 
         /// <summary>
@@ -136,8 +130,7 @@ namespace Shinoa.Modules
 
             await user.RemoveRoleAsync(mutedRole);
             await delTask;
-            this.TryReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.", out var replyTask);
-            await replyTask;
+            await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
         }
 
         /// <summary>
@@ -158,8 +151,7 @@ namespace Shinoa.Modules
                 var channel = Context.Channel as IGuildChannel;
 
                 var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
-                this.TryReplyAsync(string.Empty, out var replyTask, embed: embed.Build());
-                await replyTask;
+                await ReplyAsync(string.Empty, embed: embed.Build());
                 await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny, addReactions: PermValue.Deny));
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
             }
@@ -178,8 +170,7 @@ namespace Shinoa.Modules
                 await channel.AddPermissionOverwriteAsync(Context.User, default(OverwritePermissions));
                 await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, default(OverwritePermissions));
                 var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
-                this.TryReplyAsync(string.Empty, out var replyTask, embed: embed.Build());
-                await replyTask;
+                await ReplyAsync(string.Empty, embed: embed.Build());
             }
         }
 
@@ -211,15 +202,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (service.AddBinding(channel))
-                {
-                    this.TryReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
                 else
-                {
-                    this.TryReplyAsync("Image spam in this channel is already blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Image spam in this channel is already blocked.");
             }
 
             /// <summary>
@@ -233,15 +218,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (service.RemoveBinding(channel))
-                {
-                    this.TryReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
                 else
-                {
-                    this.TryReplyAsync("Image spam in this channel was not blocked.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Image spam in this channel was not blocked.");
             }
 
             /// <summary>
@@ -254,15 +233,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (service.CheckBinding(channel))
-                {
-                    this.TryReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
                 else
-                {
-                    this.TryReplyAsync("Image spam in this channel is not restricted.", out var replyTask);
-                    await replyTask;
-                }
+                    await ReplyAsync("Image spam in this channel is not restricted.");
             }
         }
     }

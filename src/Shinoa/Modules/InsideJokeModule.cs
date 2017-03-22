@@ -30,7 +30,7 @@ namespace Shinoa.Modules
             {
                 Url = "https://www.youtube.com/watch?v=fq3abPnEEGE",
             }.WithTitle("It is a mystery to everyone...");
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
             await deleteAsync;
         }
 
@@ -46,7 +46,7 @@ namespace Shinoa.Modules
             {
                 ImageUrl = "http://i.imgur.com/WE7Hf9b.jpg",
             };
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
             await deleteAsync;
         }
 
@@ -64,7 +64,7 @@ He is here in an advisory function and it is a great honour for us to have him.
 To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + "fdod` or `" + Shinoa.Config["global"]["command_prefix"] + "fdd`, whatever suits you more.")
                 .WithUrl("https://www.fanfiction.net/u/46508/Catsy");
 
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + 
                 .WithDescription("Fairy Dance of Death is an Alternate Universe fan-fiction novel of Sword Art Online, exploring the idea of what would have happened if Kayaba Akihiko liked Norse mythology more than a floating castle and created ALO instead of SAO, death game and all that included. It is currently 41 chapters long, still being written, and in its third arc.")
                 .WithUrl("https://www.fanfiction.net/s/8679666/1/Fairy-Dance-of-Death");
 
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + 
             {
                 ImageUrl = "http://25.media.tumblr.com/tumblr_m9dzwbH9t21r3x7i2o1_500.jpg",
             };
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
             await deleteAsync;
         }
 
@@ -123,7 +123,7 @@ To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + 
                 .WithTitle("Current Date and Time in Alfheim")
                 .AddField(field => field.WithName("Date:").WithValue($"{alfheimTime.ToString(new CultureInfo("en-US").DateTimeFormat.LongDatePattern)}"))
                 .AddField(field => field.WithName("Time:").WithValue($"{alfheimTime.ToString(new CultureInfo("de-DE").DateTimeFormat.LongTimePattern)}"));
-            await Context.Channel.TrySendEmbedAsync(embed);
+            await Context.Channel.SendEmbedAsync(embed);
         }
 
         private static DateTimeOffset GetAlfheimTime() => new DateTimeOffset(2022, 11, 6, 4, 0, 0, TimeSpan.FromHours(9)).AddTicks(DateTimeOffset.Now.Subtract(new DateTimeOffset(2017, 1, 21, 4, 0, 0, TimeSpan.FromHours(9))).Ticks);

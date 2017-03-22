@@ -36,8 +36,8 @@ namespace Shinoa.Modules
         [Alias("al", "ani")]
         public async Task AnilistCommand([Remainder]string name)
         {
-            var greatSuccess = this.TryReplyAsync("Searching...", out var responseMessageTask);
-            if (!greatSuccess) return;
+            var responseMessageTask = ReplyAsync("Searching...");
+
             var result = await service.GetEmbed(name);
             var responseMessage = await responseMessageTask;
             await responseMessage.ModifyToEmbedAsync(result);

@@ -22,9 +22,9 @@ namespace Shinoa
     /// </summary>
     public static class Logging
     {
-        private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1, 1);
         private static IMessageChannel loggingChannel;
         private static string loggingFilePath;
+        private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Logs a specific string, as given in message.
@@ -65,22 +65,8 @@ namespace Shinoa
                 },
             };
             if (loggingFilePath != null) await WriteLogWithTime(message, true);
-            var sendEmbedAsync = loggingChannel?.TrySendEmbedAsync(embed);
-            if (sendEmbedAsync != null)
-            {
-                var result = await sendEmbedAsync;
-                if (!result) StopLoggingToChannel();
-            }
-        }
-
-        /// <summary>
-        /// Logs a specific exception, as given in message, as an error.
-        /// </summary>
-        /// <param name="message">The message to log.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public static async Task LogError(Exception message)
-        {
-            await LogError($"{message}");
+            var sendEmbedAsync = loggingChannel?.SendEmbedAsync(embed);
+            if (sendEmbedAsync != null) await sendEmbedAsync;
         }
 
         /// <summary>
@@ -152,7 +138,7 @@ namespace Shinoa
 
         private static async Task WriteLogWithTime(string line, bool error)
         {
-            await Semaphore.WaitAsync();
+            await semaphore.WaitAsync();
             try
             {
                 using (var fileStream = new FileStream(loggingFilePath, FileMode.OpenOrCreate, FileAccess.Write))
@@ -167,11 +153,11 @@ namespace Shinoa
             catch (Exception e)
             {
                 loggingFilePath = null;
-                await LogError(e);
+                await LogError(e.ToString());
             }
             finally
             {
-                Semaphore.Release();
+                semaphore.Release();
             }
         }
     }

@@ -9,29 +9,44 @@ namespace Shinoa
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Discord;
-    using Discord.Commands;
-    using Discord.Rest;
 
     public static class Util
     {
-        public static async Task<bool> TrySendEmbedAsync(this IMessageChannel channel, Embed embed)
+        public static async Task SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
         {
-            try
-            {
-                var sendMessageTask = channel.SendMessageAsync(string.Empty, embed: embed);
-                await sendMessageTask;
-                return true;
-            }
-            catch (Exception e)
-            {
-                await Logging.LogError(e);
-                return false;
-            }
+            await channel.SendMessageAsync($"Sorry, but you need the `{permissionName}` permission to do that.");
+        }
+
+        public static ulong IdFromMention(string mentionString)
+        {
+            var idString = mentionString
+                .Trim()
+                .Replace("<", string.Empty)
+                .Replace(">", string.Empty)
+                .Replace("@", string.Empty)
+                .Replace("!", string.Empty);
+
+            return ulong.Parse(idString);
+        }
+
+        public static string RemoveMentions(string message)
+        {
+            var mentionRegexPattern = @"<@.*>";
+            var mentionRegex = new Regex(mentionRegexPattern);
+
+            return mentionRegex.Replace(message, string.Empty);
+        }
+
+        public static Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, Embed embed)
+        {
+            return channel.SendMessageAsync(string.Empty, embed: embed);
         }
 
         public static Task ModifyToEmbedAsync(this IUserMessage message, Embed embed)
@@ -78,6 +93,15 @@ namespace Shinoa
             return value.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Length;
         }
 
+        public static string ToRemainderString(this string[] array)
+        {
+            var output = array.Aggregate(string.Empty, (current, word) => current + word + " ");
+
+            output = output.Trim();
+
+            return output;
+        }
+
         public static IEnumerable<int> To(this int from, int to)
         {
             if (from < to)
@@ -96,19 +120,14 @@ namespace Shinoa
             }
         }
 
-        public static bool TryReplyAsync(this ModuleBase<SocketCommandContext> module, string message, out Task<RestUserMessage> userMessage, bool isTTS = false, Embed embed = null, RequestOptions requestOptions = null)
+        public static IEnumerable<T> InStepsOf<T>(this IEnumerable<T> source, int step)
         {
-            try
+            if (step == 0)
             {
-                userMessage = module.Context.Channel.SendMessageAsync(message, isTTS, embed, requestOptions);
-                return true;
+                throw new ArgumentOutOfRangeException(nameof(step), "Parameter cannot be zero.");
             }
-            catch (Exception e)
-            {
-                Logging.LogError(e).Wait();
-                userMessage = null;
-                return false;
-            }
+
+            return source.Where((x, i) => i % step == 0);
         }
     }
 }

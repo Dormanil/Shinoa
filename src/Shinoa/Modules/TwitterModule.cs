@@ -31,13 +31,11 @@ namespace Shinoa.Modules
             var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
             if (service.AddBinding(twitterName, Context.Channel))
             {
-                this.TryReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
             }
             else
             {
-                this.TryReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{Context.Channel.Name}).");
             }
         }
 
@@ -48,13 +46,11 @@ namespace Shinoa.Modules
             var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
             if (service.RemoveBinding(twitterName, Context.Channel))
             {
-                this.TryReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{Context.Channel.Name}).");
             }
             else
             {
-                this.TryReplyAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for @{twitterName} are not currently bound to this channel (#{Context.Channel.Name}).");
             }
         }
 
@@ -70,8 +66,7 @@ namespace Shinoa.Modules
                 .AddField(f => f.WithName("Twitter users currently bound to this channel").WithValue(response))
                 .WithColor(service.ModuleColor);
 
-            this.TryReplyAsync(string.Empty, out var replyTask, embed: embed.Build());
-            await replyTask;
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
     }
 }

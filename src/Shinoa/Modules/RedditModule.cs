@@ -42,13 +42,11 @@ namespace Shinoa.Modules
         {
             if (service.AddBinding(subredditName, Context.Channel))
             {
-                this.TryReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
             }
             else
             {
-                this.TryReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
             }
         }
 
@@ -63,13 +61,11 @@ namespace Shinoa.Modules
         {
             if (service.RemoveBinding(subredditName, Context.Channel))
             {
-                this.TryReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
             }
             else
             {
-                this.TryReplyAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{Context.Channel.Name}).", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Notifications for /r/{subredditName} are not currently bound to this channel (#{Context.Channel.Name}).");
             }
         }
 
@@ -89,8 +85,7 @@ namespace Shinoa.Modules
                 .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
                 .WithColor(service.ModuleColor);
 
-            this.TryReplyAsync(string.Empty, out var replyTask, embed: embed.Build());
-            await replyTask;
+            await ReplyAsync(string.Empty, embed: embed.Build());
         }
     }
 }

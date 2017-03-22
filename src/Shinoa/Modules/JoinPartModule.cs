@@ -40,13 +40,11 @@ namespace Shinoa.Modules
         {
             if (service.AddBinding(Context.Guild, Context.Channel))
             {
-                this.TryReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.");
             }
             else
             {
-                this.TryReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?", out var replyTask);
-                await replyTask;
+                await ReplyAsync("Greetings are already enabled for this server. Did you mean to use `here`?");
             }
         }
 
@@ -60,13 +58,11 @@ namespace Shinoa.Modules
         {
             if (service.RemoveBinding(Context.Guild))
             {
-                this.TryReplyAsync("Greetings disabled for this server.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("Greetings disabled for this server.");
             }
             else
             {
-                this.TryReplyAsync("Greetings aren't enabled for this server.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("Greetings aren't enabled for this server.");
             }
         }
 
@@ -80,13 +76,11 @@ namespace Shinoa.Modules
         {
             if (service.AddBinding(Context.Guild, Context.Channel, true))
             {
-                this.TryReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.", out var replyTask);
-                await replyTask;
+                await ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
             }
             else
             {
-                this.TryReplyAsync("Greetings aren't enabled for this server.", out var replyTask);
-                await replyTask;
+                await ReplyAsync("Greetings aren't enabled for this server.");
             }
         }
     }
