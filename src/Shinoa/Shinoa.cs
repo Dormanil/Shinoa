@@ -93,9 +93,7 @@ namespace Shinoa
             var configurationFileStream = Alpha
                 ? new FileStream("config_alpha.yaml", FileMode.Open)
                 : new FileStream("config.yaml", FileMode.Open);
-
-            Console.OutputEncoding = Encoding.Unicode;
-
+            
             InitLoggingToFile();
 
             Console.Title = $"Shinoa v{Version}";
@@ -108,6 +106,20 @@ namespace Shinoa
             }
 
             if (Alpha) await Log("Running in Alpha configuration.");
+
+            bool useUnicode = false;
+            try
+            {
+                useUnicode = bool.TryParse(Config["global"]["unicode_logging"], out bool res) && res;
+            }
+            catch (KeyNotFoundException)
+            {
+                await Log("The property was not found on the dynamic object. Logging in UTF-8 by default.");
+            }
+
+            if (useUnicode) await Log("Logging in Unicode.");
+
+            Console.OutputEncoding = useUnicode ? Encoding.Unicode : Encoding.UTF8;
 
             #endregion
 

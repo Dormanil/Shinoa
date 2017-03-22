@@ -11,7 +11,10 @@ global:
     refresh_rate: 30
 
     ### Channel id for logging to a Discord channel
-    logging_channel_id: "282667861455929344"
+    logging_channel_id: "000000000000000000"
+
+    ###Optional Unicode logging
+    unicode_logging: false
 
 ### Module configuration
 anilist:
