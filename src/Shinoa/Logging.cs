@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using System.Threading;
+
 namespace Shinoa
 {
     using System;
@@ -22,6 +24,7 @@ namespace Shinoa
     {
         private static IMessageChannel loggingChannel;
         private static string loggingFilePath;
+        private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Logs a specific string, as given in message.
@@ -31,7 +34,7 @@ namespace Shinoa
         public static async Task Log(string message)
         {
             PrintWithTime(message);
-            if (loggingFilePath != null) WriteLogWithTime(message, false);
+            if (loggingFilePath != null) await WriteLogWithTime(message, false);
             var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
             if (sendMessageAsync != null) await sendMessageAsync;
         }
@@ -61,7 +64,7 @@ namespace Shinoa
                     Text = Shinoa.VersionString,
                 },
             };
-            if (loggingFilePath != null) WriteLogWithTime(message, true);
+            if (loggingFilePath != null) await WriteLogWithTime(message, true);
             var sendEmbedAsync = loggingChannel?.SendEmbedAsync(embed);
             if (sendEmbedAsync != null) await sendEmbedAsync;
         }
@@ -133,8 +136,9 @@ namespace Shinoa
             Console.Error.WriteLine($"[{DateTime.Now.Hour:D2}:{DateTime.Now.Minute:D2}:{DateTime.Now.Second:D2}] {line}");
         }
 
-        private static void WriteLogWithTime(string line, bool error)
+        private static async Task WriteLogWithTime(string line, bool error)
         {
+            await semaphore.WaitAsync();
             try
             {
                 using (var fileStream = new FileStream(loggingFilePath, FileMode.OpenOrCreate, FileAccess.Write))
@@ -142,14 +146,18 @@ namespace Shinoa
                     fileStream.Seek(0, SeekOrigin.End);
                     using (var streamWriter = new StreamWriter(fileStream, Encoding.Unicode))
                     {
-                        streamWriter.WriteLine($"<{DateTime.UtcNow:u}> {(error ? "[ERROR]" : "[INFO]")} {line}");
+                        await streamWriter.WriteLineAsync($"<{DateTime.UtcNow:u}> {(error ? "[ERROR]" : "[INFO]")} {line}");
                     }
                 }
             }
             catch (Exception e)
             {
                 loggingFilePath = null;
-                Logging.LogError(e.ToString()).GetAwaiter().GetResult();
+                await LogError(e.ToString());
+            }
+            finally
+            {
+                semaphore.Release();
             }
         }
     }
