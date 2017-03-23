@@ -140,6 +140,27 @@ namespace Shinoa.Modules
             Shinoa.Cts.CancelAfter(2000);
         }
 
+        [Command("leave")]
+        [RequireOwner]
+        public async Task Leave([Remainder]string args = null)
+        {
+            try
+            {
+                var guildId = args != null ? ulong.Parse(args) : Context.Guild.Id;
+                if (!await Shinoa.TryLeaveGuildAsync(guildId))
+                {
+                    await ReplyAsync("Failed to leave server.");
+                    return;
+                }
+
+                await Logging.Log($"Left server with id {guildId}.");
+            }
+            catch (FormatException)
+            {
+                await Logging.LogError($"{args} could not be parsed.");
+            }
+        }
+
         private string GenerateStatsMessage()
         {
             var output = string.Empty;

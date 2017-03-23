@@ -22,7 +22,7 @@ namespace Shinoa.Services.TimedServices
     using Discord.WebSocket;
     using SQLite;
 
-    public class AnimeFeedService : ITimedService
+    public class AnimeFeedService : IDatabaseService, ITimedService
     {
         private static readonly Color ModuleColor = new Color(0, 150, 136);
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.se/") };

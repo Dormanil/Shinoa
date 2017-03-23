@@ -20,7 +20,7 @@ namespace Shinoa.Services.TimedServices
     using SQLite;
 
     [Config("twitter")]
-    public class TwitterService : ITimedService
+    public class TwitterService : IDatabaseService, ITimedService
     {
         private SQLiteConnection db;
         private DiscordSocketClient client;
@@ -67,6 +67,29 @@ namespace Shinoa.Services.TimedServices
                 {
                     TwitterUsername = name,
                 });
+            }
+
+            return true;
+        }
+
+        public bool RemoveBinding(IMessageChannel channel)
+        {
+            var usernames = db.Table<TwitterChannelBinding>()
+                .Where(b => b.ChannelId == channel.Id.ToString())
+                .Select(b => b.TwitterUsername);
+
+            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == channel.Id.ToString()) != 0;
+            if (!found) return false;
+
+            foreach (var username in usernames)
+            {
+                if (db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != username))
+                {
+                    db.Delete(new TwitterBinding
+                    {
+                        TwitterUsername = username,
+                    });
+                }
             }
 
             return true;

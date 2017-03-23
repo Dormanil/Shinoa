@@ -84,6 +84,45 @@ namespace Shinoa
             }
         }
 
+        public static async Task<bool> TryLeaveGuildAsync(ulong guildId)
+        {
+            try
+            {
+                var channels = Client.GetGuild(guildId).TextChannels
+                    .Select(channel => (IMessageChannel)channel).ToList();
+
+                var services = typeof(Shinoa).GetTypeInfo()
+                    .Assembly.GetExportedTypes()
+                    .Select(t => t.GetTypeInfo())
+                    .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseService)) && !(t.IsAbstract || t.IsInterface));
+
+                foreach (var service in services)
+                {
+                    object instance;
+                    if (!Map.TryGet(service.UnderlyingSystemType, out instance)) continue;
+                    channels.ForEach(async channel =>
+                    {
+                        ((IDatabaseService)instance).RemoveBinding(channel);
+                        try
+                        {
+                            if (channel.Id.ToString() == (string)Config["global"]["logging_channel_id"]) StopLoggingToChannel();
+                        }
+                        catch (KeyNotFoundException)
+                        {
+                            await LogError("The property was not found on the dynamic object. No logging channel was supplied.");
+                        }
+                    });
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                await LogError(e.ToString());
+                return false;
+            }
+        }
+
         private static async Task StartAsync()
         {
             #region Prerequisites
@@ -93,7 +132,7 @@ namespace Shinoa
             var configurationFileStream = Alpha
                 ? new FileStream("config_alpha.yaml", FileMode.Open)
                 : new FileStream("config.yaml", FileMode.Open);
-            
+
             InitLoggingToFile();
 
             Console.Title = $"Shinoa v{Version}";
@@ -107,7 +146,7 @@ namespace Shinoa
 
             if (Alpha) await Log("Running in Alpha configuration.");
 
-            bool useUnicode = false;
+            var useUnicode = false;
             try
             {
                 useUnicode = bool.TryParse(Config["global"]["unicode_logging"], out bool res) && res;

@@ -7,6 +7,7 @@
 
 namespace Shinoa.Services
 {
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Discord;
@@ -14,7 +15,7 @@ namespace Shinoa.Services
     using Discord.WebSocket;
     using SQLite;
 
-    public class JoinPartService : IService
+    public class JoinPartService : IDatabaseService
     {
         private SQLiteConnection db;
         private DiscordSocketClient client;
@@ -37,6 +38,19 @@ namespace Shinoa.Services
         {
             if (db.Table<JoinPartServer>().All(b => b.ServerId != guild.Id.ToString())) return false;
             db.Delete(new JoinPartServer { ServerId = guild.Id.ToString() });
+            return true;
+        }
+
+        public bool RemoveBinding(IMessageChannel channel)
+        {
+            if (db.Table<JoinPartServer>().All(b => b.ChannelId != channel.Id.ToString())) return false;
+            var tableQuery = db.Table<JoinPartServer>().Where(b => b.ChannelId == channel.Id.ToString());
+            var serverIds = tableQuery.Select(server => server.ServerId).ToList();
+            foreach (var server in serverIds)
+            {
+                db.Delete(server);
+            }
+
             return true;
         }
 

@@ -15,11 +15,11 @@ namespace Shinoa.Services
     using Discord.WebSocket;
     using SQLite;
 
-    public class FunService : IService
+    public class FunService : IDatabaseService
     {
         private SQLiteConnection db;
 
-        public bool AddBinding(ITextChannel channel)
+        public bool AddBinding(IMessageChannel channel)
         {
             if (db.Table<BotFunctionSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
 
@@ -30,12 +30,12 @@ namespace Shinoa.Services
             return true;
         }
 
-        public bool RemoveBinding(ITextChannel channel)
+        public bool RemoveBinding(IMessageChannel channel)
         {
             return db.Delete<BotFunctionSpamBinding>(channel.Id.ToString()) != 0;
         }
 
-        public bool CheckBinding(ITextChannel channel)
+        public bool CheckBinding(IMessageChannel channel)
         {
             return db.Table<BotFunctionSpamBinding>().All(b => b.ChannelId != channel.Id.ToString());
         }

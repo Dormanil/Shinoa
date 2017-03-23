@@ -22,7 +22,7 @@ namespace Shinoa.Services.TimedServices
     using SQLite;
 
     [Config("reddit")]
-    public class RedditService : ITimedService
+    public class RedditService : IDatabaseService, ITimedService
     {
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://www.reddit.com/r/") };
 
@@ -72,6 +72,29 @@ namespace Shinoa.Services.TimedServices
                 {
                     SubredditName = name,
                 });
+            }
+
+            return true;
+        }
+
+        public bool RemoveBinding(IMessageChannel channel)
+        {
+            var subreddits = db.Table<RedditChannelBinding>()
+                .Where(b => b.ChannelId == channel.Id.ToString())
+                .Select(b => b.SubredditName);
+
+            var found = db.Table<RedditChannelBinding>().Delete(b => b.ChannelId == channel.Id.ToString()) != 0;
+            if (!found) return false;
+
+            foreach (var subreddit in subreddits)
+            {
+                if (db.Table<RedditChannelBinding>().All(b => b.SubredditName != subreddit))
+                {
+                    db.Delete(new RedditBinding
+                    {
+                        SubredditName = subreddit,
+                    });
+                }
             }
 
             return true;

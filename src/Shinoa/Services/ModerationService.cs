@@ -16,11 +16,11 @@ namespace Shinoa.Services
     using Discord.WebSocket;
     using SQLite;
 
-    public class ModerationService : IService
+    public class ModerationService : IDatabaseService
     {
         private SQLiteConnection db;
 
-        public bool AddBinding(ITextChannel channel)
+        public bool AddBinding(IMessageChannel channel)
         {
             if (db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
 
@@ -31,12 +31,12 @@ namespace Shinoa.Services
             return true;
         }
 
-        public bool RemoveBinding(ITextChannel channel)
+        public bool RemoveBinding(IMessageChannel channel)
         {
             return db.Delete<ImageSpamBinding>(channel.Id.ToString()) != 0;
         }
 
-        public bool CheckBinding(ITextChannel channel)
+        public bool CheckBinding(IMessageChannel channel)
         {
             return db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString());
         }
@@ -58,17 +58,11 @@ namespace Shinoa.Services
                     db.Table<ImageSpamBinding>().Any(b => b.ChannelId == msg.Channel.Id.ToString()) &&
                     msg.Attachments.Count > 0)
                 {
-                    var imagesCounter = 0;
                     var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
-                    foreach (var message in messages.ToList().OrderByDescending(o => o.Timestamp))
-                    {
-                        var timeDifference = DateTimeOffset.Now - message.Timestamp;
-                        if (timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 &&
-                            message.Author.Id == msg.Author.Id)
-                        {
-                            imagesCounter++;
-                        }
-                    }
+                    var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
+                                         let timeDifference = DateTimeOffset.Now - message.Timestamp
+                                         where timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 && message.Author.Id == msg.Author.Id
+                                         select message).Count();
 
                     if (imagesCounter > 2)
                     {
