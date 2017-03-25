@@ -94,7 +94,7 @@ namespace Shinoa
             try
             {
                 var channels = Client.GetGuild(guildId).TextChannels
-                    .Select(channel => (IMessageChannel)channel).ToList();
+                    .Cast<IMessageChannel>().ToList();
 
                 var services = typeof(Shinoa).GetTypeInfo()
                     .Assembly.GetExportedTypes()
@@ -119,6 +119,7 @@ namespace Shinoa
                     });
                 }
 
+                await Client.GetGuild(guildId).LeaveAsync();
                 return true;
             }
             catch (Exception e)
