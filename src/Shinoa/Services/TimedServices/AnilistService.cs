@@ -39,9 +39,9 @@ namespace Shinoa.Services.TimedServices
 
             var postContent = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("grant_type", "client_credentials"),
-                new KeyValuePair<string, string>("client_id", clientId),
-                new KeyValuePair<string, string>("client_secret", clientSecret),
+                ("grant_type", "client_credentials").ToKeyValuePair(),
+                ("client_id", clientId).ToKeyValuePair(),
+                ("client_secret", clientSecret).ToKeyValuePair(),
             });
 
             var responseString = await (await client.PostAsync("https://anilist.co/api/auth/access_token", postContent)).Content.ReadAsStringAsync();

@@ -19,31 +19,6 @@ namespace Shinoa
 
     public static class Util
     {
-        public static async Task SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
-        {
-            await channel.SendMessageAsync($"Sorry, but you need the `{permissionName}` permission to do that.");
-        }
-
-        public static ulong IdFromMention(string mentionString)
-        {
-            var idString = mentionString
-                .Trim()
-                .Replace("<", string.Empty)
-                .Replace(">", string.Empty)
-                .Replace("@", string.Empty)
-                .Replace("!", string.Empty);
-
-            return ulong.Parse(idString);
-        }
-
-        public static string RemoveMentions(string message)
-        {
-            var mentionRegexPattern = @"<@.*>";
-            var mentionRegex = new Regex(mentionRegexPattern);
-
-            return mentionRegex.Replace(message, string.Empty);
-        }
-
         public static Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, Embed embed)
         {
             return channel.SendMessageAsync(string.Empty, embed: embed);
@@ -93,15 +68,6 @@ namespace Shinoa
             return value.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries).Length;
         }
 
-        public static string ToRemainderString(this string[] array)
-        {
-            var output = array.Aggregate(string.Empty, (current, word) => current + word + " ");
-
-            output = output.Trim();
-
-            return output;
-        }
-
         public static IEnumerable<int> To(this int from, int to)
         {
             if (from < to)
@@ -128,6 +94,11 @@ namespace Shinoa
             }
 
             return source.Where((x, i) => i % step == 0);
+        }
+
+        public static KeyValuePair<T1, T2> ToKeyValuePair<T1, T2>(this ValueTuple<T1, T2> tuple)
+        {
+            return new KeyValuePair<T1, T2>(tuple.Item1, tuple.Item2);
         }
     }
 }
