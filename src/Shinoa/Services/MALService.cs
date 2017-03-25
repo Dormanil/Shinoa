@@ -31,7 +31,7 @@ namespace Shinoa.Services
             {
                 var result = new AnimeResult();
 
-                var responseText = httpClient.HttpGet($"anime/search.xml?q={searchQuery}");
+                var responseText = httpClient.HttpGet($"anime/search.xml?q={searchQuery}").Result;
                 if (responseText == null)
                 {
                     Logging.LogError($"Could not find anime \"{searchQuery}\"").Wait();
@@ -82,7 +82,7 @@ namespace Shinoa.Services
             {
                 var result = new MangaResult();
 
-                var responseText = httpClient.HttpGet($"manga/search.xml?q={searchQuery}");
+                var responseText = httpClient.HttpGet($"manga/search.xml?q={searchQuery}").Result;
                 if (responseText == null)
                 {
                     Logging.LogError($"Could not find manga \"{searchQuery}\"").Wait();

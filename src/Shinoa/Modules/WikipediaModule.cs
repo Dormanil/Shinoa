@@ -26,7 +26,7 @@ namespace Shinoa.Modules
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var responseText = HttpClient.HttpGet($"api.php?action=opensearch&search={queryText}");
+            var responseText = await HttpClient.HttpGet($"api.php?action=opensearch&search={queryText}");
             if (responseText == null)
             {
                 var responseMsg = await responseMessageTask;

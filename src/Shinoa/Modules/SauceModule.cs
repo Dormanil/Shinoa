@@ -32,7 +32,7 @@ namespace Shinoa.Modules
                     new KeyValuePair<string, string>("database", "5"),
                 });
 
-            var resultPageHtml = HttpClient.HttpPost("search.php", postContent);
+            var resultPageHtml = HttpClient.HttpPost("search.php", postContent).Result;
             if (resultPageHtml == null) throw new SauceNotFoundException();
 
             try

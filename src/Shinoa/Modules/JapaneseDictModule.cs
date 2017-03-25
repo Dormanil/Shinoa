@@ -31,7 +31,7 @@ namespace Shinoa.Modules
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var httpResponseText = HttpClient.HttpGet($"words?keyword={term}");
+            var httpResponseText = await HttpClient.HttpGet($"words?keyword={term}");
             if (httpResponseText == null)
             {
                 var responseMsg = await responseMessageTask;

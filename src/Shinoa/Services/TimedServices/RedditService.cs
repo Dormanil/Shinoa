@@ -137,7 +137,7 @@ namespace Shinoa.Services.TimedServices
         {
             foreach (var subreddit in GetFromDb())
             {
-                var responseText = httpClient.HttpGet($"{subreddit.Name}/new/.json");
+                var responseText = await httpClient.HttpGet($"{subreddit.Name}/new/.json");
                 if (responseText == null) continue;
 
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
