@@ -8,6 +8,7 @@
 namespace Shinoa.Modules
 {
     using System.Threading.Tasks;
+    using Attributes;
     using Discord.Commands;
     using Services;
     using Services.TimedServices;
@@ -17,6 +18,7 @@ namespace Shinoa.Modules
     /// <summary>
     /// Module for MyAnimeList services.
     /// </summary>
+    [RequireNotBlacklisted]
     public class MalModule : ModuleBase<SocketCommandContext>
     {
         private readonly MalService service;

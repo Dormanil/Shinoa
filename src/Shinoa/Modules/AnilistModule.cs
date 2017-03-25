@@ -8,12 +8,14 @@
 namespace Shinoa.Modules
 {
     using System.Threading.Tasks;
+    using Attributes;
     using Discord.Commands;
     using Services.TimedServices;
 
     /// <summary>
     /// Module for Anilist services.
     /// </summary>
+    [RequireNotBlacklisted]
     public class AnilistModule : ModuleBase<SocketCommandContext>
     {
         private readonly AnilistService service;

@@ -17,6 +17,7 @@ namespace Shinoa.Modules
     /// Module for automatic updates on airing anime.
     /// </summary>
     [Group("animefeed")]
+    [RequireNotBlacklisted]
     public class AnimeFeedModule : ModuleBase<SocketCommandContext>
     {
         private readonly AnimeFeedService service;

@@ -9,6 +9,7 @@ namespace Shinoa.Modules
 {
     using System;
     using System.Threading.Tasks;
+    using Attributes;
     using Discord;
     using Discord.Commands;
     using Services;
@@ -16,6 +17,7 @@ namespace Shinoa.Modules
     /// <summary>
     /// Module for funny commands.
     /// </summary>
+    [RequireNotBlacklisted]
     public class FunModule : ModuleBase<SocketCommandContext>
     {
         private static readonly Color ModuleColor = new Color(63, 81, 181);

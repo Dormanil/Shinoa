@@ -18,6 +18,7 @@ namespace Shinoa.Modules
     /// Module for reddit services.
     /// </summary>
     [Group("reddit")]
+    [RequireNotBlacklisted]
     public class RedditModule : ModuleBase<SocketCommandContext>
     {
         private readonly RedditService service;

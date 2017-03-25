@@ -15,6 +15,7 @@ namespace Shinoa.Modules
     using Services.TimedServices;
 
     [Group("twitter")]
+    [RequireNotBlacklisted]
     public class TwitterModule : ModuleBase<SocketCommandContext>
     {
         private readonly TwitterService service;

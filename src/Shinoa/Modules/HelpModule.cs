@@ -8,12 +8,14 @@
 namespace Shinoa.Modules
 {
     using System.Threading.Tasks;
+    using Attributes;
     using Discord;
     using Discord.Commands;
 
     /// <summary>
     /// Module to get help using the bot.
     /// </summary>
+    [RequireNotBlacklisted]
     public class HelpModule : ModuleBase<SocketCommandContext>
     {
         /// <summary>

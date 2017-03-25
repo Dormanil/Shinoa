@@ -24,7 +24,7 @@ namespace Shinoa
             => AddFactory(() => new T());
 
         public T Get<T>()
-            => (T)Get(typeof(T));
+            where T : class => (T)Get(typeof(T));
 
         public bool TryAdd<T>(T obj)
             where T : class
@@ -69,6 +69,7 @@ namespace Shinoa
         }
 
         public bool TryGet<T>(out T result)
+            where T : class
         {
             var t = typeof(T);
             if (TryGet(t, out object res))

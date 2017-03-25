@@ -105,6 +105,12 @@ namespace Shinoa
                 {
                     object instance;
                     if (!Map.TryGet(service.UnderlyingSystemType, out instance)) continue;
+                    if (instance is BlacklistService blacklistService)
+                    {
+                        blacklistService.RemoveBinding(Client.GetGuild(guildId));
+                        continue;
+                    }
+
                     channels.ForEach(async channel =>
                     {
                         ((IDatabaseService)instance).RemoveBinding(channel);

@@ -34,17 +34,10 @@ namespace Shinoa.Services
             return true;
         }
 
-        public bool RemoveBinding(IGuild guild)
+        public bool RemoveBinding<T>(T channel)
         {
-            if (db.Table<JoinPartServer>().All(b => b.ServerId != guild.Id.ToString())) return false;
-            db.Delete(new JoinPartServer { ServerId = guild.Id.ToString() });
-            return true;
-        }
-
-        public bool RemoveBinding(IMessageChannel channel)
-        {
-            if (db.Table<JoinPartServer>().All(b => b.ChannelId != channel.Id.ToString())) return false;
-            var tableQuery = db.Table<JoinPartServer>().Where(b => b.ChannelId == channel.Id.ToString());
+            if (db.Table<JoinPartServer>().All(b => b.ChannelId != (channel as IMessageChannel).Id.ToString())) return false;
+            var tableQuery = db.Table<JoinPartServer>().Where(b => b.ChannelId == (channel as IMessageChannel).Id.ToString());
             var serverIds = tableQuery.Select(server => server.ServerId).ToList();
             foreach (var server in serverIds)
             {

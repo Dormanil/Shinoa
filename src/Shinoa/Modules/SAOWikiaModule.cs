@@ -10,6 +10,7 @@ namespace Shinoa.Modules
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Attributes;
     using Discord.Commands;
     using Microsoft.CSharp.RuntimeBinder;
     using Newtonsoft.Json;
@@ -17,6 +18,7 @@ namespace Shinoa.Modules
     /// <summary>
     /// Module for SAO Wikia services.
     /// </summary>
+    [RequireNotBlacklisted]
     public class SaoWikiaModule : ModuleBase<SocketCommandContext>
     {
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://swordartonline.wikia.com/api/v1/") };

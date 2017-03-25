@@ -10,12 +10,14 @@ namespace Shinoa.Modules
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Attributes;
     using Discord.Commands;
     using Newtonsoft.Json;
 
     /// <summary>
     /// Module for access to Jisho.
     /// </summary>
+    [RequireNotBlacklisted]
     public class JapaneseDictModule : ModuleBase<SocketCommandContext>
     {
         private static readonly HttpClient HttpClient = new HttpClient { BaseAddress = new Uri("http://jisho.org/api/v1/search/") };

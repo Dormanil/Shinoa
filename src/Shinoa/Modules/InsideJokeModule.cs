@@ -10,12 +10,14 @@ namespace Shinoa.Modules
     using System;
     using System.Globalization;
     using System.Threading.Tasks;
+    using Attributes;
     using Discord;
     using Discord.Commands;
 
     /// <summary>
     /// Module containing commands for use on the FDoD server.
     /// </summary>
+    [RequireNotBlacklisted]
     public class InsideJokeModule : ModuleBase<SocketCommandContext>
     {
         /// <summary>

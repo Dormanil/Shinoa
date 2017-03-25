@@ -30,9 +30,9 @@ namespace Shinoa.Services
             return true;
         }
 
-        public bool RemoveBinding(IMessageChannel channel)
+        public bool RemoveBinding<T>(T channel)
         {
-            return db.Delete<BotFunctionSpamBinding>(channel.Id.ToString()) != 0;
+            return db.Delete<BotFunctionSpamBinding>((channel as IMessageChannel).Id.ToString()) != 0;
         }
 
         public bool CheckBinding(IMessageChannel channel)

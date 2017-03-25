@@ -40,9 +40,9 @@ namespace Shinoa.Services.TimedServices
             return true;
         }
 
-        public bool RemoveBinding(IMessageChannel channel)
+        public bool RemoveBinding<T>(T channel)
         {
-            return db.Delete<AnimeFeedBinding>(channel.Id.ToString()) != 0;
+            return db.Delete<AnimeFeedBinding>((channel as IMessageChannel).Id.ToString()) != 0;
         }
 
         void IService.Init(dynamic config, IDependencyMap map)

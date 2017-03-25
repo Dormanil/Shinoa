@@ -10,11 +10,13 @@ namespace Shinoa.Modules
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Attributes;
     using Discord;
     using Discord.Commands;
     using Microsoft.CSharp.RuntimeBinder;
     using Newtonsoft.Json;
 
+    [RequireNotBlacklisted]
     public class WikipediaModule : ModuleBase<SocketCommandContext>
     {
         private static readonly Color ModuleColor = new Color(33, 150, 243);

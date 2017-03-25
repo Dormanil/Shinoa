@@ -13,10 +13,12 @@ namespace Shinoa.Modules
     using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+    using Attributes;
     using Discord;
     using Discord.Commands;
     using HtmlAgilityPack;
 
+    [RequireNotBlacklisted]
     public class SauceModule : ModuleBase<SocketCommandContext>
     {
         private static readonly HttpClient HttpClient = new HttpClient { BaseAddress = new Uri("https://saucenao.com/") };

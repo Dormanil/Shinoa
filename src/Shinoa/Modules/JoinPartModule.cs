@@ -8,6 +8,7 @@
 namespace Shinoa.Modules
 {
     using System.Threading.Tasks;
+    using Attributes;
     using Discord;
     using Discord.Commands;
     using Services;
@@ -17,6 +18,7 @@ namespace Shinoa.Modules
     /// </summary>
     [Group("greetings")]
     [Alias("joins", "welcome", "welcomes")]
+    [RequireNotBlacklisted]
     public class JoinPartModule : ModuleBase<SocketCommandContext>
     {
         private readonly JoinPartService service;

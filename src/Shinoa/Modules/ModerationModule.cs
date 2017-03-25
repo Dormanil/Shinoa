@@ -238,5 +238,61 @@ namespace Shinoa.Modules
                     await ReplyAsync("Image spam in this channel is not restricted.");
             }
         }
+
+        /// <summary>
+        /// Command group to manage command usage for specific users.
+        /// </summary>
+        [Group("blacklist")]
+        public class BlacklistModule : ModuleBase<SocketCommandContext>
+        {
+            private readonly BlacklistService service;
+
+            public BlacklistModule(BlacklistService svc)
+            {
+                service = svc;
+            }
+
+            /// <summary>
+            /// Command to add a specific user to the bot's blacklist.
+            /// </summary>
+            /// <param name="user">The user in question.</param>
+            /// <returns></returns>
+            [Command("add")]
+            public async Task Add(IGuildUser user)
+            {
+                if (service.AddBinding(Context.Guild, user))
+                    await ReplyAsync($"Command usage on this server is now blocked for #{user.Mention}.");
+                else
+                    await ReplyAsync("Command usage on this server is already blocked for that user.");
+            }
+
+            /// <summary>
+            /// Command to remove a specific user from the bot's blacklist.
+            /// </summary>
+            /// <param name="user">The user in question.</param>
+            /// <returns></returns>
+            [Command("remove")]
+            public async Task Remove(IGuildUser user)
+            {
+                if (service.RemoveBinding(Context.Guild, user))
+                    await ReplyAsync($"Command usage on this server is now no longer blocked for #{user.Mention}.");
+                else
+                    await ReplyAsync("Command usage on this server was not blocked for that user.");
+            }
+
+            /// <summary>
+            /// Command to check if a specific user is on the bot's blacklist.
+            /// </summary>
+            /// <param name="user">The user in question.</param>
+            /// <returns></returns>
+            [Command("check")]
+            public async Task Check(IGuildUser user)
+            {
+                if (service.CheckBinding(Context.Guild, user))
+                    await ReplyAsync($"Command usage on this server is currently blocked for #{user.Mention}.");
+                else
+                    await ReplyAsync("Command usage on this server is currently not blocked for that user.");
+            }
+        }
     }
 }

@@ -72,13 +72,13 @@ namespace Shinoa.Services.TimedServices
             return true;
         }
 
-        public bool RemoveBinding(IMessageChannel channel)
+        public bool RemoveBinding<T>(T channel)
         {
             var usernames = db.Table<TwitterChannelBinding>()
-                .Where(b => b.ChannelId == channel.Id.ToString())
+                .Where(b => b.ChannelId == (channel as IMessageChannel).Id.ToString())
                 .Select(b => b.TwitterUsername);
 
-            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == channel.Id.ToString()) != 0;
+            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == (channel as IMessageChannel).Id.ToString()) != 0;
             if (!found) return false;
 
             foreach (var username in usernames)
