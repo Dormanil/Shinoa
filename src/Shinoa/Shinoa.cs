@@ -35,7 +35,12 @@ namespace Shinoa
             $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
 
         private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
-        private static readonly CommandService Commands = new CommandService();
+        private static readonly CommandService Commands = new CommandService(new CommandServiceConfig()
+        {
+            CaseSensitiveCommands = true,
+            DefaultRunMode = RunMode.Async,
+        });
+
         private static readonly OpaqueDependencyMap Map = new OpaqueDependencyMap();
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
         private static SQLiteConnection databaseConnection;
