@@ -19,9 +19,9 @@ namespace Shinoa
 
     public static class Util
     {
-        public static async Task SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
+        public static Task SendPermissionErrorAsync(this IMessageChannel channel, string permissionName)
         {
-            await channel.SendMessageAsync($"Sorry, but you need the `{permissionName}` permission to do that.");
+            return channel.SendMessageAsync($"Sorry, but you need the `{permissionName}` permission to do that.");
         }
 
         public static ulong IdFromMention(string mentionString)
@@ -64,18 +64,18 @@ namespace Shinoa
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
         }
 
-        public static string HttpGet(this HttpClient client, string relativeUrl)
+        public static async Task<string> HttpGet(this HttpClient client, string relativeUrl)
         {
-            var response = client.GetAsync(relativeUrl).Result;
+            var response = await client.GetAsync(relativeUrl);
             var content = response.Content;
-            return response.IsSuccessStatusCode ? content.ReadAsStringAsync().Result : null;
+            return response.IsSuccessStatusCode ? await content.ReadAsStringAsync() : null;
         }
 
-        public static string HttpPost(this HttpClient client, string relativeUrl, HttpContent httpContent)
+        public static async Task<string> HttpPost(this HttpClient client, string relativeUrl, HttpContent httpContent)
         {
-            var response = client.PostAsync(relativeUrl, httpContent).Result;
+            var response = await client.PostAsync(relativeUrl, httpContent);
             var content = response.Content;
-            return response.IsSuccessStatusCode ? content.ReadAsStringAsync().Result : null;
+            return response.IsSuccessStatusCode ? await content.ReadAsStringAsync() : null;
         }
 
         public static string Truncate(this string value, int maxChars)

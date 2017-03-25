@@ -32,7 +32,7 @@ namespace Shinoa.Modules
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var httpResponseText = httpClient.HttpGet($"Search/List/?query={queryText}");
+            var httpResponseText = await httpClient.HttpGet($"Search/List/?query={queryText}");
             dynamic responseObject = JsonConvert.DeserializeObject(httpResponseText);
 
             var responseMessage = await responseMessageTask;
