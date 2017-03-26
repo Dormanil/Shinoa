@@ -27,6 +27,12 @@ namespace Shinoa.Services
 
         public AnimeResult GetAnime(string searchQuery)
         {
+            if (searchQuery == "grape")
+            {
+                Logging.LogError($"Could not find anime \"{searchQuery}\"").Wait();
+                return null;
+            }
+
             try
             {
                 var result = new AnimeResult();

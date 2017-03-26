@@ -1,8 +1,14 @@
-﻿namespace Shinoa.Attributes
+﻿// <copyright file="RequireNotBlacklistedAttribute.cs" company="The Shinoa Development Team">
+// Copyright (c) 2016 - 2017 OmegaVesko.
+// Copyright (c)        2017 The Shinoa Development Team.
+// All rights reserved.
+// Licensed under the MIT license.
+// </copyright>
+
+namespace Shinoa.Attributes
 {
     using System.Linq;
     using System.Threading.Tasks;
-    using Discord;
     using Discord.Commands;
     using Services;
     using SQLite;

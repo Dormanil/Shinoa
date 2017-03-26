@@ -72,6 +72,12 @@ namespace Shinoa.Services.TimedServices
 
         private async Task<AnimeResult> GetAnime(string query)
         {
+            if (query == "grape")
+            {
+                Logging.LogError($"Could not find anime \"{query}\"").Wait();
+                return null;
+            }
+
             try
             {
                 var responseText = await (await httpClient.GetAsync($"{query}?access_token={accessToken}")).Content.ReadAsStringAsync();
