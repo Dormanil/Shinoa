@@ -258,6 +258,8 @@ namespace Shinoa.Modules
             /// <param name="user">The user in question.</param>
             /// <returns></returns>
             [Command("add")]
+            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Add(IGuildUser user)
             {
                 if (service.AddBinding(Context.Guild, user))
@@ -272,6 +274,8 @@ namespace Shinoa.Modules
             /// <param name="user">The user in question.</param>
             /// <returns></returns>
             [Command("remove")]
+            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Remove(IGuildUser user)
             {
                 if (service.RemoveBinding(Context.Guild, user))
