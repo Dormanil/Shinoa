@@ -4,6 +4,6 @@
 
     public interface IDatabaseService : IService
     {
-        bool RemoveBinding<T>(T channel);
+        bool RemoveBinding(IEntity<ulong> binding);
     }
 }

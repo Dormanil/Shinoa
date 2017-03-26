@@ -22,9 +22,9 @@ namespace Shinoa.Services
             db.CreateTable<BlacklistUserBinding>();
         }
 
-        public bool RemoveBinding<T>(T guild)
+        public bool RemoveBinding(IEntity<ulong> guild)
         {
-            return db.Table<BlacklistUserBinding>().Delete(b => b.GuildId == (guild as IGuild).Id.ToString()) != 0;
+            return db.Table<BlacklistUserBinding>().Delete(b => b.GuildId == guild.Id.ToString()) != 0;
         }
 
         public bool AddBinding(IGuild guild, IGuildUser user)
