@@ -77,13 +77,13 @@ namespace Shinoa.Services.TimedServices
             return true;
         }
 
-        public bool RemoveBinding<T>(T channel)
+        public bool RemoveBinding(IEntity<ulong> binding)
         {
             var subreddits = db.Table<RedditChannelBinding>()
-                .Where(b => b.ChannelId == (channel as IMessageChannel).Id.ToString())
+                .Where(b => b.ChannelId == binding.Id.ToString())
                 .Select(b => b.SubredditName);
 
-            var found = db.Table<RedditChannelBinding>().Delete(b => b.ChannelId == (channel as IMessageChannel).Id.ToString()) != 0;
+            var found = db.Table<RedditChannelBinding>().Delete(b => b.ChannelId == binding.Id.ToString()) != 0;
             if (!found) return false;
 
             foreach (var subreddit in subreddits)

@@ -31,9 +31,9 @@ namespace Shinoa.Services
             return true;
         }
 
-        public bool RemoveBinding<T>(T channel)
+        public bool RemoveBinding(IEntity<ulong> binding)
         {
-            return db.Delete<ImageSpamBinding>((channel as IMessageChannel).Id.ToString()) != 0;
+            return db.Delete<ImageSpamBinding>(binding.Id.ToString()) != 0;
         }
 
         public bool CheckBinding(IMessageChannel channel)

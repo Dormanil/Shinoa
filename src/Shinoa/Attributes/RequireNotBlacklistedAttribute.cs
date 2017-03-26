@@ -12,8 +12,6 @@
     /// </summary>
     public class RequireNotBlacklistedAttribute : PreconditionAttribute
     {
-        private SQLiteConnection db;
-
         /// <summary>
         /// Checks the permission to use the command.
         /// </summary>
@@ -23,7 +21,7 @@
         /// <returns></returns>
         public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
         {
-            if (!map.TryGet(out db) || context.Channel is IPrivateChannel || context.Channel is IGroupChannel) return Task.FromResult(PreconditionResult.FromSuccess());
+            if (!map.TryGet(out SQLiteConnection db) || context.Guild == null) return Task.FromResult(PreconditionResult.FromSuccess());
             db.CreateTable<BlacklistService.BlacklistUserBinding>();
 
             return db.Table<BlacklistService.BlacklistUserBinding>().Any(b => b.GuildId == context.Guild.Id.ToString() && b.UserId == context.User.Id.ToString()) ? Task.FromResult(PreconditionResult.FromError("You are not allowed to use commands on this server.")) : Task.FromResult(PreconditionResult.FromSuccess());

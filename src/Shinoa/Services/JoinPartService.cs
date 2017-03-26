@@ -34,14 +34,14 @@ namespace Shinoa.Services
             return true;
         }
 
-        public bool RemoveBinding<T>(T channel)
+        public bool RemoveBinding(IEntity<ulong> binding)
         {
-            if (db.Table<JoinPartServer>().All(b => b.ChannelId != (channel as IMessageChannel).Id.ToString())) return false;
-            var tableQuery = db.Table<JoinPartServer>().Where(b => b.ChannelId == (channel as IMessageChannel).Id.ToString());
+            if (db.Table<JoinPartServer>().All(b => b.ChannelId != binding.Id.ToString())) return false;
+            var tableQuery = db.Table<JoinPartServer>().Where(b => b.ChannelId == binding.Id.ToString());
             var serverIds = tableQuery.Select(server => server.ServerId).ToList();
             foreach (var server in serverIds)
             {
-                db.Delete(server);
+                db.Delete<JoinPartServer>(server);
             }
 
             return true;
