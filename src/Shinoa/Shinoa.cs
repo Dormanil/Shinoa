@@ -29,7 +29,7 @@ namespace Shinoa
 
     public static class Shinoa
     {
-        public const string Version = "2.5.1K";
+        public const string Version = "2.6.0K";
 
         public static readonly string VersionString =
             $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
