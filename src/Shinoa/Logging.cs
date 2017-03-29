@@ -98,8 +98,8 @@ namespace Shinoa
         public static async Task LogMessage(SocketCommandContext context)
         {
             await Log(!(context.Channel is IPrivateChannel)
-                ? $"[{context.Guild.Name} -> #{context.Channel.Name}] {context.User.Username}: {context.Message.Content}"
-                : $"[PM] {context.User.Username}: {context.Message.Content}");
+                ? $"[{context.Guild.Name} (ID: {context.Guild.Id}) -> #{context.Channel.Name} (ID: {context.Channel.Id})] {context.User.Username} (ID: {context.User.Id}): {context.Message.Content}"
+                : $"[PM] {context.User.Username} (ID: {context.User.Id}): {context.Message.Content}");
         }
 
         /// <summary>

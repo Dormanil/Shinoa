@@ -13,6 +13,8 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|AnyCPU'" />
+
   <ItemGroup>
     <None Remove="stylecop.json" />
   </ItemGroup>

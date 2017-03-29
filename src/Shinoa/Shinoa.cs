@@ -15,14 +15,19 @@ namespace Shinoa
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+
     using Attributes;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
     using Services;
     using Services.TimedServices;
+
     using SQLite;
     using SQLite.Extensions;
+
     using YamlDotNet.Serialization;
 
     using static Logging;
@@ -139,7 +144,9 @@ namespace Shinoa
         {
             #region Prerequisites
 
-            databaseConnection = Alpha ? new SQLiteConnection("db_alpha.sqlite") : new SQLiteConnection("db.sqlite");
+            databaseConnection = Alpha
+                ? new SQLiteConnection("db_alpha.sqlite")
+                : new SQLiteConnection("db.sqlite");
 
             var configurationFileStream = Alpha
                 ? new FileStream("config_alpha.yaml", FileMode.Open)

@@ -13,8 +13,8 @@ namespace Shinoa
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
-    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+
     using Discord;
 
     public static class Util
@@ -99,6 +99,17 @@ namespace Shinoa
         public static KeyValuePair<T1, T2> ToKeyValuePair<T1, T2>(this ValueTuple<T1, T2> tuple)
         {
             return new KeyValuePair<T1, T2>(tuple.Item1, tuple.Item2);
+        }
+
+        public static IEnumerable<T> ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
+            foreach (var item in enumerable)
+            {
+                action(item);
+                yield return item;
+            }
         }
     }
 }
