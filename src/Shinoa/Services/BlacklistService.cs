@@ -24,37 +24,43 @@ namespace Shinoa.Services
 
         public bool RemoveBinding(IEntity<ulong> guild)
         {
-            return db.Table<BlacklistUserBinding>().Delete(b => b.GuildId == guild.Id.ToString()) != 0;
+            var guildId = guild.Id.ToString();
+            return db.Table<BlacklistUserBinding>().Delete(b => b.GuildId == guildId) != 0;
         }
 
         public bool AddBinding(IGuild guild, IGuildUser user)
         {
-            if (db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guild.Id.ToString() && b.UserId == user.Id.ToString())) return false;
+            var guildId = guild.Id.ToString();
+            var userId = user.Id.ToString();
+            if (db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId)) return false;
 
             db.Insert(new BlacklistUserBinding
             {
-                GuildId = guild.Id.ToString(),
-                UserId = user.Id.ToString(),
+                GuildId = guildId,
+                UserId = userId,
             });
             return true;
         }
 
         public bool RemoveBinding(IGuild guild, IGuildUser user)
         {
-            if (!db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guild.Id.ToString() && b.UserId == user.Id.ToString())) return false;
+            var guildId = guild.Id.ToString();
+            var userId = user.Id.ToString();
+            if (!db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId)) return false;
 
             db.Delete(new BlacklistUserBinding
             {
-                GuildId = guild.Id.ToString(),
-                UserId = user.Id.ToString(),
+                GuildId = guildId,
+                UserId = userId,
             });
             return true;
         }
 
         public bool CheckBinding(IGuild guild, IGuildUser user)
         {
-            return db.Table<BlacklistUserBinding>()
-                .Any(b => b.GuildId == guild.Id.ToString() && b.UserId == user.Id.ToString());
+            var guildId = guild.Id.ToString();
+            var userId = user.Id.ToString();
+            return db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId);
         }
 
         public class BlacklistUserBinding

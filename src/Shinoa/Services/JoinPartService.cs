@@ -36,9 +36,11 @@ namespace Shinoa.Services
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            if (db.Table<JoinPartServer>().All(b => b.ChannelId != binding.Id.ToString())) return false;
-            var tableQuery = db.Table<JoinPartServer>().Where(b => b.ChannelId == binding.Id.ToString());
-            var serverIds = tableQuery.Select(server => server.ServerId).ToList();
+            var bindingId = binding.Id.ToString();
+            if (db.Table<JoinPartServer>().All(b => b.ChannelId != bindingId)) return false;
+            var serverIds = db.Table<JoinPartServer>()
+                .Where(b => b.ChannelId == bindingId)
+                .Select(server => server.ServerId).ToList();
             foreach (var server in serverIds)
             {
                 db.Delete<JoinPartServer>(server);

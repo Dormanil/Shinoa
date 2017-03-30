@@ -7,14 +7,19 @@
 
 namespace Shinoa.Attributes
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+
     using Discord.Commands;
+
+    // FIXME: Doesn't actually work, because you simply can't put Attributes into Attributes.
 
     /// <summary>
     /// Attribute for declaring disjunctive permission requirements.
     /// </summary>
+    [Obsolete]
     public class DisjunctivePreconditionAttribute : PreconditionAttribute
     {
         private readonly IEnumerable<PreconditionAttribute> preconditions;
