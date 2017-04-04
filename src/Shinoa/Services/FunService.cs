@@ -52,7 +52,7 @@ namespace Shinoa.Services
         private async Task MessageReceivedHandler(SocketMessage m)
         {
             if (m.Author.IsBot) return;
-            if (CheckBinding(m.Channel as ITextChannel)) return;
+            if (CheckBinding(m.Channel)) return;
 
             switch (m.Content)
             {
