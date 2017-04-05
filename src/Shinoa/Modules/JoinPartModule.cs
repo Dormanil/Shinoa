@@ -21,16 +21,10 @@ namespace Shinoa.Modules
     [RequireNotBlacklisted]
     public class JoinPartModule : ModuleBase<SocketCommandContext>
     {
-        private readonly JoinPartService service;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="JoinPartModule"/> class.
+        /// Gets or sets the backing service instance.
         /// </summary>
-        /// <param name="svc">Backing service instance.</param>
-        public JoinPartModule(JoinPartService svc)
-        {
-            service = svc;
-        }
+        public JoinPartService Service { get; set; }
 
         /// <summary>
         /// Command to enable greetings in this channel.
@@ -40,7 +34,7 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
         {
-            if (service.AddBinding(Context.Guild, Context.Channel))
+            if (Service.AddBinding(Context.Guild, Context.Channel))
             {
                 await ReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.");
             }
@@ -58,7 +52,7 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
         {
-            if (service.RemoveBinding(Context.Guild))
+            if (Service.RemoveBinding(Context.Guild))
             {
                 await ReplyAsync("Greetings disabled for this server.");
             }
@@ -76,7 +70,7 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Here()
         {
-            if (service.AddBinding(Context.Guild, Context.Channel, true))
+            if (Service.AddBinding(Context.Guild, Context.Channel, true))
             {
                 await ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
             }

@@ -183,7 +183,6 @@ namespace Shinoa
 
             #region Modules
 
-            Map.Add(Client);
             Map.Add(Commands);
             Map.Add(databaseConnection);
 

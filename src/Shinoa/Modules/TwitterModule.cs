@@ -18,19 +18,17 @@ namespace Shinoa.Modules
     [RequireNotBlacklisted]
     public class TwitterModule : ModuleBase<SocketCommandContext>
     {
-        private readonly TwitterService service;
-
-        public TwitterModule(TwitterService svc)
-        {
-            service = svc;
-        }
+        /// <summary>
+        /// Gets or sets the backing service instance.
+        /// </summary>
+        public TwitterService Service { get; set; }
 
         [Command("add")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string user)
         {
             var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
-            if (service.AddBinding(twitterName, Context.Channel))
+            if (Service.AddBinding(twitterName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
             }
@@ -45,7 +43,7 @@ namespace Shinoa.Modules
         public async Task Remove(string user)
         {
             var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
-            if (service.RemoveBinding(twitterName, Context.Channel))
+            if (Service.RemoveBinding(twitterName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{Context.Channel.Name}).");
             }
@@ -58,14 +56,14 @@ namespace Shinoa.Modules
         [Command("list")]
         public async Task List()
         {
-            var response = service.GetBindings(Context.Channel)
+            var response = Service.GetBindings(Context.Channel)
                         .Aggregate(string.Empty, (current, binding) => current + $"@{binding.TwitterUsername}\n");
 
             if (response == string.Empty) response = "N/A";
 
             var embed = new EmbedBuilder()
                 .AddField(f => f.WithName("Twitter users currently bound to this channel").WithValue(response))
-                .WithColor(service.ModuleColor);
+                .WithColor(Service.ModuleColor);
 
             await ReplyAsync(string.Empty, embed: embed.Build());
         }

@@ -180,16 +180,10 @@ namespace Shinoa.Modules
         [Group("imagespam")]
         public class ImageSpamModule : ModuleBase<SocketCommandContext>
         {
-            private readonly ModerationService service;
-
             /// <summary>
-            /// Initializes a new instance of the <see cref="ImageSpamModule"/> class.
+            /// Gets or sets the backing service instance.
             /// </summary>
-            /// <param name="svc">Backing service instance.</param>
-            public ImageSpamModule(ModerationService svc)
-            {
-                service = svc;
-            }
+            public ModerationService Service { get; set; }
 
             /// <summary>
             /// Command to block image spam in this channel.
@@ -201,7 +195,7 @@ namespace Shinoa.Modules
             public async Task Block()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (service.AddBinding(channel))
+                if (Service.AddBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
                 else
                     await ReplyAsync("Image spam in this channel is already blocked.");
@@ -217,7 +211,7 @@ namespace Shinoa.Modules
             public async Task Unblock()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (service.RemoveBinding(channel))
+                if (Service.RemoveBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
                 else
                     await ReplyAsync("Image spam in this channel was not blocked.");
@@ -232,7 +226,7 @@ namespace Shinoa.Modules
             public async Task Check()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (service.CheckBinding(channel))
+                if (Service.CheckBinding(channel))
                     await ReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
                 else
                     await ReplyAsync("Image spam in this channel is not restricted.");
@@ -245,12 +239,10 @@ namespace Shinoa.Modules
         [Group("blacklist")]
         public class BlacklistModule : ModuleBase<SocketCommandContext>
         {
-            private readonly BlacklistService service;
-
-            public BlacklistModule(BlacklistService svc)
-            {
-                service = svc;
-            }
+            /// <summary>
+            /// Gets or sets the backing service instance.
+            /// </summary>
+            public BlacklistService Service { get; set; }
 
             /// <summary>
             /// Command to add a specific user to the bot's blacklist.
@@ -262,7 +254,7 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Add(IGuildUser user)
             {
-                if (service.AddBinding(Context.Guild, user))
+                if (Service.AddBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is now blocked for #{user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is already blocked for that user.");
@@ -278,7 +270,7 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Remove(IGuildUser user)
             {
-                if (service.RemoveBinding(Context.Guild, user))
+                if (Service.RemoveBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is now no longer blocked for #{user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server was not blocked for that user.");
@@ -292,7 +284,7 @@ namespace Shinoa.Modules
             [Command("check")]
             public async Task Check(IGuildUser user)
             {
-                if (service.CheckBinding(Context.Guild, user))
+                if (Service.CheckBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is currently blocked for #{user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is currently not blocked for that user.");

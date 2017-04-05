@@ -23,15 +23,6 @@ namespace Shinoa.Modules
         private static readonly Color ModuleColor = new Color(63, 81, 181);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FunModule"/> class.
-        /// </summary>
-        /// <param name="svc">Backing service instance.</param>
-        public FunModule(FunService svc)
-        {
-            Service = svc;
-        }
-
-        /// <summary>
         /// Gets or sets the backing service instance.
         /// </summary>
         public static FunService Service { get; set; }
@@ -136,15 +127,6 @@ namespace Shinoa.Modules
         [Group("fun")]
         public class FunRestrictionModule : ModuleBase<SocketCommandContext>
         {
-            /// <summary>
-            /// Initializes a new instance of the <see cref="FunRestrictionModule"/> class.
-            /// </summary>
-            /// <param name="svc">Backing service instance.</param>
-            public FunRestrictionModule(FunService svc)
-            {
-                Service = svc;
-            }
-
             /// <summary>
             /// Command to enable fun commands in this channel.
             /// </summary>
