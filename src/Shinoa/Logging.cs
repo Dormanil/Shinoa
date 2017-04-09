@@ -79,7 +79,7 @@ namespace Shinoa
             try
             {
                 DiscordLogQueue.Enqueue(new Task(
-                    async () =>
+                    () =>
                     {
                         var embed = new EmbedBuilder
                         {
@@ -102,14 +102,14 @@ namespace Shinoa
                         if (sendMessageAsync == null) return;
                         try
                         {
-                            await sendMessageAsync;
+                            sendMessageAsync.GetAwaiter().GetResult();
                         }
                         catch (Exception e)
                         {
                             StopLoggingToChannel();
-                            await LogError(e.ToString());
-                            await Task.Delay(TimeSpan.FromMinutes(1));
-                            await Shinoa.TryReenableLogging();
+                            LogError(e.ToString()).GetAwaiter().GetResult();
+                            Task.Delay(TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
+                            Shinoa.TryReenableLogging().GetAwaiter().GetResult();
                         }
                     }));
             }
@@ -140,7 +140,14 @@ namespace Shinoa
         {
             if (loggingChannel != null || channel == null) return;
             loggingChannel = channel;
-            loggingTimer = new Timer(async s => await ProcessLogQueue(), null, 0, 2000);
+            loggingTimer = new Timer(
+                s =>
+                {
+                    ProcessLogQueue().GetAwaiter().GetResult();
+                },
+                null,
+                0,
+                2000);
             await Log($"Now logging to channel \"{channel.Name}\".");
         }
 
@@ -221,9 +228,12 @@ namespace Shinoa
                 {
                     try
                     {
-                        var task = DiscordLogQueue.Dequeue();
-                        task.Start();
-                        await task;
+                        if (DiscordLogQueue.Count > 0)
+                        {
+                            var task = DiscordLogQueue.Dequeue();
+                            task.Start();
+                            await task;
+                        }
                     }
                     finally
                     {
