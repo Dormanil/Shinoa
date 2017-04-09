@@ -43,20 +43,20 @@ namespace Shinoa
             try
             {
                 DiscordLogQueue.Enqueue(new Task(
-                    async () =>
+                    () =>
                     {
                         var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
                         if (sendMessageAsync == null) return;
                         try
                         {
-                            await sendMessageAsync;
+                            sendMessageAsync.GetAwaiter().GetResult();
                         }
                         catch (Exception e)
                         {
                             StopLoggingToChannel();
-                            await LogError(e.ToString());
-                            await Task.Delay(TimeSpan.FromMinutes(1));
-                            await Shinoa.TryReenableLogging();
+                            LogError(e.ToString()).GetAwaiter().GetResult();
+                            Task.Delay(TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
+                            Shinoa.TryReenableLogging().GetAwaiter().GetResult();
                         }
                     }));
             }
