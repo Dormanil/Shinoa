@@ -77,10 +77,15 @@ namespace Shinoa.Modules
         /// <param name="unitName">The name of the unit.</param>
         /// <returns></returns>
         [Command("mute")]
+        [Alias("gag")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task Mute(IGuildUser user, int amount = 0, string unitName = "")
         {
+            var gagString = Context.Message.Content.Contains("gag") && !user.Nickname.Contains("gag")
+                ? "gagged"
+                : "muted";
+
             var delTask = Context.Message.DeleteAsync();
 
             IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
@@ -97,22 +102,23 @@ namespace Shinoa.Modules
             {
                 await user.AddRoleAsync(mutedRole);
                 await delTask;
-                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
+                await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
                 return;
             }
-            else if (duration < 0)
+
+            if (duration < 0)
             {
-                await ReplyAsync($"User <@{user.Id}> has not been muted, since the duration of the mute was negative.");
+                await ReplyAsync($"User <@{user.Id}> has not been {gagString}, since the duration of the {(gagString == "gagged" ? "gag" : "mute")} was negative.");
                 return;
             }
 
             await user.AddRoleAsync(mutedRole);
             await delTask;
-            await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
+            await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention} for {amount} {unitName}.");
             await Task.Delay(duration);
 
             await user.RemoveRoleAsync(mutedRole);
-            await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
+            await ReplyAsync($"User <@{user.Id}> has been un{gagString} automatically.");
         }
 
         /// <summary>
@@ -121,16 +127,21 @@ namespace Shinoa.Modules
         /// <param name="user">The user in question.</param>
         /// <returns></returns>
         [Command("unmute")]
+        [Alias("ungag")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task Unmute(IGuildUser user)
         {
+            var gagString = Context.Message.Content.Contains("ungag") && !user.Nickname.Contains("ungag")
+                ? "ungagged"
+                : "unmuted";
+
             var delTask = Context.Message.DeleteAsync();
             IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
             await user.RemoveRoleAsync(mutedRole);
             await delTask;
-            await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
+            await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
         }
 
         /// <summary>
