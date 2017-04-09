@@ -34,13 +34,13 @@ namespace Shinoa
 
     public static class Shinoa
     {
-        public const string Version = "2.6.0K";
+        public const string Version = "2.7.0K";
 
         public static readonly string VersionString =
             $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
 
         private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
-        private static readonly CommandService Commands = new CommandService(new CommandServiceConfig()
+        private static readonly CommandService Commands = new CommandService(new CommandServiceConfig
         {
             CaseSensitiveCommands = true,
             DefaultRunMode = RunMode.Async,
@@ -305,10 +305,15 @@ namespace Shinoa
 
                 if (responseMessage != string.Empty)
                 {
-                    responseMessage += $"\n\nReason: ```\n{res.ErrorReason}```";
+                    var errorEmbed = new EmbedBuilder
+                    {
+                        Color = new Color(0xDD, 0, 0),
+                        Title = res.ErrorReason,
+                    };
+
                     try
                     {
-                        await contextSock.Channel.SendMessageAsync(responseMessage);
+                        await contextSock.Channel.SendMessageAsync(string.Empty, embed: errorEmbed);
                     }
                     catch (Exception e)
                     {
@@ -331,8 +336,7 @@ namespace Shinoa
                     }
                     catch (KeyNotFoundException)
                     {
-                        await LogError(
-                            $"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.");
+                        await LogError($"The property was not found on the dynamic object. No service settings for \"{service.Name}\" were supplied.");
                     }
                     catch (Exception e)
                     {
