@@ -147,7 +147,7 @@ namespace Shinoa
                 },
                 null,
                 0,
-                2000);
+                1000);
             await Log($"Now logging to channel \"{channel.Name}\".");
         }
 
@@ -224,21 +224,19 @@ namespace Shinoa
         {
             if (loggingChannel != null)
             {
-                if (await DiscordLoggingSemaphore.WaitAsync(2000))
+                await DiscordLoggingSemaphore.WaitAsync();
+                try
                 {
-                    try
+                    if (DiscordLogQueue.Count > 0)
                     {
-                        if (DiscordLogQueue.Count > 0)
-                        {
-                            var task = DiscordLogQueue.Dequeue();
-                            task.Start();
-                            await task;
-                        }
+                        var task = DiscordLogQueue.Dequeue();
+                        task.Start();
+                        await Task.WhenAll(task, Task.Delay(1000));
                     }
-                    finally
-                    {
-                        DiscordLoggingSemaphore.Release();
-                    }
+                }
+                finally
+                {
+                    DiscordLoggingSemaphore.Release();
                 }
             }
         }
