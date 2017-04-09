@@ -140,7 +140,7 @@ namespace Shinoa
         {
             if (loggingChannel != null || channel == null) return;
             loggingChannel = channel;
-            loggingTimer = new Timer(async s => await ProcessLogQueue(), null, 0, 1000);
+            loggingTimer = new Timer(async s => await ProcessLogQueue(), null, 0, 2000);
             await Log($"Now logging to channel \"{channel.Name}\".");
         }
 
@@ -217,11 +217,13 @@ namespace Shinoa
         {
             if (loggingChannel != null)
             {
-                if (await DiscordLoggingSemaphore.WaitAsync(1000))
+                if (await DiscordLoggingSemaphore.WaitAsync(2000))
                 {
                     try
                     {
-                        await DiscordLogQueue.Dequeue();
+                        var task = DiscordLogQueue.Dequeue();
+                        task.Start();
+                        await task;
                     }
                     finally
                     {

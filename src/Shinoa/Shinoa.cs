@@ -34,7 +34,7 @@ namespace Shinoa
 
     public static class Shinoa
     {
-        public const string Version = "2.7.0K";
+        public const string Version = "2.7.2K";
 
         public static readonly string VersionString =
             $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
@@ -183,6 +183,7 @@ namespace Shinoa
 
             #region Modules
 
+            Map.Add(Client);
             Map.Add(Commands);
             Map.Add(databaseConnection);
 
