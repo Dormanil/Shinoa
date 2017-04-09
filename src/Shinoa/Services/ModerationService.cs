@@ -22,23 +22,26 @@ namespace Shinoa.Services
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
+            var channelId = channel.Id.ToString();
+            if (db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channelId)) return false;
 
             db.Insert(new ImageSpamBinding
             {
-                ChannelId = channel.Id.ToString(),
+                ChannelId = channelId,
             });
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            return db.Delete<ImageSpamBinding>(binding.Id.ToString()) != 0;
+            var bindingId = binding.Id.ToString();
+            return db.Delete<ImageSpamBinding>(bindingId) != 0;
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            return db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString());
+            var channelId = channel.Id.ToString();
+            return db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channelId);
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
