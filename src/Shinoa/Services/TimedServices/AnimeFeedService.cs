@@ -107,9 +107,13 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            return db.Table<AnimeFeedBinding>()
-                .Where(binding => client.GetChannel(ulong.Parse(binding.ChannelId)) is IMessageChannel)
-                .Cast<IMessageChannel>();
+            var ret = new List<IMessageChannel>();
+            foreach (var binding in db.Table<AnimeFeedBinding>())
+            {
+                if (client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel channel) ret.Add(channel);
+            }
+
+            return ret;
         }
 
         private class AnimeFeedBinding
