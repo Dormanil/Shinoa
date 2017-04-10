@@ -8,7 +8,7 @@
 namespace Shinoa
 {
     using System;
-    using System.Collections.Generic;
+    using System.Collections.Concurrent;
     using System.IO;
     using System.IO.Compression;
     using System.Text;
@@ -24,8 +24,7 @@ namespace Shinoa
     public static class Logging
     {
         private static readonly SemaphoreSlim FileLoggingSemaphore = new SemaphoreSlim(1, 1);
-        private static readonly SemaphoreSlim DiscordLoggingSemaphore = new SemaphoreSlim(1, 1);
-        private static readonly Queue<Task> DiscordLogQueue = new Queue<Task>(50);
+        private static readonly ConcurrentQueue<Task> DiscordLogQueue = new ConcurrentQueue<Task>();
         private static Timer loggingTimer;
         private static IMessageChannel loggingChannel;
         private static string loggingFilePath;
@@ -39,31 +38,23 @@ namespace Shinoa
         {
             PrintWithTime(message);
             if (loggingFilePath != null) await WriteLogWithTime(message, false);
-            await DiscordLoggingSemaphore.WaitAsync();
-            try
-            {
-                DiscordLogQueue.Enqueue(new Task(
-                    () =>
+            DiscordLogQueue.Enqueue(new Task(
+                () =>
+                {
+                    var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
+                    if (sendMessageAsync == null) return;
+                    try
                     {
-                        var sendMessageAsync = loggingChannel?.SendMessageAsync(message);
-                        if (sendMessageAsync == null) return;
-                        try
-                        {
-                            sendMessageAsync.GetAwaiter().GetResult();
-                        }
-                        catch (Exception e)
-                        {
-                            StopLoggingToChannel();
-                            LogError(e.ToString()).GetAwaiter().GetResult();
-                            Task.Delay(TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
-                            Shinoa.TryReenableLogging().GetAwaiter().GetResult();
-                        }
-                    }));
-            }
-            finally
-            {
-                DiscordLoggingSemaphore.Release();
-            }
+                        sendMessageAsync.GetAwaiter().GetResult();
+                    }
+                    catch (Exception e)
+                    {
+                        StopLoggingToChannel();
+                        LogError(e.ToString()).GetAwaiter().GetResult();
+                        Task.Delay(TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
+                        Shinoa.TryReenableLogging().GetAwaiter().GetResult();
+                    }
+                }));
         }
 
         /// <summary>
@@ -75,48 +66,40 @@ namespace Shinoa
         {
             PrintErrorWithTime(message);
             if (loggingFilePath != null) await WriteLogWithTime(message, true);
-            await DiscordLoggingSemaphore.WaitAsync();
-            try
-            {
-                DiscordLogQueue.Enqueue(new Task(
-                    () =>
+            DiscordLogQueue.Enqueue(new Task(
+                () =>
+                {
+                    var embed = new EmbedBuilder
                     {
-                        var embed = new EmbedBuilder
-                        {
-                            Title = "Error",
-                            Color = new Color(200, 0, 0),
-                            Description = $"```{message}```",
-                            Author =
-                                new EmbedAuthorBuilder
-                                {
-                                    IconUrl = Shinoa.Client.CurrentUser.GetAvatarUrl(),
-                                    Name = nameof(Shinoa),
-                                },
-                            Timestamp = DateTimeOffset.Now,
-                            Footer = new EmbedFooterBuilder
+                        Title = "Error",
+                        Color = new Color(200, 0, 0),
+                        Description = $"```{message}```",
+                        Author =
+                            new EmbedAuthorBuilder
                             {
-                                Text = Shinoa.VersionString,
+                                IconUrl = Shinoa.Client.CurrentUser.GetAvatarUrl(),
+                                Name = nameof(Shinoa),
                             },
-                        };
-                        var sendMessageAsync = loggingChannel?.SendEmbedAsync(embed);
-                        if (sendMessageAsync == null) return;
-                        try
+                        Timestamp = DateTimeOffset.Now,
+                        Footer = new EmbedFooterBuilder
                         {
-                            sendMessageAsync.GetAwaiter().GetResult();
-                        }
-                        catch (Exception e)
-                        {
-                            StopLoggingToChannel();
-                            LogError(e.ToString()).GetAwaiter().GetResult();
-                            Task.Delay(TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
-                            Shinoa.TryReenableLogging().GetAwaiter().GetResult();
-                        }
-                    }));
-            }
-            finally
-            {
-                DiscordLoggingSemaphore.Release();
-            }
+                            Text = Shinoa.VersionString,
+                        },
+                    };
+                    var sendMessageAsync = loggingChannel?.SendEmbedAsync(embed);
+                    if (sendMessageAsync == null) return;
+                    try
+                    {
+                        sendMessageAsync.GetAwaiter().GetResult();
+                    }
+                    catch (Exception e)
+                    {
+                        StopLoggingToChannel();
+                        LogError(e.ToString()).GetAwaiter().GetResult();
+                        Task.Delay(TimeSpan.FromMinutes(1)).GetAwaiter().GetResult();
+                        Shinoa.TryReenableLogging().GetAwaiter().GetResult();
+                    }
+                }));
         }
 
         /// <summary>
@@ -224,21 +207,10 @@ namespace Shinoa
         {
             if (loggingChannel != null)
             {
-                if (await DiscordLoggingSemaphore.WaitAsync(2000))
+                if (DiscordLogQueue.TryDequeue(out var task))
                 {
-                    try
-                    {
-                        if (DiscordLogQueue.Count > 0)
-                        {
-                            var task = DiscordLogQueue.Dequeue();
-                            task.Start();
-                            await task;
-                        }
-                    }
-                    finally
-                    {
-                        DiscordLoggingSemaphore.Release();
-                    }
+                    task.Start();
+                    await task;
                 }
             }
         }
