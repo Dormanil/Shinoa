@@ -127,6 +127,17 @@ namespace Shinoa.Modules
         [Group("fun")]
         public class FunRestrictionModule : ModuleBase<SocketCommandContext>
         {
+            // DO NOT REMOVE, OTHERWISE IT WON'T WORK
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="FunRestrictionModule"/> class.
+            /// </summary>
+            /// <param name="service">Backing service instance.</param>
+            public FunRestrictionModule(FunService service)
+            {
+                Service = service;
+            }
+
             /// <summary>
             /// Command to enable fun commands in this channel.
             /// </summary>

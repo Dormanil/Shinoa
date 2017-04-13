@@ -74,12 +74,11 @@ namespace Shinoa
                         Title = "Error",
                         Color = new Color(200, 0, 0),
                         Description = $"```{message}```",
-                        Author =
-                            new EmbedAuthorBuilder
-                            {
-                                IconUrl = Shinoa.Client.CurrentUser.GetAvatarUrl(),
-                                Name = nameof(Shinoa),
-                            },
+                        Author = new EmbedAuthorBuilder
+                        {
+                            IconUrl = Shinoa.Client.CurrentUser.GetAvatarUrl(),
+                            Name = nameof(Shinoa),
+                        },
                         Timestamp = DateTimeOffset.Now,
                         Footer = new EmbedFooterBuilder
                         {
