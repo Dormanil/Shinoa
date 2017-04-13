@@ -36,9 +36,10 @@ namespace Shinoa.Services.TimedServices
         public bool AddBinding(string subredditName, IMessageChannel channel)
         {
             var name = subredditName.ToLower();
+            var channelId = channel.Id.ToString();
 
             if (db.Table<RedditChannelBinding>()
-                    .Any(b => b.ChannelId == channel.Id.ToString() && b.SubredditName == name)) return false;
+                    .Any(b => b.ChannelId == channelId && b.SubredditName == name)) return false;
 
             if (db.Table<RedditBinding>().All(b => b.SubredditName != name))
             {
@@ -52,7 +53,7 @@ namespace Shinoa.Services.TimedServices
             db.Insert(new RedditChannelBinding
             {
                 SubredditName = name,
-                ChannelId = channel.Id.ToString(),
+                ChannelId = channelId,
             });
             return true;
         }
@@ -79,11 +80,12 @@ namespace Shinoa.Services.TimedServices
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
+            var bindingId = binding.Id.ToString();
             var subreddits = db.Table<RedditChannelBinding>()
-                .Where(b => b.ChannelId == binding.Id.ToString())
+                .Where(b => b.ChannelId == bindingId)
                 .Select(b => b.SubredditName);
 
-            var found = db.Table<RedditChannelBinding>().Delete(b => b.ChannelId == binding.Id.ToString()) != 0;
+            var found = db.Table<RedditChannelBinding>().Delete(b => b.ChannelId == bindingId) != 0;
             if (!found) return false;
 
             foreach (var subreddit in subreddits)
@@ -106,7 +108,7 @@ namespace Shinoa.Services.TimedServices
             return db.Table<RedditChannelBinding>().Where(b => b.ChannelId == idString);
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        async void IService.Init(dynamic config, IDependencyMap map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<RedditBinding>();
@@ -123,13 +125,11 @@ namespace Shinoa.Services.TimedServices
             }
             catch (KeyNotFoundException)
             {
-                Logging.LogError(
-                        "RedditService.Init: The property was not found on the dynamic object. No colors were supplied.")
-                    .Wait();
+                await Logging.LogError("RedditService.Init: The property was not found on the dynamic object. No colors were supplied.");
             }
             catch (Exception e)
             {
-                Logging.LogError(e.ToString()).Wait();
+                await Logging.LogError(e.ToString());
             }
         }
 

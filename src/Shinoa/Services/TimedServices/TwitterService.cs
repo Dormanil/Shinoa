@@ -31,9 +31,10 @@ namespace Shinoa.Services.TimedServices
         public bool AddBinding(string username, IMessageChannel channel)
         {
             var name = username.ToLower();
+            var channelId = channel.Id.ToString();
 
             if (db.Table<TwitterChannelBinding>()
-                    .Any(b => b.ChannelId == channel.Id.ToString() && b.TwitterUsername == name)) return false;
+                    .Any(b => b.ChannelId == channelId && b.TwitterUsername == name)) return false;
 
             if (db.Table<TwitterBinding>().All(b => b.TwitterUsername != name))
             {
@@ -47,7 +48,7 @@ namespace Shinoa.Services.TimedServices
             db.Insert(new TwitterChannelBinding
             {
                 TwitterUsername = name,
-                ChannelId = channel.Id.ToString(),
+                ChannelId = channelId,
             });
             return true;
         }
@@ -74,11 +75,12 @@ namespace Shinoa.Services.TimedServices
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
+            var channelId = binding.Id.ToString();
             var usernames = db.Table<TwitterChannelBinding>()
-                .Where(b => b.ChannelId == binding.Id.ToString())
+                .Where(b => b.ChannelId == channelId)
                 .Select(b => b.TwitterUsername);
 
-            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == binding.Id.ToString()) != 0;
+            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == channelId) != 0;
             if (!found) return false;
 
             foreach (var username in usernames)

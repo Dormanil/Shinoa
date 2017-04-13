@@ -18,16 +18,10 @@ namespace Shinoa.Modules
     [RequireNotBlacklisted]
     public class AnilistModule : ModuleBase<SocketCommandContext>
     {
-        private readonly AnilistService service;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="AnilistModule"/> class.
+        /// Gets or sets the backing service instance.
         /// </summary>
-        /// <param name="svc">Backing service instance.</param>
-        public AnilistModule(AnilistService svc)
-        {
-            service = svc;
-        }
+        public AnilistService Service { get; set; }
 
         /// <summary>
         /// Command to search for an anime using Anilist.
@@ -40,7 +34,7 @@ namespace Shinoa.Modules
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = await service.GetEmbed(name);
+            var result = await Service.GetEmbed(name);
             var responseMessage = await responseMessageTask;
             await responseMessage.ModifyToEmbedAsync(result);
         }

@@ -21,19 +21,15 @@ namespace Shinoa.Modules
     [RequireNotBlacklisted]
     public class MalModule : ModuleBase<SocketCommandContext>
     {
-        private readonly MalService service;
-        private readonly AnilistService fallbackService;
+        /// <summary>
+        /// Gets or sets the backing service instance.
+        /// </summary>
+        public MalService Service { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MalModule"/> class.
+        /// Gets or sets the backing fallback service instance.
         /// </summary>
-        /// <param name="svc">Backing service instance.</param>
-        /// <param name="fallbackSvc">Backing fallback service instance.</param>
-        public MalModule(MalService svc, AnilistService fallbackSvc)
-        {
-            service = svc;
-            fallbackService = fallbackSvc;
-        }
+        public AnilistService FallbackService { get; set; }
 
         /// <summary>
         /// Command for searching a specific anime using MyAnimeList.
@@ -46,15 +42,15 @@ namespace Shinoa.Modules
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = service.GetAnime(name);
+            var result = Service.GetAnime(name);
             var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(service.ModuleColor));
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(Service.ModuleColor));
             }
             else
             {
-                var fallbackResult = await fallbackService.GetEmbed(name);
+                var fallbackResult = await FallbackService.GetEmbed(name);
                 await responseMessage.ModifyToEmbedAsync(fallbackResult);
             }
         }
@@ -70,11 +66,11 @@ namespace Shinoa.Modules
         {
             var responseMessageTask = ReplyAsync("Searching...");
 
-            var result = service.GetManga(name);
+            var result = Service.GetManga(name);
             var responseMessage = await responseMessageTask;
             if (result != null)
             {
-                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(service.ModuleColor));
+                await responseMessage.ModifyToEmbedAsync(result.GetEmbed(Service.ModuleColor));
             }
             else
             {

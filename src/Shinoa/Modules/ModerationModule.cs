@@ -77,10 +77,15 @@ namespace Shinoa.Modules
         /// <param name="unitName">The name of the unit.</param>
         /// <returns></returns>
         [Command("mute")]
+        [Alias("gag")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task Mute(IGuildUser user, int amount = 0, string unitName = "")
         {
+            var gagString = Context.Message.Content.Contains("gag") && !user.Nickname.Contains("gag")
+                ? "gagged"
+                : "muted";
+
             var delTask = Context.Message.DeleteAsync();
 
             IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
@@ -97,22 +102,23 @@ namespace Shinoa.Modules
             {
                 await user.AddRoleAsync(mutedRole);
                 await delTask;
-                await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention}.");
+                await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
                 return;
             }
-            else if (duration < 0)
+
+            if (duration < 0)
             {
-                await ReplyAsync($"User <@{user.Id}> has not been muted, since the duration of the mute was negative.");
+                await ReplyAsync($"User <@{user.Id}> has not been {gagString}, since the duration of the {(gagString == "gagged" ? "gag" : "mute")} was negative.");
                 return;
             }
 
             await user.AddRoleAsync(mutedRole);
             await delTask;
-            await ReplyAsync($"User {user.Mention} has been muted by {Context.User.Mention} for {amount} {unitName}.");
+            await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention} for {amount} {unitName}.");
             await Task.Delay(duration);
 
             await user.RemoveRoleAsync(mutedRole);
-            await ReplyAsync($"User <@{user.Id}> has been unmuted automatically.");
+            await ReplyAsync($"User <@{user.Id}> has been un{gagString} automatically.");
         }
 
         /// <summary>
@@ -121,16 +127,21 @@ namespace Shinoa.Modules
         /// <param name="user">The user in question.</param>
         /// <returns></returns>
         [Command("unmute")]
+        [Alias("ungag")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task Unmute(IGuildUser user)
         {
+            var gagString = Context.Message.Content.Contains("ungag") && !user.Nickname.Contains("ungag")
+                ? "ungagged"
+                : "unmuted";
+
             var delTask = Context.Message.DeleteAsync();
             IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
             await user.RemoveRoleAsync(mutedRole);
             await delTask;
-            await ReplyAsync($"User {user.Mention} has been unmuted by {Context.User.Mention}.");
+            await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
         }
 
         /// <summary>
@@ -180,16 +191,10 @@ namespace Shinoa.Modules
         [Group("imagespam")]
         public class ImageSpamModule : ModuleBase<SocketCommandContext>
         {
-            private readonly ModerationService service;
-
             /// <summary>
-            /// Initializes a new instance of the <see cref="ImageSpamModule"/> class.
+            /// Gets or sets the backing service instance.
             /// </summary>
-            /// <param name="svc">Backing service instance.</param>
-            public ImageSpamModule(ModerationService svc)
-            {
-                service = svc;
-            }
+            public ModerationService Service { get; set; }
 
             /// <summary>
             /// Command to block image spam in this channel.
@@ -201,7 +206,7 @@ namespace Shinoa.Modules
             public async Task Block()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (service.AddBinding(channel))
+                if (Service.AddBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
                 else
                     await ReplyAsync("Image spam in this channel is already blocked.");
@@ -217,7 +222,7 @@ namespace Shinoa.Modules
             public async Task Unblock()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (service.RemoveBinding(channel))
+                if (Service.RemoveBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
                 else
                     await ReplyAsync("Image spam in this channel was not blocked.");
@@ -232,7 +237,7 @@ namespace Shinoa.Modules
             public async Task Check()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (service.CheckBinding(channel))
+                if (Service.CheckBinding(channel))
                     await ReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
                 else
                     await ReplyAsync("Image spam in this channel is not restricted.");
@@ -245,12 +250,10 @@ namespace Shinoa.Modules
         [Group("blacklist")]
         public class BlacklistModule : ModuleBase<SocketCommandContext>
         {
-            private readonly BlacklistService service;
-
-            public BlacklistModule(BlacklistService svc)
-            {
-                service = svc;
-            }
+            /// <summary>
+            /// Gets or sets the backing service instance.
+            /// </summary>
+            public BlacklistService Service { get; set; }
 
             /// <summary>
             /// Command to add a specific user to the bot's blacklist.
@@ -262,7 +265,7 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Add(IGuildUser user)
             {
-                if (service.AddBinding(Context.Guild, user))
+                if (Service.AddBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is now blocked for #{user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is already blocked for that user.");
@@ -278,7 +281,7 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Remove(IGuildUser user)
             {
-                if (service.RemoveBinding(Context.Guild, user))
+                if (Service.RemoveBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is now no longer blocked for #{user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server was not blocked for that user.");
@@ -292,7 +295,7 @@ namespace Shinoa.Modules
             [Command("check")]
             public async Task Check(IGuildUser user)
             {
-                if (service.CheckBinding(Context.Guild, user))
+                if (Service.CheckBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is currently blocked for #{user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is currently not blocked for that user.");

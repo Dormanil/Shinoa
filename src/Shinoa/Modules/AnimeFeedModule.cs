@@ -20,16 +20,10 @@ namespace Shinoa.Modules
     [RequireNotBlacklisted]
     public class AnimeFeedModule : ModuleBase<SocketCommandContext>
     {
-        private readonly AnimeFeedService service;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="AnimeFeedModule"/> class.
+        /// Gets or sets the backing service instance.
         /// </summary>
-        /// <param name="svc">Backing service instance.</param>
-        public AnimeFeedModule(AnimeFeedService svc)
-        {
-            service = svc;
-        }
+        public AnimeFeedService Service { get; set; }
 
         /// <summary>
         /// Command to enable the anime feed for the current channel.
@@ -39,7 +33,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
         {
-            if (service.AddBinding(Context.Channel))
+            if (Service.AddBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
                     await ReplyAsync($"Anime notifications have been bound to this channel (#{Context.Channel.Name}).");
@@ -63,7 +57,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
         {
-            if (service.RemoveBinding(Context.Channel))
+            if (Service.RemoveBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
                     await ReplyAsync($"Anime notifications have been unbound from this channel (#{Context.Channel.Name}).");

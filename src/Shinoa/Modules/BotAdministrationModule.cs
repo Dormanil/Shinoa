@@ -22,19 +22,15 @@ namespace Shinoa.Modules
     /// </summary>
     public class BotAdministrationModule : ModuleBase<SocketCommandContext>
     {
-        private readonly DiscordSocketClient client;
-        private readonly CommandService commandService;
+        /// <summary>
+        /// Gets or sets the backing Discord client instance.
+        /// </summary>
+        public DiscordSocketClient Client { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BotAdministrationModule"/> class.
+        /// Gets or sets the backing service instance.
         /// </summary>
-        /// <param name="clnt">Client running the bot.</param>
-        /// <param name="commandSvc">Backing service instance.</param>
-        public BotAdministrationModule(DiscordSocketClient clnt, CommandService commandSvc)
-        {
-            client = clnt;
-            commandService = commandSvc;
-        }
+        public CommandService CommandService { get; set; }
 
         /// <summary>
         /// Command to set the avatar of the bot.
@@ -54,7 +50,7 @@ namespace Shinoa.Modules
             };
             var stream = await (await new HttpClient(handler) { BaseAddress = new Uri(splitLink[1].Value) }.GetAsync(splitLink[2].Value))
                 .Content.ReadAsStreamAsync();
-            await client.CurrentUser.ModifyAsync(p =>
+            await Client.CurrentUser.ModifyAsync(p =>
             {
                 p.Avatar = new Image(stream);
             });
@@ -70,7 +66,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task SetPlaying([Remainder]string game)
         {
-            await client.SetGameAsync(game);
+            await Client.SetGameAsync(game);
         }
 
         /// <summary>
@@ -95,7 +91,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task Announce([Remainder]string announcement)
         {
-            foreach (IGuild server in client.Guilds)
+            foreach (IGuild server in Client.Guilds)
             {
                 await (await server.GetDefaultChannelAsync()).SendMessageAsync($"**Announcement:** {announcement}");
             }
@@ -124,7 +120,7 @@ namespace Shinoa.Modules
         [RequireOwner]
         public async Task GetInviteLink()
         {
-            await ReplyAsync($"Invite link for {client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={client.CurrentUser.Id}&scope=bot");
+            await ReplyAsync($"Invite link for {Client.CurrentUser.Mention}: https://discordapp.com/oauth2/authorize?client_id={Client.CurrentUser.Id}&scope=bot");
         }
 
         /// <summary>
@@ -174,7 +170,7 @@ namespace Shinoa.Modules
             output += $"Uptime: {uptimeString}\n\n";
 
             output += "Running modules:\n\n```";
-            output = commandService.Modules.Aggregate(output, (current, module) => current + $"{module.Name}\n");
+            output = CommandService.Modules.Aggregate(output, (current, module) => current + $"{module.Name}\n");
             output += "```";
 
             return output;

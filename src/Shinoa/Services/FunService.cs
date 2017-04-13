@@ -21,23 +21,26 @@ namespace Shinoa.Services
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.Table<BotFunctionSpamBinding>().Any(b => b.ChannelId == channel.Id.ToString())) return false;
+            var channelId = channel.Id.ToString();
+            if (db.Table<BotFunctionSpamBinding>().Any(b => b.ChannelId == channelId)) return false;
 
             db.Insert(new BotFunctionSpamBinding
             {
-                ChannelId = channel.Id.ToString(),
+                ChannelId = channelId,
             });
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            return db.Delete<BotFunctionSpamBinding>(binding.Id.ToString()) != 0;
+            var bindingId = binding.Id.ToString();
+            return db.Delete<BotFunctionSpamBinding>(bindingId) != 0;
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            return db.Table<BotFunctionSpamBinding>().All(b => b.ChannelId != channel.Id.ToString());
+            var channelId = channel.Id.ToString();
+            return db.Table<BotFunctionSpamBinding>().All(b => b.ChannelId != channelId);
         }
 
         void IService.Init(dynamic config, IDependencyMap map)
@@ -71,7 +74,7 @@ namespace Shinoa.Services
                 default:
                     if (m.Content.ToLower() == "wake me up")
                     {
-                        await m.Channel.SendMessageAsync($"_Wakes {m.Author.Username} up inside._");
+                        await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname : m.Author.Username)} up inside._");
                     }
                     else if (m.Content.ToLower().StartsWith("wake") && m.Content.ToLower().EndsWith("up"))
                     {
@@ -81,8 +84,7 @@ namespace Shinoa.Services
                             .Skip(1)
                             .Reverse();
 
-                        await m.Channel.SendMessageAsync(
-                            $"_Wakes {messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} up inside._");
+                        await m.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} up inside._");
                     }
 
                     break;

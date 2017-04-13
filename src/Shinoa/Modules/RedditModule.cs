@@ -21,16 +21,10 @@ namespace Shinoa.Modules
     [RequireNotBlacklisted]
     public class RedditModule : ModuleBase<SocketCommandContext>
     {
-        private readonly RedditService service;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="RedditModule"/> class.
+        /// Gets or sets the backing service instance.
         /// </summary>
-        /// <param name="svc">Backing service instance.</param>
-        public RedditModule(RedditService svc)
-        {
-            service = svc;
-        }
+        public RedditService Service { get; set; }
 
         /// <summary>
         /// Command to add reddit notifications to the channel.
@@ -41,7 +35,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string subredditName)
         {
-            if (service.AddBinding(subredditName, Context.Channel))
+            if (Service.AddBinding(subredditName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
             }
@@ -60,7 +54,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string subredditName)
         {
-            if (service.RemoveBinding(subredditName, Context.Channel))
+            if (Service.RemoveBinding(subredditName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
             }
@@ -77,14 +71,14 @@ namespace Shinoa.Modules
         [Command("list")]
         public async Task List()
         {
-            var response = service.GetBindings(Context.Channel)
+            var response = Service.GetBindings(Context.Channel)
                         .Aggregate(string.Empty, (current, binding) => current + $"/r/{binding.SubredditName}\n");
 
             if (response == string.Empty) response = "N/A";
 
             var embed = new EmbedBuilder()
                 .AddField(f => f.WithName("Subreddits currently bound to this channel").WithValue(response))
-                .WithColor(service.ModuleColor);
+                .WithColor(Service.ModuleColor);
 
             await ReplyAsync(string.Empty, embed: embed.Build());
         }
