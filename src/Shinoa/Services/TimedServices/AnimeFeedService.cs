@@ -25,7 +25,7 @@ namespace Shinoa.Services.TimedServices
     public class AnimeFeedService : IDatabaseService, ITimedService
     {
         private static readonly Color ModuleColor = new Color(0, 150, 136);
-        private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.se/") };
+        private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.si/") };
         private SQLiteConnection db;
         private DiscordSocketClient client;
 
@@ -57,7 +57,7 @@ namespace Shinoa.Services.TimedServices
 
         async Task ITimedService.Callback()
         {
-            var responseText = await httpClient.HttpGet("?page=rss&user=64513");
+            var responseText = await httpClient.HttpGet("?page=rss&u=HorribleSubs");
             if (responseText == null) return;
 
             var document = XDocument.Load(new MemoryStream(Encoding.Unicode.GetBytes(responseText)));
@@ -68,15 +68,15 @@ namespace Shinoa.Services.TimedServices
                     .Where(i => i.Name.LocalName == "item").ToList();
 
             var newestCreationTimeString = entries[0].Elements()
-                .First(i => i.Name.LocalName == "pubDate").Value.Replace(" GMT", string.Empty).Replace(" +0000", string.Empty);
+                .First(i => i.Name.LocalName == "pubDate").Value.Replace(" -0000", string.Empty);
             var newestCreationTime = new DateTimeOffset(DateTime.ParseExact(
-                newestCreationTimeString, "ddd, dd MMM yyyy H:m:s", CultureInfo.InvariantCulture));
+                newestCreationTimeString, "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
             var postStack = new Stack<Embed>();
 
             foreach (var entry in entries)
             {
                 var creationTime = new DateTimeOffset(DateTime.ParseExact(
-                    entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value, "ddd, dd MMM yyyy H:m:s zzz", CultureInfo.InvariantCulture));
+                    entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value.Replace(" -0000", string.Empty), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
                 if (creationTime <= AnimeFeedBinding.LatestPost) break;
 
                 var title = entry.Elements().First(i => i.Name.LocalName == "title").Value;
@@ -107,13 +107,10 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            var ret = new List<IMessageChannel>();
-            foreach (var binding in db.Table<AnimeFeedBinding>())
-            {
-                if (client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel channel) ret.Add(channel);
-            }
-
-            return ret;
+            return db.Table<AnimeFeedBinding>()
+                .Where(binding => client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel)
+                .Cast<IMessageChannel>()
+                .ToList();
         }
 
         private class AnimeFeedBinding
