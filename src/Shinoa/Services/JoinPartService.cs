@@ -14,6 +14,7 @@ namespace Shinoa.Services
     using Discord.Commands;
     using Discord.WebSocket;
     using SQLite;
+    using System;
 
     public class JoinPartService : IDatabaseService
     {
@@ -49,7 +50,7 @@ namespace Shinoa.Services
             return true;
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<JoinPartServer>();

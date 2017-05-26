@@ -43,7 +43,7 @@ namespace Shinoa.Services
             return db.Table<BotFunctionSpamBinding>().All(b => b.ChannelId != channelId);
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<BotFunctionSpamBinding>();

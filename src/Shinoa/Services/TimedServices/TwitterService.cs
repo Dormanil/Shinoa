@@ -103,7 +103,7 @@ namespace Shinoa.Services.TimedServices
             return db.Table<TwitterChannelBinding>().Where(b => b.ChannelId == idString);
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<TwitterBinding>();

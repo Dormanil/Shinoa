@@ -149,7 +149,7 @@ namespace Shinoa
                 {
                     foreach (var path in Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
                     {
-                        archive.CreateEntryFromFile(path, Path.GetFileName(path));
+                        archive.CreateEntry(path);
                         File.Delete(path);
                     }
                 }

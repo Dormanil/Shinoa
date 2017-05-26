@@ -16,7 +16,7 @@ namespace Shinoa.Services.TimedServices
     using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using System.Xml.Linq;
+    using System.Xml;
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
@@ -47,7 +47,7 @@ namespace Shinoa.Services.TimedServices
             return db.Delete<AnimeFeedBinding>(bindingId) != 0;
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<AnimeFeedBinding>();

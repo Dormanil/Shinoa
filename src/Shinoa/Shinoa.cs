@@ -31,6 +31,8 @@ namespace Shinoa
     using YamlDotNet.Serialization;
 
     using static Logging;
+    using Microsoft.Extensions.DependencyInjection;
+    using global::Shinoa.Databases;
 
     public static class Shinoa
     {
@@ -46,7 +48,8 @@ namespace Shinoa
             DefaultRunMode = RunMode.Async,
         });
 
-        private static readonly OpaqueDependencyMap Map = new OpaqueDependencyMap();
+        private static readonly IServiceCollection Map = new ServiceCollection();
+        private static IServiceProvider provider;
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
         private static SQLiteConnection databaseConnection;
         private static Timer globalRefreshTimer;
@@ -108,8 +111,8 @@ namespace Shinoa
 
                 foreach (var service in services)
                 {
-                    object instance;
-                    if (!Map.TryGet(service.UnderlyingSystemType, out instance)) continue;
+                    var instance = provider.GetService(service.UnderlyingSystemType);
+                    if (instance == null) continue;
                     if (instance is BlacklistService blacklistService)
                     {
                         blacklistService.RemoveBinding(Client.GetGuild(guildId));
@@ -183,9 +186,18 @@ namespace Shinoa
 
             #region Modules
 
-            Map.Add(Client);
-            Map.Add(Commands);
-            Map.Add(databaseConnection);
+            Map.AddSingleton(Client);
+            Map.AddSingleton(Commands);
+
+            var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
+                    .Select(t => t.GetTypeInfo())
+                    .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseContext)) && !(t.IsAbstract || t.IsInterface))
+                    .Select(t => t.UnderlyingSystemType);
+
+            foreach (var database in databases)
+            {
+                Map.AddSingleton(database);
+            }
 
             #region Services
 
@@ -273,7 +285,8 @@ namespace Shinoa
 
                 var contextSock = new SocketCommandContext(Client, userMessage);
                 await LogMessage(contextSock);
-                var res = await Commands.ExecuteAsync(contextSock, argPos, Map);
+                provider = Map.BuildServiceProvider();
+                var res = await Commands.ExecuteAsync(contextSock, argPos, provider);
                 if (res.IsSuccess) return;
 
                 await LogError(res.ErrorReason);
@@ -327,7 +340,8 @@ namespace Shinoa
                 foreach (var service in services)
                 {
                     var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
-                    if (!Map.TryAddOpaque(instance)) continue;
+                    var descriptor = new ServiceDescriptor(service.UnderlyingSystemType, instance);
+                    if (Map.Contains(descriptor)) continue;
 
                     var configAttr = service.GetCustomAttribute<ConfigAttribute>();
                     dynamic config = null;
@@ -346,13 +360,14 @@ namespace Shinoa
 
                     try
                     {
-                        instance.Init(config, Map);
+                        provider = Map.BuildServiceProvider();
+                        instance.Init(config, provider);
                     }
                     catch (Exception e)
                     {
                         await LogError($"Initialization of service \"{service.Name}\" failed.");
                         await LogError(e.ToString());
-                        Map.TryRemove(service.UnderlyingSystemType);
+                        Map.Remove(descriptor);
                     }
 
                     if (instance is ITimedService timedService)

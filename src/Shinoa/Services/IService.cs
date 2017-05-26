@@ -8,9 +8,10 @@
 namespace Shinoa.Services
 {
     using Discord.Commands;
+    using System;
 
     public interface IService
     {
-        void Init(dynamic config, IDependencyMap map);
+        void Init(dynamic config, IServiceProvider map);
     }
 }

@@ -108,7 +108,7 @@ namespace Shinoa.Services.TimedServices
             return db.Table<RedditChannelBinding>().Where(b => b.ChannelId == idString);
         }
 
-        async void IService.Init(dynamic config, IDependencyMap map)
+        async void IService.Init(dynamic config, IServiceProvider map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<RedditBinding>();

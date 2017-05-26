@@ -11,12 +11,13 @@ namespace Shinoa.Services
     using Discord;
     using Discord.Commands;
     using SQLite;
+    using System;
 
     public class BlacklistService : IDatabaseService
     {
         private SQLiteConnection db;
 
-        public void Init(dynamic config, IDependencyMap map)
+        public void Init(dynamic config, IServiceProvider map)
         {
             if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
             db.CreateTable<BlacklistUserBinding>();

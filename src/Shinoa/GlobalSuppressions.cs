@@ -3,7 +3,7 @@
 // attributes that are applied to this project.
 // Project-level suppressions either have no target or are given 
 // a specific target and scoped to a namespace, type, member, etc.
-
+/*
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1503:Braces must not be omitted", Justification = "Braces are allowed to be omitted")]
@@ -11,3 +11,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1602:EnumerationItemsMustBeDocumented", Justification = "Reviewed.")]
 [assembly: SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1502:Element must not be on a single line", Justification = "Reviewed.")]
 [assembly: SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1101:Prefix local calls with this", Justification = "Reviewed.")]
+*/

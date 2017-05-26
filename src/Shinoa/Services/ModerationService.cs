@@ -10,46 +10,48 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.Net;
     using Discord.WebSocket;
-    using SQLite;
 
     public class ModerationService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private ImageSpamContext db;
 
         public bool AddBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            if (db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channelId)) return false;
+            if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
 
-            db.Insert(new ImageSpamBinding
+            db.Add(new ImageSpamContext.ImageSpamBinding
             {
-                ChannelId = channelId,
+                ChannelId = channel.Id,
             });
+
+            db.SaveChanges();
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            return db.Delete<ImageSpamBinding>(bindingId) != 0;
+            var entity = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
+            if (entity == null)
+                return false;
+            db.DbSet.Remove(entity);
+            db.SaveChanges();
+            return true;
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            return db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channelId);
+            return db.DbSet.Any(b => b.ChannelId == channel.Id);
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<ImageSpamBinding>();
+            db = map.GetService(typeof(ImageSpamContext)) as ImageSpamContext ?? throw new Exception("Database context was not found in service provider.");
 
-            var client = map.Get<DiscordSocketClient>();
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient;
             client.MessageReceived += Handler;
         }
 
@@ -58,7 +60,7 @@ namespace Shinoa.Services
             try
             {
                 if (msg.Author is IGuildUser user &&
-                    db.Table<ImageSpamBinding>().Any(b => b.ChannelId == msg.Channel.Id.ToString()) &&
+                    db.DbSet.Any(b => b.ChannelId == msg.Channel.Id) &&
                     msg.Attachments.Count > 0)
                 {
                     var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
@@ -84,12 +86,6 @@ namespace Shinoa.Services
             catch (HttpException)
             {
             }
-        }
-
-        private class ImageSpamBinding
-        {
-            [PrimaryKey]
-            public string ChannelId { get; set; }
         }
     }
 }

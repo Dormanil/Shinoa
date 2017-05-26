@@ -16,7 +16,6 @@ namespace Shinoa.Services
     using System.Xml.Linq;
     using Attributes;
     using Discord;
-    using Discord.Commands;
 
     [Config("mal")]
     public class MalService : IService
@@ -132,7 +131,7 @@ namespace Shinoa.Services
             }
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             httpClient.SetBasicHttpCredentials((string)config["username"], (string)config["password"]);
 

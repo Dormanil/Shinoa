@@ -49,7 +49,7 @@ namespace Shinoa.Services.TimedServices
             accessToken = responseObject.access_token;
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             clientId = config["client_id"];
             clientSecret = config["client_secret"];

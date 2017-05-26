@@ -96,7 +96,7 @@ namespace Shinoa
             return source.Where((x, i) => i % step == 0);
         }
 
-        public static KeyValuePair<T1, T2> ToKeyValuePair<T1, T2>(this ValueTuple<T1, T2> tuple)
+        public static KeyValuePair<T1, T2> ToKeyValuePair<T1, T2>(this (T1, T2) tuple)
         {
             return new KeyValuePair<T1, T2>(tuple.Item1, tuple.Item2);
         }
