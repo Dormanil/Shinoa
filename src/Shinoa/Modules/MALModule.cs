@@ -29,7 +29,7 @@ namespace Shinoa.Modules
         /// <summary>
         /// Gets or sets the backing fallback service instance.
         /// </summary>
-        public AnilistService FallbackService { get; set; }
+        ////public AnilistService FallbackService { get; set; }
 
         /// <summary>
         /// Command for searching a specific anime using MyAnimeList.
@@ -50,8 +50,9 @@ namespace Shinoa.Modules
             }
             else
             {
-                var fallbackResult = await FallbackService.GetEmbed(name);
-                await responseMessage.ModifyToEmbedAsync(fallbackResult);
+                await responseMessage.ModifyAsync(p => p.Content = "Anime not found.");
+                ////var fallbackResult = await FallbackService.GetEmbed(name);
+                ////await responseMessage.ModifyToEmbedAsync(fallbackResult);
             }
         }
 

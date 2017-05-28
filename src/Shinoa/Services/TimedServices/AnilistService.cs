@@ -4,7 +4,7 @@
 // All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
-
+/*
 namespace Shinoa.Services.TimedServices
 {
     using System;
@@ -20,7 +20,8 @@ namespace Shinoa.Services.TimedServices
     [Config("anilist")]
     public class AnilistService : ITimedService
     {
-        private HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://anilist.co/api/anime/search/") };
+        private HttpClientHandler handler = new HttpClientHandler { };
+        private HttpClient httpClient;
         private string clientId;
         private string clientSecret;
         private string accessToken = string.Empty;
@@ -35,7 +36,7 @@ namespace Shinoa.Services.TimedServices
 
         async Task ITimedService.Callback()
         {
-            var client = new HttpClient();
+            var client = new HttpClient(handler);
 
             var postContent = new FormUrlEncodedContent(new[]
             {
@@ -51,6 +52,10 @@ namespace Shinoa.Services.TimedServices
 
         void IService.Init(dynamic config, IDependencyMap map)
         {
+            // FIXME: UGLY HACK
+            handler.ServerCertificateCustomValidationCallback += (_, _2, _3, _4) => true;
+
+            httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://anilist.co/api/anime/search/") };
             clientId = config["client_id"];
             clientSecret = config["client_secret"];
 
@@ -215,3 +220,4 @@ namespace Shinoa.Services.TimedServices
         }
     }
 }
+*/
