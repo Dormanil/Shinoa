@@ -5,7 +5,6 @@
 // Licensed under the MIT license.
 // </copyright>
 
-/*
 namespace Shinoa.Modules
 {
     using System.Threading.Tasks;
@@ -41,4 +40,3 @@ namespace Shinoa.Modules
         }
     }
 }
-*/
