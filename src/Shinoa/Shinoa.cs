@@ -187,8 +187,9 @@ namespace Shinoa
             Map.AddSingleton(Client);
             Map.AddSingleton(Commands);
 
+            // TODO: Add ability to choose provider and connection string.
             var contextOptions = new DbContextOptionsBuilder()
-                .UseSqlite($"Data Source={(Alpha ? "db_alpha" : "db")}.sqlite")
+                .UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=Shinoa.Databases;Trusted_Connection=True;")
                 .Options;
 
             Map.AddSingleton(contextOptions);

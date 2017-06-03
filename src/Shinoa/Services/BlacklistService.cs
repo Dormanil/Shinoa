@@ -13,6 +13,7 @@ namespace Shinoa.Services
     using Discord;
     using Discord.Commands;
     using static Databases.BlacklistUserContext;
+    using System.Threading.Tasks;
 
     public class BlacklistService : IDatabaseService
     {
@@ -62,5 +63,7 @@ namespace Shinoa.Services
         {
             return db.DbSet.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
         }
+
+        Task IDatabaseService.Callback() => db.SaveChangesAsync();
     }
 }

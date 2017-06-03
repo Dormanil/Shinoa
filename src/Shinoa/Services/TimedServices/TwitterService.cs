@@ -11,18 +11,24 @@ namespace Shinoa.Services.TimedServices
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+
     using Attributes;
+
     using BoxKite.Twitter;
     using BoxKite.Twitter.Models;
+
+    using Databases;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+
+    using static Databases.TwitterContext;
 
     [Config("twitter")]
     public class TwitterService : IDatabaseService, ITimedService
     {
-        private SQLiteConnection db;
+        private TwitterContext db;
         private DiscordSocketClient client;
         private ApplicationSession twitterSession;
 
@@ -30,25 +36,18 @@ namespace Shinoa.Services.TimedServices
 
         public bool AddBinding(string username, IMessageChannel channel)
         {
-            var name = username.ToLower();
-            var channelId = channel.Id.ToString();
-
-            if (db.Table<TwitterChannelBinding>()
-                    .Any(b => b.ChannelId == channelId && b.TwitterUsername == name)) return false;
-
-            if (db.Table<TwitterBinding>().All(b => b.TwitterUsername != name))
+            var twitterBinding = new TwitterBinding
             {
-                db.Insert(new TwitterBinding
-                {
-                    TwitterUsername = name,
-                    LatestPost = DateTimeOffset.UtcNow,
-                });
-            }
+                TwitterUsername = username,
+                LatestPost = DateTime.UtcNow,
+            };
 
-            db.Insert(new TwitterChannelBinding
+            if (db.DbSet.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return false;
+
+            db.DbSet.Add(new TwitterChannelBinding
             {
-                TwitterUsername = name,
-                ChannelId = channelId,
+                TwitterBinding = twitterBinding,
+                ChannelId = channel.Id,
             });
             return true;
         }
@@ -56,60 +55,33 @@ namespace Shinoa.Services.TimedServices
         public bool RemoveBinding(string username, IMessageChannel channel)
         {
             var name = username.ToLower();
-            var idString = channel.Id.ToString();
 
-            var found = db.Table<TwitterChannelBinding>()
-                .Delete(b => b.ChannelId == idString && b.TwitterUsername == name) != 0;
-            if (!found) return false;
+            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == name);
+            if (found == default(TwitterChannelBinding)) return false;
 
-            if (db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != name))
-            {
-                db.Delete(new TwitterBinding
-                {
-                    TwitterUsername = name,
-                });
-            }
-
+            db.Remove(found);
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var channelId = binding.Id.ToString();
-            var usernames = db.Table<TwitterChannelBinding>()
-                .Where(b => b.ChannelId == channelId)
-                .Select(b => b.TwitterUsername);
+            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
+            if (found == default(TwitterChannelBinding)) return false;
 
-            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == channelId) != 0;
-            if (!found) return false;
-
-            foreach (var username in usernames)
-            {
-                if (db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != username))
-                {
-                    db.Delete(new TwitterBinding
-                    {
-                        TwitterUsername = username,
-                    });
-                }
-            }
-
+            db.Remove(found);
             return true;
         }
 
         public IEnumerable<TwitterChannelBinding> GetBindings(IMessageChannel channel)
         {
-            var idString = channel.Id.ToString();
-            return db.Table<TwitterChannelBinding>().Where(b => b.ChannelId == idString);
+            return db.DbSet.Where(b => b.ChannelId == channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<TwitterBinding>();
-            db.CreateTable<TwitterChannelBinding>();
+            db = map.GetService(typeof(TwitterContext)) as TwitterContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
-            client = map.Get<DiscordSocketClient>();
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             ModuleColor = new Color(33, 155, 243);
             try
@@ -130,6 +102,8 @@ namespace Shinoa.Services.TimedServices
             twitterSession = new ApplicationSession(config["client_key"], config["client_secret"]);
         }
 
+        Task IDatabaseService.Callback() => db.SaveChangesAsync();
+
         async Task ITimedService.Callback()
         {
             foreach (var user in GetFromDb())
@@ -141,7 +115,7 @@ namespace Shinoa.Services.TimedServices
                 foreach (var tweet in response)
                 {
                     if (tweet.Time <= user.LatestPost) break;
-                    user.LatestPost = tweet.Time;
+                    user.LatestPost = tweet.Time.DateTime;
 
                     var embed = new EmbedBuilder()
                         .WithUrl($"https://twitter.com/{tweet.User.ScreenName}/status/{tweet.Id}")
@@ -154,7 +128,7 @@ namespace Shinoa.Services.TimedServices
                     postStack.Push(embed.Build());
                 }
 
-                if (newestCreationTime > user.LatestPost) user.LatestPost = newestCreationTime;
+                if (newestCreationTime > user.LatestPost) user.LatestPost = newestCreationTime.DateTime;
 
                 foreach (var embed in postStack)
                 {
@@ -175,16 +149,16 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<SubscribedUser> GetFromDb()
         {
             var ret = new List<SubscribedUser>();
-            foreach (var binding in db.Table<TwitterBinding>())
+            foreach (var binding in db.TwitterBindingSet)
             {
                 var tmpSub = new SubscribedUser
                 {
                     Username = binding.TwitterUsername,
                     LatestPost = binding.LatestPost,
                 };
-                foreach (var channelBinding in db.Table<TwitterChannelBinding>().Where(b => b.TwitterUsername == tmpSub.Username))
+                foreach (var channelBinding in db.DbSet.Where(b => b.TwitterBinding.TwitterUsername == tmpSub.Username))
                 {
-                    var tmpChannel = client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
+                    var tmpChannel = client.GetChannel(channelBinding.ChannelId) as IMessageChannel;
                     if (tmpChannel == null) continue;
                     tmpSub.Channels.Add(tmpChannel);
                 }
@@ -195,31 +169,13 @@ namespace Shinoa.Services.TimedServices
             return ret;
         }
 
-        // TODO: Migrate to Microsoft.EntityFrameworkCore.SQLite
-        public class TwitterChannelBinding
-        {
-            [Indexed]
-            public string TwitterUsername { get; set; }
-
-            [Indexed]
-            public string ChannelId { get; set; }
-        }
-
-        private class TwitterBinding
-        {
-            [PrimaryKey]
-            public string TwitterUsername { get; set; }
-
-            public DateTimeOffset LatestPost { get; set; }
-        }
-
         private class SubscribedUser
         {
             public string Username { get; set; }
 
             public ICollection<IMessageChannel> Channels { get; } = new List<IMessageChannel>();
 
-            public DateTimeOffset LatestPost { get; set; } = DateTimeOffset.UtcNow;
+            public DateTime LatestPost { get; set; } = DateTime.UtcNow;
         }
     }
 }

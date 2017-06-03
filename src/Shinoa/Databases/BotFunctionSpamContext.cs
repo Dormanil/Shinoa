@@ -17,6 +17,11 @@ namespace Shinoa.Databases
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.HasDefaultSchema("botfunctionspam");
+        }
+
         public DbSet<BotFunctionSpamBinding> DbSet { get; set; }
 
         public class BotFunctionSpamBinding

@@ -22,6 +22,7 @@ namespace Shinoa.Databases
         {
             modelBuilder.Entity<BlacklistUserBinding>()
                 .HasKey(b => new { b.GuildId, b.UserId });
+            modelBuilder.HasDefaultSchema("blacklist");
         }
 
         public class BlacklistUserBinding

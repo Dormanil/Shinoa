@@ -57,7 +57,7 @@ namespace Shinoa.Modules
         public async Task List()
         {
             var response = Service.GetBindings(Context.Channel)
-                        .Aggregate(string.Empty, (current, binding) => current + $"@{binding.TwitterUsername}\n");
+                        .Aggregate(string.Empty, (current, binding) => current + $"@{binding.TwitterBinding.TwitterUsername}\n");
 
             if (response == string.Empty) response = "N/A";
 

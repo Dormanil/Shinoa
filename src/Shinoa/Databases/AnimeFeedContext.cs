@@ -19,6 +19,11 @@ namespace Shinoa.Databases
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.HasDefaultSchema("animefeed");
+        }
+
         public DbSet<AnimeFeedBinding> DbSet { get; set; }
 
         public class AnimeFeedBinding
@@ -26,7 +31,7 @@ namespace Shinoa.Databases
             [Key]
             public ulong ChannelId { get; set; }
 
-            public DateTime LatestPost { get; set; }
+            public static DateTime LatestPost { get; set; } = DateTime.UtcNow;
         }
     }
 }

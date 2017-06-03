@@ -13,20 +13,27 @@ namespace Shinoa.Services.TimedServices
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
+
     using Attributes;
+
+    using Databases;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
     using Modules;
+
     using Newtonsoft.Json;
-    using SQLite;
+
+    using static Databases.RedditContext;
 
     [Config("reddit")]
     public class RedditService : IDatabaseService, ITimedService
     {
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://www.reddit.com/r/") };
 
-        private SQLiteConnection db;
+        private RedditContext db;
         private DiscordSocketClient client;
         private string[] compactKeywords;
         private string[] filterKeywords;
@@ -35,85 +42,52 @@ namespace Shinoa.Services.TimedServices
 
         public bool AddBinding(string subredditName, IMessageChannel channel)
         {
-            var name = subredditName.ToLower();
-            var channelId = channel.Id.ToString();
-
-            if (db.Table<RedditChannelBinding>()
-                    .Any(b => b.ChannelId == channelId && b.SubredditName == name)) return false;
-
-            if (db.Table<RedditBinding>().All(b => b.SubredditName != name))
+            var subreddit = new RedditBinding
             {
-                db.Insert(new RedditBinding
-                {
-                    SubredditName = name,
-                    LatestPost = DateTimeOffset.UtcNow,
-                });
-            }
+                SubredditName = subredditName.ToLower(),
+                LatestPost = DateTime.UtcNow,
+            };
 
-            db.Insert(new RedditChannelBinding
+            if (db.DbSet.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return false;
+
+            db.Add(new RedditChannelBinding
             {
-                SubredditName = name,
-                ChannelId = channelId,
+                Subreddit = subreddit,
+                ChannelId = channel.Id,
             });
             return true;
         }
 
         public bool RemoveBinding(string subredditName, IMessageChannel channel)
         {
-            var name = subredditName.ToLower();
-            var idString = channel.Id.ToString();
+            var name = new RedditBinding { SubredditName = subredditName.ToLower(), };
 
-            var found = db.Table<RedditChannelBinding>()
-                        .Delete(b => b.ChannelId == idString && b.SubredditName == name) != 0;
-            if (!found) return false;
+            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name.SubredditName);
+            if (found == default(RedditChannelBinding)) return false;
 
-            if (db.Table<RedditChannelBinding>().All(b => b.SubredditName != name))
-            {
-                db.Delete(new RedditBinding
-                {
-                    SubredditName = name,
-                });
-            }
-
+            db.Remove(found);
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            var subreddits = db.Table<RedditChannelBinding>()
-                .Where(b => b.ChannelId == bindingId)
-                .Select(b => b.SubredditName);
+            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
+            if (found == default(RedditChannelBinding)) return false;
 
-            var found = db.Table<RedditChannelBinding>().Delete(b => b.ChannelId == bindingId) != 0;
-            if (!found) return false;
-
-            foreach (var subreddit in subreddits)
-            {
-                if (db.Table<RedditChannelBinding>().All(b => b.SubredditName != subreddit))
-                {
-                    db.Delete(new RedditBinding
-                    {
-                        SubredditName = subreddit,
-                    });
-                }
-            }
-
+            db.Remove(found);
             return true;
         }
 
         public IEnumerable<RedditChannelBinding> GetBindings(IMessageChannel channel)
         {
-            var idString = channel.Id.ToString();
-            return db.Table<RedditChannelBinding>().Where(b => b.ChannelId == idString);
+            return db.DbSet.Where(b => b.ChannelId == channel.Id);
         }
 
         async void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<RedditBinding>();
-            db.CreateTable<RedditChannelBinding>();
-            client = map.Get<DiscordSocketClient>();
+            db = map.GetService(typeof(RedditContext)) as RedditContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             compactKeywords = ((List<object>)config["compact_keywords"]).Cast<string>().ToArray();
             filterKeywords = ((List<object>)config["filter_keywords"]).Cast<string>().ToArray();
@@ -132,6 +106,8 @@ namespace Shinoa.Services.TimedServices
                 await Logging.LogError(e.ToString());
             }
         }
+
+        Task IDatabaseService.Callback() => db.SaveChangesAsync();
 
         async Task ITimedService.Callback()
         {
@@ -233,16 +209,16 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<SubscribedSubreddit> GetFromDb()
         {
             var ret = new List<SubscribedSubreddit>();
-            foreach (var binding in db.Table<RedditBinding>())
+            foreach (var binding in db.RedditBindingSet)
             {
                 var tmpSub = new SubscribedSubreddit
                 {
                     Name = binding.SubredditName,
                     LatestPost = binding.LatestPost,
                 };
-                foreach (var channelBinding in db.Table<RedditChannelBinding>().Where(b => b.SubredditName == tmpSub.Name))
+                foreach (var channelBinding in db.DbSet.Where(b => b.Subreddit.SubredditName == tmpSub.Name))
                 {
-                    var tmpChannel = client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
+                    var tmpChannel = client.GetChannel(channelBinding.ChannelId) as IMessageChannel;
                     if (tmpChannel == null) continue;
                     tmpSub.Channels.Add(tmpChannel);
                 }
@@ -251,24 +227,6 @@ namespace Shinoa.Services.TimedServices
             }
 
             return ret;
-        }
-
-        public class RedditBinding
-        {
-            [PrimaryKey]
-            public string SubredditName { get; set; }
-
-            public DateTimeOffset LatestPost { get; set; }
-        }
-
-        // TODO: Migrate to Microsoft.EntityFrameworkCore.SQLite
-        public class RedditChannelBinding
-        {
-            [Indexed]
-            public string SubredditName { get; set; }
-
-            [Indexed]
-            public string ChannelId { get; set; }
         }
 
         private class SubscribedSubreddit

@@ -93,5 +93,7 @@ namespace Shinoa.Services
                     break;
             }
         }
+
+        Task IDatabaseService.Callback() => db.SaveChangesAsync();
     }
 }

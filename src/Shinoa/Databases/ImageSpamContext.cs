@@ -17,6 +17,11 @@ namespace Shinoa.Databases
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.HasDefaultSchema("imagespam");
+        }
+
         public DbSet<ImageSpamBinding> DbSet { get; set; }
 
         public class ImageSpamBinding

@@ -72,7 +72,7 @@ namespace Shinoa.Modules
         public async Task List()
         {
             var response = Service.GetBindings(Context.Channel)
-                        .Aggregate(string.Empty, (current, binding) => current + $"/r/{binding.SubredditName}\n");
+                        .Aggregate(string.Empty, (current, binding) => current + $"/r/{binding.Subreddit.SubredditName}\n");
 
             if (response == string.Empty) response = "N/A";
 

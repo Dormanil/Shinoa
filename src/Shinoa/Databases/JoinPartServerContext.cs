@@ -17,6 +17,11 @@ namespace Shinoa.Databases
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.HasDefaultSchema("joinpartserver");
+        }
+
         public DbSet<JoinPartServerBinding> DbSet { get; set; }
 
         public class JoinPartServerBinding

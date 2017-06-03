@@ -97,5 +97,7 @@ namespace Shinoa.Services
             if (channel == null) return;
             await channel.SendMessageAsync(message);
         }
+
+        Task IDatabaseService.Callback() => db.SaveChangesAsync();
     }
 }

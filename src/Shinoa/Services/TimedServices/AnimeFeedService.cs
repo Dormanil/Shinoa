@@ -61,7 +61,7 @@ namespace Shinoa.Services.TimedServices
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
         }
 
-        async Task IDatabaseService.Callback() => await db.SaveChangesAsync();
+        Task IDatabaseService.Callback() => db.SaveChangesAsync();
 
         async Task ITimedService.Callback()
         {
@@ -77,14 +77,12 @@ namespace Shinoa.Services.TimedServices
 
             var newestCreationTimeString = entries[0].Elements()
                 .First(i => i.Name.LocalName == "pubDate").Value.Replace(" -0000", string.Empty);
-            var newestCreationTime = new DateTimeOffset(DateTime.ParseExact(
-                newestCreationTimeString, "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
+            var newestCreationTime = DateTime.ParseExact(newestCreationTimeString, "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture);
             var postStack = new Stack<Embed>();
 
             foreach (var entry in entries)
             {
-                var creationTime = new DateTimeOffset(DateTime.ParseExact(
-                    entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value.Replace(" -0000", string.Empty), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
+                var creationTime = DateTime.ParseExact(entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value.Replace(" -0000", string.Empty), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture);
                 if (creationTime <= AnimeFeedBinding.LatestPost) break;
 
                 var title = entry.Elements().First(i => i.Name.LocalName == "title").Value;
