@@ -1,4 +1,4 @@
-﻿// <copyright file="ImageSpamContext.cs" company="The Shinoa Development Team">
+﻿// <copyright file="JoinPartServerContext.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
 // All rights reserved.
@@ -10,18 +10,20 @@ namespace Shinoa.Databases
     using System.ComponentModel.DataAnnotations;
     using Microsoft.EntityFrameworkCore;
 
-    public class ImageSpamContext : DbContext, IDatabaseContext
+    public class JoinPartServerContext : DbContext, IDatabaseContext
     {
-        public ImageSpamContext(DbContextOptions dbContextOptions)
+        public JoinPartServerContext(DbContextOptions dbContextOptions)
             : base(dbContextOptions)
         {
         }
 
-        public DbSet<ImageSpamBinding> DbSet { get; set; }
+        public DbSet<JoinPartServerBinding> DbSet { get; set; }
 
-        public class ImageSpamBinding
+        public class JoinPartServerBinding
         {
             [Key]
+            public ulong ServerId { get; set; }
+
             public ulong ChannelId { get; set; }
         }
     }

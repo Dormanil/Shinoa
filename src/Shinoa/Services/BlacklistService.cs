@@ -7,70 +7,60 @@
 
 namespace Shinoa.Services
 {
+    using System;
     using System.Linq;
+    using Databases;
     using Discord;
     using Discord.Commands;
-    using SQLite;
-    using System;
+    using static Databases.BlacklistUserContext;
 
     public class BlacklistService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private BlacklistUserContext db;
 
         public void Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<BlacklistUserBinding>();
+            db = map.GetService(typeof(BlacklistUserContext)) as BlacklistUserContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
         }
 
         public bool RemoveBinding(IEntity<ulong> guild)
         {
-            var guildId = guild.Id.ToString();
-            return db.Table<BlacklistUserBinding>().Delete(b => b.GuildId == guildId) != 0;
+            var entities = db.DbSet.Where(b => b.GuildId == guild.Id);
+            if (entities.Count() == 0) return false;
+
+            db.RemoveRange(entities);
+            db.SaveChanges();
+            return true;
         }
 
         public bool AddBinding(IGuild guild, IGuildUser user)
         {
-            var guildId = guild.Id.ToString();
-            var userId = user.Id.ToString();
-            if (db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId)) return false;
+            if (db.DbSet.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
 
-            db.Insert(new BlacklistUserBinding
+            db.Add(new BlacklistUserBinding
             {
-                GuildId = guildId,
-                UserId = userId,
+                GuildId = guild.Id,
+                UserId = user.Id,
             });
+            db.SaveChanges();
             return true;
         }
 
         public bool RemoveBinding(IGuild guild, IGuildUser user)
         {
-            var guildId = guild.Id.ToString();
-            var userId = user.Id.ToString();
-            if (!db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId)) return false;
+            var entity = db.DbSet.FirstOrDefault(b => b.GuildId == guild.Id && b.UserId == user.Id);
 
-            db.Delete(new BlacklistUserBinding
-            {
-                GuildId = guildId,
-                UserId = userId,
-            });
+            if (entity == null)
+                return false;
+
+            db.Remove(entity);
+            db.SaveChanges();
             return true;
         }
 
         public bool CheckBinding(IGuild guild, IGuildUser user)
         {
-            var guildId = guild.Id.ToString();
-            var userId = user.Id.ToString();
-            return db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId);
-        }
-
-        public class BlacklistUserBinding
-        {
-            [Indexed]
-            public string GuildId { get; set; }
-
-            [Indexed]
-            public string UserId { get; set; }
+            return db.DbSet.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
         }
     }
 }

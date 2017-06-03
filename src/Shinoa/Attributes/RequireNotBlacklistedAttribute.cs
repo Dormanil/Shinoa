@@ -10,9 +10,9 @@ namespace Shinoa.Attributes
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Databases;
     using Discord.Commands;
     using Services;
-    using SQLite;
 
     /// <summary>
     /// PreconditionAttribute that makes users required to be not blacklisted for certain commands.
@@ -28,9 +28,9 @@ namespace Shinoa.Attributes
         /// <returns></returns>
         public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider map)
         {
-            if (!map.GetService(typeof(BlacklistUserContext)) is BlacklistUserContext db || context.Guild == null) return Task.FromResult(PreconditionResult.FromSuccess());
+            if (!(map.GetService(typeof(BlacklistUserContext)) is BlacklistUserContext db) || context.Guild == null) return Task.FromResult(PreconditionResult.FromSuccess());
 
-            return db.Any(b => b.GuildId == context.Guild.Id.ToString() && b.UserId == context.User.Id.ToString()) ? Task.FromResult(PreconditionResult.FromError("You are not allowed to use commands on this server.")) : Task.FromResult(PreconditionResult.FromSuccess());
+            return db.DbSet.Any(b => b.GuildId == context.Guild.Id && b.UserId == context.User.Id) ? Task.FromResult(PreconditionResult.FromError("You are not allowed to use commands on this server.")) : Task.FromResult(PreconditionResult.FromSuccess());
         }
     }
 }

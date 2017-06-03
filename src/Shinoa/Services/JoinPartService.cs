@@ -7,54 +7,56 @@
 
 namespace Shinoa.Services
 {
-    using System.Collections.Generic;
+    using System;
     using System.Linq;
     using System.Threading.Tasks;
+
+    using Databases;
+
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
-    using System;
+
+    using static Databases.JoinPartServerContext;
 
     public class JoinPartService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private JoinPartServerContext db;
         private DiscordSocketClient client;
 
         public bool AddBinding(IGuild guild, IMessageChannel channel, bool move = false)
         {
-            var binding = new JoinPartServer
+            var binding = new JoinPartServerBinding
             {
-                ServerId = guild.Id.ToString(),
-                ChannelId = channel.Id.ToString(),
+                ServerId = guild.Id,
+                ChannelId = channel.Id,
             };
 
-            if (db.Table<JoinPartServer>().Any(b => b.ServerId == binding.ServerId) && !move) return false;
+            if (db.DbSet.Any(b => b.ServerId == binding.ServerId) && !move) return false;
             if (move) db.Update(binding);
-            else db.Insert(binding);
+            else db.Add(binding);
+
+            db.SaveChanges();
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            if (db.Table<JoinPartServer>().All(b => b.ChannelId != bindingId)) return false;
-            var serverIds = db.Table<JoinPartServer>()
-                .Where(b => b.ChannelId == bindingId)
-                .Select(server => server.ServerId).ToList();
-            foreach (var server in serverIds)
-            {
-                db.Delete<JoinPartServer>(server);
-            }
+            var servers = db.DbSet
+                .Where(b => b.ChannelId == binding.Id);
+
+            if (servers.Count() == 0) return false;
+
+            db.RemoveRange(servers);
+            db.SaveChanges();
 
             return true;
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<JoinPartServer>();
-            client = map.Get<DiscordSocketClient>();
+            db = map.GetService(typeof(JoinPartServerContext)) as JoinPartServerContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             client.UserJoined += async user =>
             {
@@ -79,12 +81,13 @@ namespace Shinoa.Services
 
         private IMessageChannel GetGreetingChannel(IGuild guild)
         {
-            var server = Enumerable.FirstOrDefault(db.Table<JoinPartServer>(), srv => srv.ServerId == guild.Id.ToString());
-            if (server == default(JoinPartServer)) return null;
-            var greetingChannel = client.GetChannel(ulong.Parse(server.ChannelId));
+            var server = db.DbSet.FirstOrDefault(srv => srv.ServerId == guild.Id);
+            if (server == default(JoinPartServerBinding)) return null;
+            var greetingChannel = client.GetChannel(server.ChannelId);
 
             if (greetingChannel != null) return greetingChannel as IMessageChannel;
-            db.Delete<JoinPartServer>(new JoinPartServer { ServerId = server.ServerId });
+            db.Remove(new JoinPartServerBinding { ServerId = server.ServerId });
+            db.SaveChanges();
             return null;
         }
 
@@ -93,14 +96,6 @@ namespace Shinoa.Services
             var channel = GetGreetingChannel(guild);
             if (channel == null) return;
             await channel.SendMessageAsync(message);
-        }
-
-        public class JoinPartServer
-        {
-            [PrimaryKey]
-            public string ServerId { get; set; }
-
-            public string ChannelId { get; set; }
         }
     }
 }

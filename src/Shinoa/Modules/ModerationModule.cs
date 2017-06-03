@@ -206,7 +206,7 @@ namespace Shinoa.Modules
             public async Task Block()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (Service.AddBinding(channel))
+                if (Service.RemoveBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
                 else
                     await ReplyAsync("Image spam in this channel is already blocked.");
@@ -222,7 +222,7 @@ namespace Shinoa.Modules
             public async Task Unblock()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (Service.RemoveBinding(channel))
+                if (Service.AddBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
                 else
                     await ReplyAsync("Image spam in this channel was not blocked.");
@@ -237,7 +237,7 @@ namespace Shinoa.Modules
             public async Task Check()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (Service.CheckBinding(channel))
+                if (!Service.CheckBinding(channel))
                     await ReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
                 else
                     await ReplyAsync("Image spam in this channel is not restricted.");

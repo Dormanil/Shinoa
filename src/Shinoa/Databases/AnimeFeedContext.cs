@@ -1,4 +1,4 @@
-﻿// <copyright file="ImageSpamContext.cs" company="The Shinoa Development Team">
+﻿// <copyright file="AnimeFeedContext.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
 // All rights reserved.
@@ -7,22 +7,26 @@
 
 namespace Shinoa.Databases
 {
+    using System;
     using System.ComponentModel.DataAnnotations;
+
     using Microsoft.EntityFrameworkCore;
 
-    public class ImageSpamContext : DbContext, IDatabaseContext
+    public class AnimeFeedContext : DbContext, IDatabaseContext
     {
-        public ImageSpamContext(DbContextOptions dbContextOptions)
+        public AnimeFeedContext(DbContextOptions dbContextOptions)
             : base(dbContextOptions)
         {
         }
 
-        public DbSet<ImageSpamBinding> DbSet { get; set; }
+        public DbSet<AnimeFeedBinding> DbSet { get; set; }
 
-        public class ImageSpamBinding
+        public class AnimeFeedBinding
         {
             [Key]
             public ulong ChannelId { get; set; }
+
+            public DateTime LatestPost { get; set; }
         }
     }
 }

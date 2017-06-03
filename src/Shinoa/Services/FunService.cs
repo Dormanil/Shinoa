@@ -10,45 +10,48 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+    using static Databases.BotFunctionSpamContext;
 
     public class FunService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private BotFunctionSpamContext db;
 
         public bool AddBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            if (db.Table<BotFunctionSpamBinding>().Any(b => b.ChannelId == channelId)) return false;
+            if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
 
-            db.Insert(new BotFunctionSpamBinding
+            db.Add(new BotFunctionSpamBinding
             {
-                ChannelId = channelId,
+                ChannelId = channel.Id,
             });
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            return db.Delete<BotFunctionSpamBinding>(bindingId) != 0;
+            var entity = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
+
+            if (entity == null)
+                return false;
+
+            db.Remove(entity);
+            db.SaveChanges();
+            return true;
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            return db.Table<BotFunctionSpamBinding>().All(b => b.ChannelId != channelId);
+            return db.DbSet.All(b => b.ChannelId != channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<BotFunctionSpamBinding>();
+            db = map.GetService(typeof(BotFunctionSpamContext)) as BotFunctionSpamContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
-            var client = map.Get<DiscordSocketClient>();
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += MessageReceivedHandler;
         }
 
@@ -89,12 +92,6 @@ namespace Shinoa.Services
 
                     break;
             }
-        }
-
-        private class BotFunctionSpamBinding
-        {
-            [PrimaryKey]
-            public string ChannelId { get; set; }
         }
     }
 }

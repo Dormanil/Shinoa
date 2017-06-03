@@ -18,9 +18,14 @@ namespace Shinoa
 
     using Attributes;
 
+    using Databases;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
 
     using Services;
     using Services.TimedServices;
@@ -31,8 +36,6 @@ namespace Shinoa
     using YamlDotNet.Serialization;
 
     using static Logging;
-    using Microsoft.Extensions.DependencyInjection;
-    using global::Shinoa.Databases;
 
     public static class Shinoa
     {
@@ -51,7 +54,6 @@ namespace Shinoa
         private static readonly IServiceCollection Map = new ServiceCollection();
         private static IServiceProvider provider;
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
-        private static SQLiteConnection databaseConnection;
         private static Timer globalRefreshTimer;
 
         public static dynamic Config { get; private set; }
@@ -147,10 +149,6 @@ namespace Shinoa
         {
             #region Prerequisites
 
-            databaseConnection = Alpha
-                ? new SQLiteConnection("db_alpha.sqlite")
-                : new SQLiteConnection("db.sqlite");
-
             var configurationFileStream = Alpha
                 ? new FileStream("config_alpha.yaml", FileMode.Open)
                 : new FileStream("config.yaml", FileMode.Open);
@@ -188,6 +186,12 @@ namespace Shinoa
 
             Map.AddSingleton(Client);
             Map.AddSingleton(Commands);
+
+            var contextOptions = new DbContextOptionsBuilder()
+                .UseSqlite($"Data Source={(Alpha ? "db_alpha" : "db")}.sqlite")
+                .Options;
+
+            Map.AddSingleton(contextOptions);
 
             var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
                     .Select(t => t.GetTypeInfo())
@@ -434,5 +438,5 @@ namespace Shinoa
 
             #endregion
         }
-}
+    }
 }

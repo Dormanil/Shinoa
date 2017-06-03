@@ -17,43 +17,51 @@ namespace Shinoa.Services.TimedServices
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Xml;
+    using System.Xml.Linq;
+
+    using Databases;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+
+    using static Databases.AnimeFeedContext;
 
     public class AnimeFeedService : IDatabaseService, ITimedService
     {
         private static readonly Color ModuleColor = new Color(0, 150, 136);
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.si/") };
-        private SQLiteConnection db;
+        private AnimeFeedContext db;
         private DiscordSocketClient client;
 
         public bool AddBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            if (db.Table<AnimeFeedBinding>().Any(b => b.ChannelId == channelId)) return false;
+            if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
 
-            db.Insert(new AnimeFeedBinding
+            db.Add(new AnimeFeedBinding
             {
-                ChannelId = channelId,
+                ChannelId = channel.Id,
             });
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            return db.Delete<AnimeFeedBinding>(bindingId) != 0;
+            var entity = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
+            if (entity == default(AnimeFeedBinding)) return false;
+
+            db.Remove(entity);
+            return true;
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<AnimeFeedBinding>();
+            db = map.GetService(typeof(AnimeFeedContext)) as AnimeFeedContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
-            client = map.Get<DiscordSocketClient>();
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
         }
+
+        async Task IDatabaseService.Callback() => await db.SaveChangesAsync();
 
         async Task ITimedService.Callback()
         {
@@ -107,18 +115,9 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            return db.Table<AnimeFeedBinding>()
-                .Where(binding => client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel)
-                .Cast<IMessageChannel>()
-                .ToList();
-        }
-
-        private class AnimeFeedBinding
-        {
-            public static DateTimeOffset LatestPost { get; set; } = DateTimeOffset.UtcNow;
-
-            [PrimaryKey]
-            public string ChannelId { get; set; }
+            return db.DbSet
+                .Where(binding => client.GetChannel(binding.ChannelId) is ITextChannel)
+                .Cast<IMessageChannel>();
         }
     }
 }

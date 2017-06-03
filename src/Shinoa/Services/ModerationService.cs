@@ -14,6 +14,7 @@ namespace Shinoa.Services
     using Discord;
     using Discord.Net;
     using Discord.WebSocket;
+    using static Databases.ImageSpamContext;
 
     public class ModerationService : IDatabaseService
     {
@@ -23,7 +24,7 @@ namespace Shinoa.Services
         {
             if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
 
-            db.Add(new ImageSpamContext.ImageSpamBinding
+            db.Add(new ImageSpamBinding
             {
                 ChannelId = channel.Id,
             });
@@ -49,9 +50,9 @@ namespace Shinoa.Services
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            db = map.GetService(typeof(ImageSpamContext)) as ImageSpamContext ?? throw new Exception("Database context was not found in service provider.");
+            db = map.GetService(typeof(ImageSpamContext)) as ImageSpamContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
-            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient;
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += Handler;
         }
 
