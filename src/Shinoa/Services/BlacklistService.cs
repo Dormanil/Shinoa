@@ -9,11 +9,10 @@ namespace Shinoa.Services
 {
     using System;
     using System.Linq;
+    using System.Threading.Tasks;
     using Databases;
     using Discord;
-    using Discord.Commands;
     using static Databases.BlacklistUserContext;
-    using System.Threading.Tasks;
 
     public class BlacklistService : IDatabaseService
     {
@@ -26,42 +25,39 @@ namespace Shinoa.Services
 
         public bool RemoveBinding(IEntity<ulong> guild)
         {
-            var entities = db.DbSet.Where(b => b.GuildId == guild.Id);
-            if (entities.Count() == 0) return false;
+            var entities = db.BlacklistUserBindings.Where(b => b.GuildId == guild.Id);
+            if (!entities.Any()) return false;
 
-            db.RemoveRange(entities);
-            db.SaveChanges();
+            db.BlacklistUserBindings.RemoveRange(entities);
             return true;
         }
 
         public bool AddBinding(IGuild guild, IGuildUser user)
         {
-            if (db.DbSet.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
+            if (db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
 
             db.Add(new BlacklistUserBinding
             {
                 GuildId = guild.Id,
                 UserId = user.Id,
             });
-            db.SaveChanges();
             return true;
         }
 
         public bool RemoveBinding(IGuild guild, IGuildUser user)
         {
-            var entity = db.DbSet.FirstOrDefault(b => b.GuildId == guild.Id && b.UserId == user.Id);
+            var entity = db.BlacklistUserBindings.FirstOrDefault(b => b.GuildId == guild.Id && b.UserId == user.Id);
 
             if (entity == null)
                 return false;
 
             db.Remove(entity);
-            db.SaveChanges();
             return true;
         }
 
         public bool CheckBinding(IGuild guild, IGuildUser user)
         {
-            return db.DbSet.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
+            return db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
         }
 
         Task IDatabaseService.Callback() => db.SaveChangesAsync();

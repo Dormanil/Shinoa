@@ -16,13 +16,11 @@ namespace Shinoa.Services.TimedServices
     using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using System.Xml;
     using System.Xml.Linq;
 
     using Databases;
 
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
 
     using static Databases.AnimeFeedContext;
@@ -36,7 +34,7 @@ namespace Shinoa.Services.TimedServices
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
+            if (db.AnimeFeedBindings.Any(b => b.ChannelId == channel.Id)) return false;
 
             db.Add(new AnimeFeedBinding
             {
@@ -47,10 +45,10 @@ namespace Shinoa.Services.TimedServices
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entity = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
-            if (entity == default(AnimeFeedBinding)) return false;
+            var entities = db.AnimeFeedBindings.Where(b => b.ChannelId == binding.Id);
+            if (!entities.Any()) return false;
 
-            db.Remove(entity);
+            db.AnimeFeedBindings.RemoveRange(entities);
             return true;
         }
 
@@ -113,7 +111,7 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            return db.DbSet
+            return db.AnimeFeedBindings
                 .Where(binding => client.GetChannel(binding.ChannelId) is ITextChannel)
                 .Cast<IMessageChannel>();
         }

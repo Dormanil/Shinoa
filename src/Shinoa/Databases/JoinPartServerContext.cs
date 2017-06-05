@@ -8,6 +8,7 @@
 namespace Shinoa.Databases
 {
     using System.ComponentModel.DataAnnotations;
+    using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
     public class JoinPartServerContext : DbContext, IDatabaseContext
@@ -17,19 +18,33 @@ namespace Shinoa.Databases
         {
         }
 
+        public DbSet<JoinPartServerBinding> JoinPartServerBindings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("joinpartserver");
         }
 
-        public DbSet<JoinPartServerBinding> DbSet { get; set; }
-
         public class JoinPartServerBinding
         {
             [Key]
-            public ulong ServerId { get; set; }
+            public string ServerIdString { get; set; }
 
-            public ulong ChannelId { get; set; }
+            [NotMapped]
+            public ulong ServerId
+            {
+                get => ulong.Parse(ServerIdString);
+                set => ServerIdString = value.ToString();
+            }
+
+            public string ChannelIdString { get; set; }
+
+            [NotMapped]
+            public ulong ChannelId
+            {
+                get => ulong.Parse(ChannelIdString);
+                set => ChannelIdString = value.ToString();
+            }
         }
     }
 }

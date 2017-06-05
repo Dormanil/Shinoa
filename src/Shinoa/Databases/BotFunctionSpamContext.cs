@@ -8,6 +8,7 @@
 namespace Shinoa.Databases
 {
     using System.ComponentModel.DataAnnotations;
+    using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
     public class BotFunctionSpamContext : DbContext, IDatabaseContext
@@ -17,17 +18,24 @@ namespace Shinoa.Databases
         {
         }
 
+        public DbSet<BotFunctionSpamBinding> BotFunctionSpamBindings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("botfunctionspam");
         }
 
-        public DbSet<BotFunctionSpamBinding> DbSet { get; set; }
-
         public class BotFunctionSpamBinding
         {
             [Key]
-            public ulong ChannelId { get; set; }
+            public string ChannelIdString { get; set; }
+
+            [NotMapped]
+            public ulong ChannelId
+            {
+                get => ulong.Parse(ChannelIdString);
+                set => ChannelIdString = value.ToString();
+            }
         }
     }
 }

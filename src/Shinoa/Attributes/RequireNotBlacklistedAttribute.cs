@@ -30,7 +30,7 @@ namespace Shinoa.Attributes
         {
             if (!(map.GetService(typeof(BlacklistUserContext)) is BlacklistUserContext db) || context.Guild == null) return Task.FromResult(PreconditionResult.FromSuccess());
 
-            return db.DbSet.Any(b => b.GuildId == context.Guild.Id && b.UserId == context.User.Id) ? Task.FromResult(PreconditionResult.FromError("You are not allowed to use commands on this server.")) : Task.FromResult(PreconditionResult.FromSuccess());
+            return db.BlacklistUserBindings.Any(b => b.GuildId == context.Guild.Id && b.UserId == context.User.Id) ? Task.FromResult(PreconditionResult.FromError("You are not allowed to use commands on this server.")) : Task.FromResult(PreconditionResult.FromSuccess());
         }
     }
 }

@@ -22,30 +22,27 @@ namespace Shinoa.Services
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
+            if (db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
 
             db.Add(new ImageSpamBinding
             {
                 ChannelId = channel.Id,
             });
-
-            db.SaveChanges();
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entity = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
-            if (entity == null)
-                return false;
-            db.DbSet.Remove(entity);
-            db.SaveChanges();
+            var entities = db.ImageSpamBindings.Where(b => b.ChannelId == binding.Id);
+            if (!entities.Any()) return false;
+
+            db.ImageSpamBindings.RemoveRange(entities);
             return true;
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            return db.DbSet.Any(b => b.ChannelId == channel.Id);
+            return db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
@@ -61,7 +58,7 @@ namespace Shinoa.Services
             try
             {
                 if (msg.Author is IGuildUser user &&
-                    db.DbSet.Any(b => b.ChannelId == msg.Channel.Id) &&
+                    db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
                     msg.Attachments.Count > 0)
                 {
                     var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();

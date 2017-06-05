@@ -42,9 +42,9 @@ namespace Shinoa.Services.TimedServices
                 LatestPost = DateTime.UtcNow,
             };
 
-            if (db.DbSet.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return false;
+            if (db.TwitterChannelBindings.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return false;
 
-            db.DbSet.Add(new TwitterChannelBinding
+            db.TwitterChannelBindings.Add(new TwitterChannelBinding
             {
                 TwitterBinding = twitterBinding,
                 ChannelId = channel.Id,
@@ -56,7 +56,7 @@ namespace Shinoa.Services.TimedServices
         {
             var name = username.ToLower();
 
-            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == name);
+            var found = db.TwitterChannelBindings.FirstOrDefault(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == name);
             if (found == default(TwitterChannelBinding)) return false;
 
             db.Remove(found);
@@ -65,16 +65,16 @@ namespace Shinoa.Services.TimedServices
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
-            if (found == default(TwitterChannelBinding)) return false;
+            var entities = db.TwitterChannelBindings.Where(b => b.ChannelId == binding.Id);
+            if (!entities.Any()) return false;
 
-            db.Remove(found);
+            db.TwitterChannelBindings.RemoveRange(entities);
             return true;
         }
 
         public IEnumerable<TwitterChannelBinding> GetBindings(IMessageChannel channel)
         {
-            return db.DbSet.Where(b => b.ChannelId == channel.Id);
+            return db.TwitterChannelBindings.Where(b => b.ChannelId == channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
@@ -149,14 +149,14 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<SubscribedUser> GetFromDb()
         {
             var ret = new List<SubscribedUser>();
-            foreach (var binding in db.TwitterBindingSet)
+            foreach (var binding in db.TwitterBindings)
             {
                 var tmpSub = new SubscribedUser
                 {
                     Username = binding.TwitterUsername,
                     LatestPost = binding.LatestPost,
                 };
-                foreach (var channelBinding in db.DbSet.Where(b => b.TwitterBinding.TwitterUsername == tmpSub.Username))
+                foreach (var channelBinding in db.TwitterChannelBindings.Where(b => b.TwitterBinding.TwitterUsername == tmpSub.Username))
                 {
                     var tmpChannel = client.GetChannel(channelBinding.ChannelId) as IMessageChannel;
                     if (tmpChannel == null) continue;

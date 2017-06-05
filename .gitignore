@@ -253,3 +253,4 @@ src/Shinoa/.logs/
 # JetBrains Web/PHPStorm workspace info
 docs/.idea/workspace.xml
 
+src/Shinoa/Migrations/

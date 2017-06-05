@@ -48,7 +48,7 @@ namespace Shinoa.Services.TimedServices
                 LatestPost = DateTime.UtcNow,
             };
 
-            if (db.DbSet.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return false;
+            if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return false;
 
             db.Add(new RedditChannelBinding
             {
@@ -62,7 +62,7 @@ namespace Shinoa.Services.TimedServices
         {
             var name = new RedditBinding { SubredditName = subredditName.ToLower(), };
 
-            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name.SubredditName);
+            var found = db.RedditChannelBindings.FirstOrDefault(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name.SubredditName);
             if (found == default(RedditChannelBinding)) return false;
 
             db.Remove(found);
@@ -71,16 +71,16 @@ namespace Shinoa.Services.TimedServices
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var found = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
-            if (found == default(RedditChannelBinding)) return false;
+            var entities = db.RedditChannelBindings.Where(b => b.ChannelId == binding.Id);
+            if (!entities.Any()) return false;
 
-            db.Remove(found);
+            db.RedditChannelBindings.RemoveRange(entities);
             return true;
         }
 
         public IEnumerable<RedditChannelBinding> GetBindings(IMessageChannel channel)
         {
-            return db.DbSet.Where(b => b.ChannelId == channel.Id);
+            return db.RedditChannelBindings.Where(b => b.ChannelId == channel.Id);
         }
 
         async void IService.Init(dynamic config, IServiceProvider map)
@@ -209,14 +209,14 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<SubscribedSubreddit> GetFromDb()
         {
             var ret = new List<SubscribedSubreddit>();
-            foreach (var binding in db.RedditBindingSet)
+            foreach (var binding in db.RedditBindings)
             {
                 var tmpSub = new SubscribedSubreddit
                 {
                     Name = binding.SubredditName,
                     LatestPost = binding.LatestPost,
                 };
-                foreach (var channelBinding in db.DbSet.Where(b => b.Subreddit.SubredditName == tmpSub.Name))
+                foreach (var channelBinding in db.RedditChannelBindings.Where(b => b.Subreddit.SubredditName == tmpSub.Name))
                 {
                     var tmpChannel = client.GetChannel(channelBinding.ChannelId) as IMessageChannel;
                     if (tmpChannel == null) continue;

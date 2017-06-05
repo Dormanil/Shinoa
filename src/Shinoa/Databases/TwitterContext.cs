@@ -8,8 +8,9 @@
 namespace Shinoa.Databases
 {
     using System;
+    using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
-
+    using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
     public class TwitterContext : DbContext, IDatabaseContext
@@ -19,23 +20,16 @@ namespace Shinoa.Databases
         {
         }
 
-        public DbSet<TwitterBinding> TwitterBindingSet { get; set; }
+        public DbSet<TwitterBinding> TwitterBindings { get; set; }
 
-        public DbSet<TwitterChannelBinding> DbSet { get; set; }
+        public DbSet<TwitterChannelBinding> TwitterChannelBindings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasDefaultSchema("twitter");
             modelBuilder.Entity<TwitterChannelBinding>()
-                .HasKey(b => new { b.TwitterBinding, b.ChannelId });
-        }
-
-        public class TwitterChannelBinding
-        {
-            public TwitterBinding TwitterBinding { get; set; }
-
-            public ulong ChannelId { get; set; }
+                .HasKey(b => new { b.TwitterUsername, b.ChannelIdString });
         }
 
         public class TwitterBinding
@@ -44,6 +38,25 @@ namespace Shinoa.Databases
             public string TwitterUsername { get; set; }
 
             public DateTime LatestPost { get; set; }
+
+            public List<TwitterChannelBinding> ChannelBindings { get; set; }
+        }
+
+        public class TwitterChannelBinding
+        {
+            [ForeignKey("TwitterUsername")]
+            public TwitterBinding TwitterBinding { get; set; }
+
+            public string TwitterUsername { get; set; }
+
+            public string ChannelIdString { get; set; }
+
+            [NotMapped]
+            public ulong ChannelId
+            {
+                get => ulong.Parse(ChannelIdString);
+                set => ChannelIdString = value.ToString();
+            }
         }
     }
 }

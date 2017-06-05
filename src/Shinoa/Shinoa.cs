@@ -189,11 +189,11 @@ namespace Shinoa
             Map.AddSingleton(Commands);
 
             // TODO: Test this
-            DatabaseProvider dbprovider;
+            DatabaseProvider dbProvider;
             try
             {
                 string providerString = Config["global"]["database"]["provider"];
-                dbprovider = Enum.Parse<DatabaseProvider>(providerString);
+                dbProvider = Enum.Parse<DatabaseProvider>(providerString);
             }
             catch (KeyNotFoundException)
             {
@@ -210,7 +210,7 @@ namespace Shinoa
             {
                 string connectString = Config["global"]["database"]["connect_string"];
                 var optionsBuilder = new DbContextOptionsBuilder();
-                switch (dbprovider)
+                switch (dbProvider)
                 {
                     case DatabaseProvider.PostgreSQL:
                         optionsBuilder.UseNpgsql(connectString);
@@ -327,6 +327,7 @@ namespace Shinoa
             };
             Client.MessageReceived += async message =>
             {
+                if (provider == null) return;
                 var userMessage = message as SocketUserMessage;
                 var argPos = 0;
                 if (userMessage == null
@@ -335,7 +336,6 @@ namespace Shinoa
 
                 var contextSock = new SocketCommandContext(Client, userMessage);
                 await LogMessage(contextSock);
-                provider = Map.BuildServiceProvider();
                 var res = await Commands.ExecuteAsync(contextSock, argPos, provider);
                 if (res.IsSuccess) return;
 
@@ -412,6 +412,7 @@ namespace Shinoa
                     {
                         provider = Map.BuildServiceProvider();
                         instance.Init(config, provider);
+                        Map.AddSingleton(service.UnderlyingSystemType, instance);
                     }
                     catch (Exception e)
                     {
@@ -481,6 +482,7 @@ namespace Shinoa
                     TimeSpan.Zero,
                     TimeSpan.FromSeconds(refreshRate));
 
+                provider = Map.BuildServiceProvider();
                 await Log("All modules initialized successfully. Shinoa is up and running.");
             };
 

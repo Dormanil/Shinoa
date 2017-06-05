@@ -9,7 +9,7 @@ namespace Shinoa.Databases
 {
     using System;
     using System.ComponentModel.DataAnnotations;
-
+    using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
     public class AnimeFeedContext : DbContext, IDatabaseContext
@@ -19,19 +19,26 @@ namespace Shinoa.Databases
         {
         }
 
+        public DbSet<AnimeFeedBinding> AnimeFeedBindings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("animefeed");
         }
 
-        public DbSet<AnimeFeedBinding> DbSet { get; set; }
-
         public class AnimeFeedBinding
         {
-            [Key]
-            public ulong ChannelId { get; set; }
-
             public static DateTime LatestPost { get; set; } = DateTime.UtcNow;
+
+            [Key]
+            public string ChannelIdString { get; set; }
+
+            [NotMapped]
+            public ulong ChannelId
+            {
+                get => ulong.Parse(ChannelIdString);
+                set => ChannelIdString = value.ToString();
+            }
         }
     }
 }

@@ -31,24 +31,19 @@ namespace Shinoa.Services
                 ChannelId = channel.Id,
             };
 
-            if (db.DbSet.Any(b => b.ServerId == binding.ServerId) && !move) return false;
+            if (db.JoinPartServerBindings.Any(b => b.ServerId == binding.ServerId) && !move) return false;
             if (move) db.Update(binding);
             else db.Add(binding);
-
-            db.SaveChanges();
             return true;
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var servers = db.DbSet
-                .Where(b => b.ChannelId == binding.Id);
+            var entities = db.JoinPartServerBindings.Where(b => b.ChannelId == binding.Id);
 
-            if (servers.Count() == 0) return false;
+            if (!entities.Any()) return false;
 
-            db.RemoveRange(servers);
-            db.SaveChanges();
-
+            db.JoinPartServerBindings.RemoveRange(entities);
             return true;
         }
 
@@ -56,7 +51,7 @@ namespace Shinoa.Services
         {
             db = map.GetService(typeof(JoinPartServerContext)) as JoinPartServerContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
-            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             client.UserJoined += async user =>
             {
@@ -81,13 +76,12 @@ namespace Shinoa.Services
 
         private IMessageChannel GetGreetingChannel(IGuild guild)
         {
-            var server = db.DbSet.FirstOrDefault(srv => srv.ServerId == guild.Id);
+            var server = db.JoinPartServerBindings.FirstOrDefault(srv => srv.ServerId == guild.Id);
             if (server == default(JoinPartServerBinding)) return null;
             var greetingChannel = client.GetChannel(server.ChannelId);
 
             if (greetingChannel != null) return greetingChannel as IMessageChannel;
             db.Remove(new JoinPartServerBinding { ServerId = server.ServerId });
-            db.SaveChanges();
             return null;
         }
 

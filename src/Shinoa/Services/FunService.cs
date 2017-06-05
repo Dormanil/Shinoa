@@ -21,7 +21,7 @@ namespace Shinoa.Services
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.DbSet.Any(b => b.ChannelId == channel.Id)) return false;
+            if (db.BotFunctionSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
 
             db.Add(new BotFunctionSpamBinding
             {
@@ -32,19 +32,17 @@ namespace Shinoa.Services
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entity = db.DbSet.FirstOrDefault(b => b.ChannelId == binding.Id);
+            var entities = db.BotFunctionSpamBindings.Where(b => b.ChannelId == binding.Id);
 
-            if (entity == null)
-                return false;
+            if (!entities.Any()) return false;
 
-            db.Remove(entity);
-            db.SaveChanges();
+            db.BotFunctionSpamBindings.RemoveRange(entities);
             return true;
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            return db.DbSet.All(b => b.ChannelId != channel.Id);
+            return db.BotFunctionSpamBindings.All(b => b.ChannelId != channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)

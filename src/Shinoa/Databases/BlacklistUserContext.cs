@@ -7,6 +7,7 @@
 
 namespace Shinoa.Databases
 {
+    using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
     public class BlacklistUserContext : DbContext, IDatabaseContext
@@ -16,20 +17,34 @@ namespace Shinoa.Databases
         {
         }
 
-        public DbSet<BlacklistUserBinding> DbSet { get; set; }
+        public DbSet<BlacklistUserBinding> BlacklistUserBindings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<BlacklistUserBinding>()
-                .HasKey(b => new { b.GuildId, b.UserId });
+                .HasKey(b => new { b.GuildIdString, b.UserIdString });
             modelBuilder.HasDefaultSchema("blacklist");
         }
 
         public class BlacklistUserBinding
         {
-            public ulong GuildId { get; set; }
+            public string GuildIdString { get; set; }
 
-            public ulong UserId { get; set; }
+            [NotMapped]
+            public ulong GuildId
+            {
+                get => ulong.Parse(GuildIdString);
+                set => GuildIdString = value.ToString();
+            }
+
+            public string UserIdString { get; set; }
+
+            [NotMapped]
+            public ulong UserId
+            {
+                get => ulong.Parse(UserIdString);
+                set => UserIdString = value.ToString();
+            }
         }
     }
 }
