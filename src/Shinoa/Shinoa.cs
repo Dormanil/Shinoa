@@ -188,12 +188,56 @@ namespace Shinoa
             Map.AddSingleton(Client);
             Map.AddSingleton(Commands);
 
-            // TODO: Add ability to choose provider and connection string.
-            var contextOptions = new DbContextOptionsBuilder()
-                .UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=Shinoa.Databases;Trusted_Connection=True;")
-                .Options;
+            // TODO: Test this
+            DatabaseProvider dbprovider;
+            try
+            {
+                string providerString = Config["global"]["database"]["provider"];
+                dbprovider = Enum.Parse<DatabaseProvider>(providerString);
+            }
+            catch (KeyNotFoundException)
+            {
+                await LogError("No database provider found. Exiting");
+                return;
+            }
+            catch (ArgumentException)
+            {
+                await LogError("The given database provider was invalid. Exiting.");
+                return;
+            }
 
-            Map.AddSingleton(contextOptions);
+            try
+            {
+                string connectString = Config["global"]["database"]["connect_string"];
+                var optionsBuilder = new DbContextOptionsBuilder();
+                switch (dbprovider)
+                {
+                    case DatabaseProvider.PostgreSQL:
+                        optionsBuilder.UseNpgsql(connectString);
+                        break;
+                    case DatabaseProvider.SQLServer:
+                        optionsBuilder.UseSqlServer(connectString);
+                        break;
+                    default:
+                        await LogError("The given database provider was invalid. Exiting.");
+                        break;
+                }
+
+                var contextOptions = optionsBuilder.Options;
+
+                Map.AddSingleton(contextOptions);
+            }
+            catch (KeyNotFoundException)
+            {
+                await LogError("No database connection string was provided. Exiting.");
+                return;
+            }
+            catch (Exception e)
+            {
+                await LogError("The given connection string was invalid. Exiting.");
+                await LogError(e.ToString());
+                return;
+            }
 
             var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
                     .Select(t => t.GetTypeInfo())

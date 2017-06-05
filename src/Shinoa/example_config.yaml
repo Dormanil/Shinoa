@@ -16,6 +16,12 @@ global:
     ###Optional Unicode logging
     unicode_logging: false
 
+    database:
+        ### Possible options are SQLServer, PostgreSQL
+        provider: "provider"
+        ### The provider specific connect string
+        connect_string: "connect_string"
+
 ### Module configuration
 anilist:
     client_id: "id"
