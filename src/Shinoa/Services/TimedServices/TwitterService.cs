@@ -123,7 +123,7 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new TwitterContext(dbOptions))
             {
-                foreach (var user in db.TwitterBindings)
+                foreach (var user in db.TwitterBindings.Include(b => b.ChannelBindings))
                 {
                     var response = await twitterSession.GetUserTimeline(user.TwitterUsername);
                     var newestCreationTime = response.FirstOrDefault()?.Time ?? DateTimeOffset.FromUnixTimeSeconds(0);

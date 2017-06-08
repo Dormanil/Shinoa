@@ -128,7 +128,7 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new RedditContext(dbOptions))
             {
-                foreach (var subreddit in db.RedditBindings)
+                foreach (var subreddit in db.RedditBindings.Include(b => b.ChannelBindings))
                 {
                     var responseText = await httpClient.HttpGet($"{subreddit.SubredditName}/new/.json");
                     if (responseText == null) continue;
