@@ -36,7 +36,7 @@ namespace Shinoa.Services.TimedServices
 
         public Color ModuleColor { get; private set; }
 
-        public bool AddBinding(string username, IMessageChannel channel)
+        public async Task<bool> AddBinding(string username, IMessageChannel channel)
         {
             using (var db = new TwitterContext(dbOptions))
             {
@@ -54,27 +54,27 @@ namespace Shinoa.Services.TimedServices
                     ChannelId = channel.Id,
                 });
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(string username, IMessageChannel channel)
+        public async Task<bool> RemoveBinding(string username, IMessageChannel channel)
         {
             using (var db = new TwitterContext(dbOptions))
             {
                 var name = username.ToLower();
 
-                var found = db.TwitterChannelBindings.FirstOrDefault(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == name);
+                var found = await db.TwitterChannelBindings.FirstOrDefaultAsync(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == name);
                 if (found == default(TwitterChannelBinding)) return false;
 
                 db.TwitterChannelBindings.Remove(found);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
             using (var db = new TwitterContext(dbOptions))
             {
@@ -82,7 +82,7 @@ namespace Shinoa.Services.TimedServices
                 if (!entities.Any()) return false;
 
                 db.TwitterChannelBindings.RemoveRange(entities);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
@@ -155,7 +155,7 @@ namespace Shinoa.Services.TimedServices
                     }
 
                     // db.Update(user); // Unnecessary because of tracking queries
-                    db.SaveChanges();
+                    await db.SaveChangesAsync();
                 }
             }
         }

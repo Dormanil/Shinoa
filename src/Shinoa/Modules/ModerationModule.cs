@@ -159,7 +159,7 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task On()
             {
-                var channel = Context.Channel as IGuildChannel;
+                var channel = (IGuildChannel)Context.Channel;
 
                 var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
                 await ReplyAsync(string.Empty, embed: embed.Build());
@@ -176,7 +176,7 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Off()
             {
-                var channel = Context.Channel as IGuildChannel;
+                var channel = (IGuildChannel)Context.Channel;
 
                 await channel.AddPermissionOverwriteAsync(Context.User, default(OverwritePermissions));
                 await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, default(OverwritePermissions));
@@ -206,7 +206,7 @@ namespace Shinoa.Modules
             public async Task Block()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (Service.RemoveBinding(channel))
+                if (await Service.RemoveBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
                 else
                     await ReplyAsync("Image spam in this channel is already blocked.");
@@ -222,7 +222,7 @@ namespace Shinoa.Modules
             public async Task Unblock()
             {
                 var channel = Context.Channel as ITextChannel;
-                if (Service.AddBinding(channel))
+                if (await Service.AddBinding(channel))
                     await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
                 else
                     await ReplyAsync("Image spam in this channel was not blocked.");
@@ -265,8 +265,8 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Add(IGuildUser user)
             {
-                if (Service.AddBinding(Context.Guild, user))
-                    await ReplyAsync($"Command usage on this server is now blocked for #{user.Mention}.");
+                if (await Service.AddBinding(Context.Guild, user))
+                    await ReplyAsync($"Command usage on this server is now blocked for {user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is already blocked for that user.");
             }
@@ -281,8 +281,8 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Remove(IGuildUser user)
             {
-                if (Service.RemoveBinding(Context.Guild, user))
-                    await ReplyAsync($"Command usage on this server is now no longer blocked for #{user.Mention}.");
+                if (await Service.RemoveBinding(Context.Guild, user))
+                    await ReplyAsync($"Command usage on this server is now no longer blocked for {user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server was not blocked for that user.");
             }
@@ -293,10 +293,12 @@ namespace Shinoa.Modules
             /// <param name="user">The user in question.</param>
             /// <returns></returns>
             [Command("check")]
-            public async Task Check(IGuildUser user)
+            [RequireContext(ContextType.Guild)]
+            public async Task Check(IGuildUser user = null)
             {
+                if (user == null) user = (IGuildUser) Context.User;
                 if (Service.CheckBinding(Context.Guild, user))
-                    await ReplyAsync($"Command usage on this server is currently blocked for #{user.Mention}.");
+                    await ReplyAsync($"Command usage on this server is currently blocked for {user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is currently not blocked for that user.");
             }

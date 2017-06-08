@@ -21,7 +21,7 @@ namespace Shinoa.Services
         private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
-        public bool AddBinding(IGuild guild, IMessageChannel channel, bool move = false)
+        public async Task<bool> AddBinding(IGuild guild, IMessageChannel channel, bool move = false)
         {
             using (var db = new JoinPartServerContext(dbOptions))
             {
@@ -35,12 +35,12 @@ namespace Shinoa.Services
                 if (move) db.JoinPartServerBindings.Update(binding);
                 else db.JoinPartServerBindings.Add(binding);
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
             using (var db = new JoinPartServerContext(dbOptions))
             {
@@ -49,6 +49,7 @@ namespace Shinoa.Services
                 if (!entities.Any()) return false;
 
                 db.JoinPartServerBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
                 return true;
             }
         }
@@ -80,25 +81,25 @@ namespace Shinoa.Services
             };
         }
 
-        private IMessageChannel GetGreetingChannel(IGuild guild)
+        private async Task<IMessageChannel> GetGreetingChannel(IGuild guild)
         {
             using (var db = new JoinPartServerContext(dbOptions))
             {
-                var server = db.JoinPartServerBindings.FirstOrDefault(srv => srv.ServerId == guild.Id);
+                var server = await db.JoinPartServerBindings.FirstOrDefaultAsync(srv => srv.ServerId == guild.Id);
                 if (server == default(JoinPartServerBinding)) return null;
                 var greetingChannel = client.GetChannel(server.ChannelId);
 
                 if (greetingChannel is IMessageChannel msgChannel) return msgChannel;
                 db.JoinPartServerBindings.Remove(server);
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return null;
             }
         }
 
         private async Task SendGreetingAsync(IGuild guild, string message)
         {
-            var channel = GetGreetingChannel(guild);
+            var channel = await GetGreetingChannel(guild);
             if (channel == null) return;
             await channel.SendMessageAsync(message);
         }

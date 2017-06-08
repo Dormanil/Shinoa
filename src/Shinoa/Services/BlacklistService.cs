@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using System.Threading.Tasks;
+
 namespace Shinoa.Services
 {
     using System;
@@ -23,7 +25,7 @@ namespace Shinoa.Services
             dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
         }
 
-        public bool RemoveBinding(IEntity<ulong> guild)
+        public async Task<bool> RemoveBinding(IEntity<ulong> guild)
         {
             using (var db = new BlacklistUserContext(dbOptions))
             {
@@ -31,12 +33,12 @@ namespace Shinoa.Services
                 if (!entities.Any()) return false;
 
                 db.BlacklistUserBindings.RemoveRange(entities);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool AddBinding(IGuild guild, IGuildUser user)
+        public async Task<bool> AddBinding(IGuild guild, IGuildUser user)
         {
             using (var db = new BlacklistUserContext(dbOptions))
             {
@@ -47,20 +49,20 @@ namespace Shinoa.Services
                     GuildId = guild.Id,
                     UserId = user.Id,
                 });
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(IGuild guild, IGuildUser user)
+        public async Task<bool> RemoveBinding(IGuild guild, IGuildUser user)
         {
             using (var db = new BlacklistUserContext(dbOptions))
             {
-                var entity = db.BlacklistUserBindings.FirstOrDefault(b => b.GuildId == guild.Id && b.UserId == user.Id);
+                var entity = await db.BlacklistUserBindings.FirstOrDefaultAsync(b => b.GuildId == guild.Id && b.UserId == user.Id);
                 if (entity == null) return false;
 
                 db.BlacklistUserBindings.Remove(entity);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }

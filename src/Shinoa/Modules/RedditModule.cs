@@ -35,7 +35,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string subredditName)
         {
-            if (Service.AddBinding(subredditName, Context.Channel))
+            if (await Service.AddBinding(subredditName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
             }
@@ -54,7 +54,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string subredditName)
         {
-            if (Service.RemoveBinding(subredditName, Context.Channel))
+            if (await Service.RemoveBinding(subredditName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
             }

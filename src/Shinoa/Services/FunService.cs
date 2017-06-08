@@ -20,7 +20,7 @@ namespace Shinoa.Services
     {
         private DbContextOptions dbOptions;
 
-        public bool AddBinding(IMessageChannel channel)
+        public async Task<bool> AddBinding(IMessageChannel channel)
         {
             using (var db = new BotFunctionSpamContext(dbOptions))
             {
@@ -30,12 +30,12 @@ namespace Shinoa.Services
                 {
                     ChannelId = channel.Id,
                 });
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
             using (var db = new BotFunctionSpamContext(dbOptions))
             {
@@ -43,7 +43,7 @@ namespace Shinoa.Services
                 if (!entities.Any()) return false;
 
                 db.BotFunctionSpamBindings.RemoveRange(entities);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }

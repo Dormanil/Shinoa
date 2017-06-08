@@ -42,7 +42,7 @@ namespace Shinoa.Services.TimedServices
 
         public Color ModuleColor { get; private set; }
 
-        public bool AddBinding(string subredditName, IMessageChannel channel)
+        public async Task<bool> AddBinding(string subredditName, IMessageChannel channel)
         {
             using (var db = new RedditContext(dbOptions))
             {
@@ -60,27 +60,27 @@ namespace Shinoa.Services.TimedServices
                     ChannelId = channel.Id,
                 });
 
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(string subredditName, IMessageChannel channel)
+        public async Task<bool> RemoveBinding(string subredditName, IMessageChannel channel)
         {
             using (var db = new RedditContext(dbOptions))
             {
                 var name = subredditName.ToLower();
 
-                var found = db.RedditChannelBindings.FirstOrDefault(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name);
+                var found = await db.RedditChannelBindings.FirstOrDefaultAsync(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name);
                 if (found == default(RedditChannelBinding)) return false;
 
                 db.RedditChannelBindings.Remove(found);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
             using (var db = new RedditContext(dbOptions))
             {
@@ -88,7 +88,7 @@ namespace Shinoa.Services.TimedServices
                 if (!entities.Any()) return false;
 
                 db.RedditChannelBindings.RemoveRange(entities);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
@@ -215,7 +215,7 @@ namespace Shinoa.Services.TimedServices
                     if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;
 
                     // db.RedditBindings.Update(subreddit); // Unnecessary because of tracking queries
-                    db.SaveChanges();
+                    await db.SaveChangesAsync();
                 }
             }
         }

@@ -28,7 +28,7 @@ namespace Shinoa.Modules
         public async Task Add(string user)
         {
             var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
-            if (Service.AddBinding(twitterName, Context.Channel))
+            if (await Service.AddBinding(twitterName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
             }
@@ -43,7 +43,7 @@ namespace Shinoa.Modules
         public async Task Remove(string user)
         {
             var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
-            if (Service.RemoveBinding(twitterName, Context.Channel))
+            if (await Service.RemoveBinding(twitterName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{Context.Channel.Name}).");
             }

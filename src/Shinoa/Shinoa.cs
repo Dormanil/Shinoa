@@ -114,13 +114,13 @@ namespace Shinoa
                     if (instance == null) continue;
                     if (instance is BlacklistService blacklistService)
                     {
-                        blacklistService.RemoveBinding(Client.GetGuild(guildId));
+                        await blacklistService.RemoveBinding(Client.GetGuild(guildId));
                         continue;
                     }
 
                     channels.ForEach(async channel =>
                     {
-                        ((IDatabaseService)instance).RemoveBinding(channel);
+                        await ((IDatabaseService)instance).RemoveBinding(channel);
                         try
                         {
                             if (channel.Id.ToString() == (string)Config["global"]["logging_channel_id"]) StopLoggingToChannel();

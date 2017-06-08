@@ -33,7 +33,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
         {
-            if (Service.AddBinding(Context.Channel))
+            if (await Service.AddBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
                     await ReplyAsync($"Anime notifications have been bound to this channel (#{Context.Channel.Name}).");
@@ -57,7 +57,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
         {
-            if (Service.RemoveBinding(Context.Channel))
+            if (await Service.RemoveBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
                     await ReplyAsync($"Anime notifications have been unbound from this channel (#{Context.Channel.Name}).");

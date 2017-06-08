@@ -30,7 +30,7 @@ namespace Shinoa.Services.TimedServices
         private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
-        public bool AddBinding(IMessageChannel channel)
+        public async Task<bool> AddBinding(IMessageChannel channel)
         {
             using (var db = new AnimeFeedContext(dbOptions))
             {
@@ -40,12 +40,12 @@ namespace Shinoa.Services.TimedServices
                 {
                     ChannelId = channel.Id,
                 });
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
             using (var db = new AnimeFeedContext(dbOptions))
             {
@@ -53,7 +53,7 @@ namespace Shinoa.Services.TimedServices
                 if (!entities.Any()) return false;
 
                 db.AnimeFeedBindings.RemoveRange(entities);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 return true;
             }
         }

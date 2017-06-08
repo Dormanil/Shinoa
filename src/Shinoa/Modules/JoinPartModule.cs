@@ -34,9 +34,9 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
         {
-            if (Service.AddBinding(Context.Guild, Context.Channel))
+            if (await Service.AddBinding(Context.Guild, Context.Channel))
             {
-                await ReplyAsync($"Greetings enabled for this server and bound to channel #{Context.Channel.Name}.");
+                await ReplyAsync($"Greetings enabled for this server and bound to channel <#{Context.Channel.Id}>.");
             }
             else
             {
@@ -52,7 +52,7 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
         {
-            if (Service.RemoveBinding(Context.Guild))
+            if (await Service.RemoveBinding(Context.Guild))
             {
                 await ReplyAsync("Greetings disabled for this server.");
             }
@@ -70,9 +70,9 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageGuild)]
         public async Task Here()
         {
-            if (Service.AddBinding(Context.Guild, Context.Channel, true))
+            if (await Service.AddBinding(Context.Guild, Context.Channel, true))
             {
-                await ReplyAsync($"Greetings moved to channel #{Context.Channel.Name}.");
+                await ReplyAsync($"Greetings moved to channel <#{Context.Channel.Id}>.");
             }
             else
             {
