@@ -30,9 +30,6 @@ namespace Shinoa
     using Services;
     using Services.TimedServices;
 
-    using SQLite;
-    using SQLite.Extensions;
-
     using YamlDotNet.Serialization;
 
     using static Logging;
@@ -54,7 +51,6 @@ namespace Shinoa
         private static readonly IServiceCollection Map = new ServiceCollection();
         private static IServiceProvider provider;
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
-        private static readonly Dictionary<Type, Func<Task>> DatabaseCallbacks = new Dictionary<Type, Func<Task>>();
         private static Timer globalRefreshTimer;
 
         public static dynamic Config { get; private set; }
@@ -188,7 +184,6 @@ namespace Shinoa
             Map.AddSingleton(Client);
             Map.AddSingleton(Commands);
 
-            // TODO: Test this
             DatabaseProvider dbProvider;
             try
             {
@@ -239,7 +234,8 @@ namespace Shinoa
                 return;
             }
 
-            var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
+            // Obsoleted because not concurrency-safe
+            /*var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
                     .Select(t => t.GetTypeInfo())
                     .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseContext)) && !(t.IsAbstract || t.IsInterface))
                     .Select(t => t.UnderlyingSystemType);
@@ -247,7 +243,7 @@ namespace Shinoa
             foreach (var database in databases)
             {
                 Map.AddSingleton(database);
-            }
+            }*/
 
             #region Services
 
@@ -427,12 +423,6 @@ namespace Shinoa
                         await Log($"Service \"{service.Name}\" added to callbacks");
                     }
 
-                    if (instance is IDatabaseService databaseService)
-                    {
-                        DatabaseCallbacks.TryAdd(service.UnderlyingSystemType, databaseService.Callback);
-                        await Log($"Service \"{service.Name}\" added to database callbacks");
-                    }
-
                     await Log($"Loaded service \"{service.Name}\"");
                 }
 
@@ -455,18 +445,6 @@ namespace Shinoa
                     async s =>
                     {
                         foreach (var callback in Callbacks.Values)
-                        {
-                            try
-                            {
-                                await callback();
-                            }
-                            catch (Exception e)
-                            {
-                                await LogError(e.ToString());
-                            }
-                        }
-
-                        foreach (var callback in DatabaseCallbacks.Values)
                         {
                             try
                             {

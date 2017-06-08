@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Shinoa.Services.TimedServices
 {
     using System;
@@ -33,7 +35,7 @@ namespace Shinoa.Services.TimedServices
     {
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://www.reddit.com/r/") };
 
-        private RedditContext db;
+        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
         private string[] compactKeywords;
         private string[] filterKeywords;
@@ -42,50 +44,64 @@ namespace Shinoa.Services.TimedServices
 
         public bool AddBinding(string subredditName, IMessageChannel channel)
         {
-            var subreddit = new RedditBinding
+            using (var db = new RedditContext(dbOptions))
             {
-                SubredditName = subredditName.ToLower(),
-                LatestPost = DateTime.UtcNow,
-            };
+                var subreddit = new RedditBinding
+                {
+                    SubredditName = subredditName.ToLower(),
+                    LatestPost = DateTime.UtcNow,
+                };
 
-            if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return false;
+                if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return false;
 
-            db.Add(new RedditChannelBinding
-            {
-                Subreddit = subreddit,
-                ChannelId = channel.Id,
-            });
-            return true;
+                db.RedditChannelBindings.Add(new RedditChannelBinding
+                {
+                    Subreddit = subreddit,
+                    ChannelId = channel.Id,
+                });
+
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool RemoveBinding(string subredditName, IMessageChannel channel)
         {
-            var name = new RedditBinding { SubredditName = subredditName.ToLower(), };
+            using (var db = new RedditContext(dbOptions))
+            {
+                var name = subredditName.ToLower();
 
-            var found = db.RedditChannelBindings.FirstOrDefault(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name.SubredditName);
-            if (found == default(RedditChannelBinding)) return false;
+                var found = db.RedditChannelBindings.FirstOrDefault(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == name);
+                if (found == default(RedditChannelBinding)) return false;
 
-            db.Remove(found);
-            return true;
+                db.RedditChannelBindings.Remove(found);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entities = db.RedditChannelBindings.Where(b => b.ChannelId == binding.Id);
-            if (!entities.Any()) return false;
+            using (var db = new RedditContext(dbOptions))
+            {
+                var entities = db.RedditChannelBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
 
-            db.RedditChannelBindings.RemoveRange(entities);
-            return true;
+                db.RedditChannelBindings.RemoveRange(entities);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public IEnumerable<RedditChannelBinding> GetBindings(IMessageChannel channel)
         {
+            using (var db = new RedditContext(dbOptions))
             return db.RedditChannelBindings.Where(b => b.ChannelId == channel.Id);
         }
 
         async void IService.Init(dynamic config, IServiceProvider map)
         {
-            db = map.GetService(typeof(RedditContext)) as RedditContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
 
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
@@ -107,135 +123,101 @@ namespace Shinoa.Services.TimedServices
             }
         }
 
-        Task IDatabaseService.Callback() => db.SaveChangesAsync();
-
         async Task ITimedService.Callback()
         {
-            foreach (var subreddit in GetFromDb())
+            using (var db = new RedditContext(dbOptions))
             {
-                var responseText = await httpClient.HttpGet($"{subreddit.Name}/new/.json");
-                if (responseText == null) continue;
-
-                dynamic responseObject = JsonConvert.DeserializeObject(responseText);
-                dynamic posts = responseObject["data"]["children"];
-                var newestCreationTime = DateTimeOffset.FromUnixTimeSeconds((int)posts[0]["data"]["created_utc"]);
-                var postStack = new Stack<Embed>();
-
-                foreach (var post in posts)
+                foreach (var subreddit in db.RedditBindings)
                 {
-                    var creationTime = DateTimeOffset.FromUnixTimeSeconds((int)post["data"]["created_utc"]);
-                    if (creationTime <= subreddit.LatestPost)
-                        break;
+                    var responseText = await httpClient.HttpGet($"{subreddit.SubredditName}/new/.json");
+                    if (responseText == null) continue;
 
-                    var title = WebUtility.HtmlDecode((string)post["data"]["title"]);
-                    string username = post["data"]["author"];
-                    string id = post["data"]["id"];
-                    string url = post["data"]["url"];
-                    string selftext = post["data"]["selftext"];
+                    dynamic responseObject = JsonConvert.DeserializeObject(responseText);
+                    dynamic posts = responseObject["data"]["children"];
+                    var newestCreationTime = DateTimeOffset.FromUnixTimeSeconds((int)posts[0]["data"]["created_utc"]);
+                    var postStack = new Stack<Embed>();
 
-                    if (filterKeywords.Any(kw => title.ToLower().Contains(kw))) continue;
-
-                    var compact = compactKeywords.Any(kw => title.ToLower().Contains(kw));
-
-                    string imageUrl = null;
-                    try
+                    foreach (var post in posts)
                     {
-                        imageUrl = post["data"]["preview"]["images"][0]["source"]["url"];
-                    }
-                    catch (Exception)
-                    {
-                    }
+                        var creationTime = DateTimeOffset.FromUnixTimeSeconds((int)post["data"]["created_utc"]);
+                        if (creationTime <= subreddit.LatestPost)
+                            break;
 
-                    string thumbnailUrl = null;
-                    if (post["data"]["thumbnail"] != "self" && post["data"]["thumbnail"] != "default") thumbnailUrl = post["data"]["thumbnail"];
+                        var title = WebUtility.HtmlDecode((string)post["data"]["title"]);
+                        string username = post["data"]["author"];
+                        string id = post["data"]["id"];
+                        string url = post["data"]["url"];
+                        string selftext = post["data"]["selftext"];
 
-                    var embed = new EmbedBuilder()
-                        .AddField(f => f.WithName("Title").WithValue(title))
-                        .AddField(f => f.WithName("Submitted By").WithValue($"/u/{username}").WithIsInline(true))
-                        .AddField(f => f.WithName("Subreddit").WithValue($"/r/{subreddit.Name}").WithIsInline(true))
-                        .AddField(f => f.WithName("Shortlink").WithValue($"http://redd.it/{id}").WithIsInline(true))
-                        .WithColor(ModuleColor);
+                        if (filterKeywords.Any(kw => title.ToLower().Contains(kw))) continue;
 
-                    if (!url.Contains("reddit.com")) embed.AddField(f => f.WithName("URL").WithValue(url));
+                        var compact = compactKeywords.Any(kw => title.ToLower().Contains(kw));
 
-                    if (!compact)
-                    {
-                        if (imageUrl != null)
-                        {
-                            embed.ImageUrl = imageUrl;
-                        }
-                        else if (thumbnailUrl != null)
-                        {
-                            embed.ThumbnailUrl = thumbnailUrl;
-                        }
-
-                        if (selftext != string.Empty) embed.AddField(f => f.WithName("Text").WithValue(selftext.Truncate(500)));
-                    }
-
-                    if (!(compact || imageUrl == null))
-                    {
+                        string imageUrl = null;
                         try
                         {
-                            var sauce = SauceModule.GetSauce(imageUrl);
-                            if (sauce.SimilarityPercentage > 90) postStack.Push(sauce.GetEmbed());
+                            imageUrl = post["data"]["preview"]["images"][0]["source"]["url"];
                         }
-                        catch (SauceModule.SauceNotFoundException sauceNotFoundException)
+                        catch (Exception)
                         {
-                            await Logging.LogError(sauceNotFoundException.ToString());
+                        }
+
+                        string thumbnailUrl = null;
+                        if (post["data"]["thumbnail"] != "self" && post["data"]["thumbnail"] != "default") thumbnailUrl = post["data"]["thumbnail"];
+
+                        var embed = new EmbedBuilder()
+                            .AddField(f => f.WithName("Title").WithValue(title))
+                            .AddField(f => f.WithName("Submitted By").WithValue($"/u/{username}").WithIsInline(true))
+                            .AddField(f => f.WithName("Subreddit").WithValue($"/r/{subreddit.SubredditName}").WithIsInline(true))
+                            .AddField(f => f.WithName("Shortlink").WithValue($"http://redd.it/{id}").WithIsInline(true))
+                            .WithColor(ModuleColor);
+
+                        if (!url.Contains("reddit.com")) embed.AddField(f => f.WithName("URL").WithValue(url));
+
+                        if (!compact)
+                        {
+                            if (imageUrl != null)
+                            {
+                                embed.ImageUrl = imageUrl;
+                            }
+                            else if (thumbnailUrl != null)
+                            {
+                                embed.ThumbnailUrl = thumbnailUrl;
+                            }
+
+                            if (selftext != string.Empty) embed.AddField(f => f.WithName("Text").WithValue(selftext.Truncate(500)));
+                        }
+
+                        if (!(compact || imageUrl == null))
+                        {
+                            try
+                            {
+                                var sauce = SauceModule.GetSauce(imageUrl);
+                                if (sauce.SimilarityPercentage > 90) postStack.Push(sauce.GetEmbed());
+                            }
+                            catch (SauceModule.SauceNotFoundException sauceNotFoundException)
+                            {
+                                await Logging.LogError(sauceNotFoundException.ToString());
+                            }
+                        }
+
+                        postStack.Push(embed.Build());
+                    }
+
+                    foreach (var embed in postStack)
+                    {
+                        foreach (var channelBinding in subreddit.ChannelBindings)
+                        {
+                            if (client.GetChannel(channelBinding.ChannelId) is IMessageChannel channel) await channel.SendEmbedAsync(embed);
                         }
                     }
 
-                    postStack.Push(embed.Build());
+                    if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;
+
+                    // db.RedditBindings.Update(subreddit); // Unnecessary because of tracking queries
+                    db.SaveChanges();
                 }
-
-                foreach (var embed in postStack)
-                {
-                    foreach (var channel in subreddit.Channels)
-                    {
-                        await channel.SendEmbedAsync(embed);
-                    }
-                }
-
-                if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;
-
-                db.Update(new RedditBinding
-                {
-                    SubredditName = subreddit.Name,
-                    LatestPost = subreddit.LatestPost,
-                });
             }
-        }
-
-        private IEnumerable<SubscribedSubreddit> GetFromDb()
-        {
-            var ret = new List<SubscribedSubreddit>();
-            foreach (var binding in db.RedditBindings)
-            {
-                var tmpSub = new SubscribedSubreddit
-                {
-                    Name = binding.SubredditName,
-                    LatestPost = binding.LatestPost,
-                };
-                foreach (var channelBinding in db.RedditChannelBindings.Where(b => b.Subreddit.SubredditName == tmpSub.Name))
-                {
-                    var tmpChannel = client.GetChannel(channelBinding.ChannelId) as IMessageChannel;
-                    if (tmpChannel == null) continue;
-                    tmpSub.Channels.Add(tmpChannel);
-                }
-
-                ret.Add(tmpSub);
-            }
-
-            return ret;
-        }
-
-        private class SubscribedSubreddit
-        {
-            public string Name { get; set; }
-
-            public ICollection<IMessageChannel> Channels { get; } = new List<IMessageChannel>();
-
-            public DateTimeOffset LatestPost { get; set; } = DateTimeOffset.UtcNow;
         }
     }
 }

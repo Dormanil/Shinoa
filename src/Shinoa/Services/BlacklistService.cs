@@ -9,57 +9,66 @@ namespace Shinoa.Services
 {
     using System;
     using System.Linq;
-    using System.Threading.Tasks;
     using Databases;
     using Discord;
+    using Microsoft.EntityFrameworkCore;
     using static Databases.BlacklistUserContext;
 
     public class BlacklistService : IDatabaseService
     {
-        private BlacklistUserContext db;
+        private DbContextOptions dbOptions;
 
-        public void Init(dynamic config, IServiceProvider map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            db = map.GetService(typeof(BlacklistUserContext)) as BlacklistUserContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
         }
 
         public bool RemoveBinding(IEntity<ulong> guild)
         {
-            var entities = db.BlacklistUserBindings.Where(b => b.GuildId == guild.Id);
-            if (!entities.Any()) return false;
+            using (var db = new BlacklistUserContext(dbOptions))
+            {
+                var entities = db.BlacklistUserBindings.Where(b => b.GuildId == guild.Id);
+                if (!entities.Any()) return false;
 
-            db.BlacklistUserBindings.RemoveRange(entities);
-            return true;
+                db.BlacklistUserBindings.RemoveRange(entities);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool AddBinding(IGuild guild, IGuildUser user)
         {
-            if (db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
-
-            db.Add(new BlacklistUserBinding
+            using (var db = new BlacklistUserContext(dbOptions))
             {
-                GuildId = guild.Id,
-                UserId = user.Id,
-            });
-            return true;
+                if (db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
+
+                db.BlacklistUserBindings.Add(new BlacklistUserBinding
+                {
+                    GuildId = guild.Id,
+                    UserId = user.Id,
+                });
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool RemoveBinding(IGuild guild, IGuildUser user)
         {
-            var entity = db.BlacklistUserBindings.FirstOrDefault(b => b.GuildId == guild.Id && b.UserId == user.Id);
+            using (var db = new BlacklistUserContext(dbOptions))
+            {
+                var entity = db.BlacklistUserBindings.FirstOrDefault(b => b.GuildId == guild.Id && b.UserId == user.Id);
+                if (entity == null) return false;
 
-            if (entity == null)
-                return false;
-
-            db.Remove(entity);
-            return true;
+                db.BlacklistUserBindings.Remove(entity);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool CheckBinding(IGuild guild, IGuildUser user)
         {
+            using (var db = new BlacklistUserContext(dbOptions))
             return db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
         }
-
-        Task IDatabaseService.Callback() => db.SaveChangesAsync();
     }
 }

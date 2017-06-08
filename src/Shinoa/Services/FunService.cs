@@ -13,41 +13,50 @@ namespace Shinoa.Services
     using Databases;
     using Discord;
     using Discord.WebSocket;
+    using Microsoft.EntityFrameworkCore;
     using static Databases.BotFunctionSpamContext;
 
     public class FunService : IDatabaseService
     {
-        private BotFunctionSpamContext db;
+        private DbContextOptions dbOptions;
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.BotFunctionSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
-
-            db.Add(new BotFunctionSpamBinding
+            using (var db = new BotFunctionSpamContext(dbOptions))
             {
-                ChannelId = channel.Id,
-            });
-            return true;
+                if (db.BotFunctionSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
+
+                db.BotFunctionSpamBindings.Add(new BotFunctionSpamBinding
+                {
+                    ChannelId = channel.Id,
+                });
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entities = db.BotFunctionSpamBindings.Where(b => b.ChannelId == binding.Id);
+            using (var db = new BotFunctionSpamContext(dbOptions))
+            {
+                var entities = db.BotFunctionSpamBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
 
-            if (!entities.Any()) return false;
-
-            db.BotFunctionSpamBindings.RemoveRange(entities);
-            return true;
+                db.BotFunctionSpamBindings.RemoveRange(entities);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
+            using (var db = new BotFunctionSpamContext(dbOptions))
             return db.BotFunctionSpamBindings.All(b => b.ChannelId != channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            db = map.GetService(typeof(BotFunctionSpamContext)) as BotFunctionSpamContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options not found in service provider.");
 
             var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += MessageReceivedHandler;
@@ -91,7 +100,5 @@ namespace Shinoa.Services
                     break;
             }
         }
-
-        Task IDatabaseService.Callback() => db.SaveChangesAsync();
     }
 }

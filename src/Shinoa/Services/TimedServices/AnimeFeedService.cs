@@ -17,49 +17,53 @@ namespace Shinoa.Services.TimedServices
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Xml.Linq;
-
     using Databases;
-
     using Discord;
     using Discord.WebSocket;
-
+    using Microsoft.EntityFrameworkCore;
     using static Databases.AnimeFeedContext;
 
     public class AnimeFeedService : IDatabaseService, ITimedService
     {
         private static readonly Color ModuleColor = new Color(0, 150, 136);
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.si/") };
-        private AnimeFeedContext db;
+        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.AnimeFeedBindings.Any(b => b.ChannelId == channel.Id)) return false;
-
-            db.Add(new AnimeFeedBinding
+            using (var db = new AnimeFeedContext(dbOptions))
             {
-                ChannelId = channel.Id,
-            });
-            return true;
+                if (db.AnimeFeedBindings.Any(b => b.ChannelId == channel.Id)) return false;
+
+                db.AnimeFeedBindings.Add(new AnimeFeedBinding
+                {
+                    ChannelId = channel.Id,
+                });
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entities = db.AnimeFeedBindings.Where(b => b.ChannelId == binding.Id);
-            if (!entities.Any()) return false;
+            using (var db = new AnimeFeedContext(dbOptions))
+            {
+                var entities = db.AnimeFeedBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
 
-            db.AnimeFeedBindings.RemoveRange(entities);
-            return true;
+                db.AnimeFeedBindings.RemoveRange(entities);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            db = map.GetService(typeof(AnimeFeedContext)) as AnimeFeedContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
 
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
         }
-
-        Task IDatabaseService.Callback() => db.SaveChangesAsync();
 
         async Task ITimedService.Callback()
         {
@@ -111,9 +115,8 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            return db.AnimeFeedBindings
-                .Where(binding => client.GetChannel(binding.ChannelId) is ITextChannel)
-                .Cast<IMessageChannel>();
+            using (var db = new AnimeFeedContext(dbOptions))
+            return db.AnimeFeedBindings.Select(binding => client.GetChannel(binding.ChannelId)).OfType<IMessageChannel>();
         }
     }
 }

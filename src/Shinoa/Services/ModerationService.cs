@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using Microsoft.EntityFrameworkCore;
+
 namespace Shinoa.Services
 {
     using System;
@@ -18,36 +20,45 @@ namespace Shinoa.Services
 
     public class ModerationService : IDatabaseService
     {
-        private ImageSpamContext db;
+        private DbContextOptions dbOptions;
 
         public bool AddBinding(IMessageChannel channel)
         {
-            if (db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
-
-            db.Add(new ImageSpamBinding
+            using (var db = new ImageSpamContext(dbOptions))
             {
-                ChannelId = channel.Id,
-            });
-            return true;
+                if (db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
+
+                db.ImageSpamBindings.Add(new ImageSpamBinding
+                {
+                    ChannelId = channel.Id,
+                });
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool RemoveBinding(IEntity<ulong> binding)
         {
-            var entities = db.ImageSpamBindings.Where(b => b.ChannelId == binding.Id);
-            if (!entities.Any()) return false;
+            using (var db = new ImageSpamContext(dbOptions))
+            {
+                var entities = db.ImageSpamBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
 
-            db.ImageSpamBindings.RemoveRange(entities);
-            return true;
+                db.ImageSpamBindings.RemoveRange(entities);
+                db.SaveChanges();
+                return true;
+            }
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
+            using (var db = new ImageSpamContext(dbOptions))
             return db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            db = map.GetService(typeof(ImageSpamContext)) as ImageSpamContext ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
 
             var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += Handler;
@@ -57,35 +68,36 @@ namespace Shinoa.Services
         {
             try
             {
-                if (msg.Author is IGuildUser user &&
-                    db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
-                    msg.Attachments.Count > 0)
+                using (var db = new ImageSpamContext(dbOptions))
                 {
-                    var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
-                    var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
-                                         let timeDifference = DateTimeOffset.Now - message.Timestamp
-                                         where timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 && message.Author.Id == msg.Author.Id
-                                         select message).Count();
+                   if (msg.Author is IGuildUser user &&
+                        db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
+                        msg.Attachments.Count > 0)
+                   {
+                        var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
+                        var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
+                                             let timeDifference = DateTimeOffset.Now - message.Timestamp
+                                             where timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 && message.Author.Id == msg.Author.Id
+                                             select message).Count();
 
-                    if (imagesCounter > 2)
-                    {
-                        await msg.DeleteAsync();
-                        await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
+                        if (imagesCounter > 2)
+                        {
+                            await msg.DeleteAsync();
+                            await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
 
-                        var mutedRole = user.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
+                            var mutedRole = user.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
-                        await user.AddRoleAsync(mutedRole);
-                        await Task.Delay(5 * 60 * 1000);
-                        await user.RemoveRoleAsync(mutedRole);
-                        await msg.Channel.SendMessageAsync($"User {user.Mention} has been unmuted automatically.");
-                    }
+                            await user.AddRoleAsync(mutedRole);
+                            await Task.Delay(5 * 60 * 1000);
+                            await user.RemoveRoleAsync(mutedRole);
+                            await msg.Channel.SendMessageAsync($"User {user.Mention} has been unmuted automatically.");
+                        }
+                   }
                 }
             }
             catch (HttpException)
             {
             }
         }
-
-        Task IDatabaseService.Callback() => db.SaveChangesAsync();
     }
 }
