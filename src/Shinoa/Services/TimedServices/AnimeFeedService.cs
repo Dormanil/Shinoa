@@ -116,7 +116,7 @@ namespace Shinoa.Services.TimedServices
         private IEnumerable<IMessageChannel> GetFromDb()
         {
             using (var db = new AnimeFeedContext(dbOptions))
-            return db.AnimeFeedBindings.Select(binding => client.GetChannel(binding.ChannelId)).OfType<IMessageChannel>();
+                return db.AnimeFeedBindings.Select(binding => client.GetChannel(binding.ChannelId)).OfType<IMessageChannel>().ToList();
         }
     }
 }

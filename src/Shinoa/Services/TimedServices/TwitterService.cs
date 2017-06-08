@@ -5,7 +5,6 @@
 // Licensed under the MIT license.
 // </copyright>
 
-using Microsoft.EntityFrameworkCore;
 
 namespace Shinoa.Services.TimedServices
 {
@@ -24,6 +23,8 @@ namespace Shinoa.Services.TimedServices
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
+    using Microsoft.EntityFrameworkCore;
 
     using static Databases.TwitterContext;
 
@@ -90,7 +91,7 @@ namespace Shinoa.Services.TimedServices
         public IEnumerable<TwitterChannelBinding> GetBindings(IMessageChannel channel)
         {
             using (var db = new TwitterContext(dbOptions))
-            return db.TwitterChannelBindings.Where(b => b.ChannelId == channel.Id);
+                return db.TwitterChannelBindings.Where(b => b.ChannelId == channel.Id).Include(b => b.TwitterBinding).ToList();
         }
 
         void IService.Init(dynamic config, IServiceProvider map)

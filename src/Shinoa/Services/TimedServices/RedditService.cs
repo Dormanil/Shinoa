@@ -5,7 +5,6 @@
 // Licensed under the MIT license.
 // </copyright>
 
-using Microsoft.EntityFrameworkCore;
 
 namespace Shinoa.Services.TimedServices
 {
@@ -23,6 +22,8 @@ namespace Shinoa.Services.TimedServices
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
+    using Microsoft.EntityFrameworkCore;
 
     using Modules;
 
@@ -96,7 +97,7 @@ namespace Shinoa.Services.TimedServices
         public IEnumerable<RedditChannelBinding> GetBindings(IMessageChannel channel)
         {
             using (var db = new RedditContext(dbOptions))
-            return db.RedditChannelBindings.Where(b => b.ChannelId == channel.Id);
+                return db.RedditChannelBindings.Where(b => b.ChannelId == channel.Id).Include(b => b.Subreddit).ToList();
         }
 
         async void IService.Init(dynamic config, IServiceProvider map)
