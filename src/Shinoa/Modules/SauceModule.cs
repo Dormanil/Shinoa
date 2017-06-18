@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using System.Net;
+
 namespace Shinoa.Modules
 {
     using System;
@@ -154,7 +156,7 @@ namespace Shinoa.Modules
         {
             public SauceResult(string title, float similarityPercentage, string sourceUrl, string artistName, string thumbmnailImageUrl)
             {
-                Title = title;
+                Title = WebUtility.HtmlDecode(title);
                 SimilarityPercentage = similarityPercentage;
                 SourceUrl = sourceUrl;
                 ArtistName = artistName;
