@@ -5,7 +5,6 @@
 // Licensed under the MIT license.
 // </copyright>
 
-
 namespace Shinoa.Services.TimedServices
 {
     using System;
@@ -14,21 +13,13 @@ namespace Shinoa.Services.TimedServices
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
-
     using Attributes;
-
     using Databases;
-
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-
     using Microsoft.EntityFrameworkCore;
-
     using Modules;
-
     using Newtonsoft.Json;
-
     using static Databases.RedditContext;
 
     [Config("reddit")]
@@ -43,8 +34,9 @@ namespace Shinoa.Services.TimedServices
 
         public Color ModuleColor { get; private set; }
 
-        public async Task<bool> AddBinding(string subredditName, IMessageChannel channel)
+        public async Task<BindingStatus> AddBinding(string subredditName, IMessageChannel channel)
         {
+            if (!(await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, subredditName))).IsSuccessStatusCode) return BindingStatus.Error;
             using (var db = new RedditContext(dbOptions))
             {
                 var subreddit = new RedditBinding
@@ -53,7 +45,7 @@ namespace Shinoa.Services.TimedServices
                     LatestPost = DateTime.UtcNow,
                 };
 
-                if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return false;
+                if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return BindingStatus.AlreadyExists;
 
                 db.RedditChannelBindings.Add(new RedditChannelBinding
                 {
@@ -62,7 +54,7 @@ namespace Shinoa.Services.TimedServices
                 });
 
                 await db.SaveChangesAsync();
-                return true;
+                return BindingStatus.Added;
             }
         }
 
@@ -215,7 +207,7 @@ namespace Shinoa.Services.TimedServices
 
                     if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;
 
-                    // db.RedditBindings.Update(subreddit); // Unnecessary because of tracking queries
+                    db.RedditBindings.Update(subreddit);
                     await db.SaveChangesAsync();
                 }
             }

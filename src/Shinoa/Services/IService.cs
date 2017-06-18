@@ -7,7 +7,6 @@
 
 namespace Shinoa.Services
 {
-    using Discord.Commands;
     using System;
 
     public interface IService

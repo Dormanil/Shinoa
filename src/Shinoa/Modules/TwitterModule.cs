@@ -12,6 +12,7 @@ namespace Shinoa.Modules
     using Attributes;
     using Discord;
     using Discord.Commands;
+    using Services;
     using Services.TimedServices;
 
     [Group("twitter")]
@@ -27,14 +28,19 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string user)
         {
-            var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
-            if (await Service.AddBinding(twitterName, Context.Channel))
+            var twitterName = user.TrimStart('@');
+
+            switch (await Service.AddBinding(twitterName, Context.Channel))
             {
-                await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
-            }
-            else
-            {
-                await ReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{Context.Channel.Name}).");
+                case BindingStatus.Error:
+                    await ReplyAsync($"Could not access @{twitterName}. Does the handle exist?");
+                    break;
+                case BindingStatus.AlreadyExists:
+                    await ReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{Context.Channel.Name}).");
+                    break;
+                case BindingStatus.Added:
+                    await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
+                    break;
             }
         }
 
@@ -42,7 +48,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string user)
         {
-            var twitterName = user.Replace("@", string.Empty).ToLower().Trim();
+            var twitterName = user.TrimStart('@');
             if (await Service.RemoveBinding(twitterName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for @{twitterName} have been unbound from this channel (#{Context.Channel.Name}).");

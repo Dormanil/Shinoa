@@ -31,8 +31,10 @@ namespace Shinoa.Services
                     ChannelId = channel.Id,
                 };
 
-                if (db.JoinPartServerBindings.Any(b => b.ServerId == binding.ServerId) && !move) return false;
-                if (move) db.JoinPartServerBindings.Update(binding);
+                var bindingExists = db.JoinPartServerBindings.Any(b => b.ServerId == binding.ServerId);
+
+                if (bindingExists && !move) return false;
+                if (bindingExists) db.JoinPartServerBindings.Update(binding);
                 else db.JoinPartServerBindings.Add(binding);
 
                 await db.SaveChangesAsync();

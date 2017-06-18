@@ -12,6 +12,7 @@ namespace Shinoa.Modules
     using Attributes;
     using Discord;
     using Discord.Commands;
+    using Services;
     using Services.TimedServices;
 
     /// <summary>
@@ -35,13 +36,21 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string subredditName)
         {
-            if (await Service.AddBinding(subredditName, Context.Channel))
+            subredditName = subredditName.Replace("r/", string.Empty).TrimStart('/'); // Extract name
+
+            switch (await Service.AddBinding(subredditName, Context.Channel))
             {
-                await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
-            }
-            else
-            {
-                await ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
+                case BindingStatus.Added:
+                    await ReplyAsync(
+                        $"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
+                    break;
+                case BindingStatus.AlreadyExists:
+                    await ReplyAsync(
+                        $"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
+                    break;
+                case BindingStatus.Error:
+                    await ReplyAsync($"Could not access subreddit /r/{subredditName}. Does it exist?");
+                    break;
             }
         }
 
@@ -54,6 +63,8 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string subredditName)
         {
+            subredditName = subredditName.Replace("r/", string.Empty).TrimStart('/');
+
             if (await Service.RemoveBinding(subredditName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");

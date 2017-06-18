@@ -5,27 +5,19 @@
 // Licensed under the MIT license.
 // </copyright>
 
-
 namespace Shinoa.Services.TimedServices
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-
     using Attributes;
-
     using BoxKite.Twitter;
     using BoxKite.Twitter.Models;
-
     using Databases;
-
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-
     using Microsoft.EntityFrameworkCore;
-
     using static Databases.TwitterContext;
 
     [Config("twitter")]
@@ -37,17 +29,18 @@ namespace Shinoa.Services.TimedServices
 
         public Color ModuleColor { get; private set; }
 
-        public async Task<bool> AddBinding(string username, IMessageChannel channel)
+        public async Task<BindingStatus> AddBinding(string username, IMessageChannel channel)
         {
+            if (string.IsNullOrEmpty((await twitterSession.GetUserProfile(username)).Name)) return BindingStatus.Error;
             using (var db = new TwitterContext(dbOptions))
             {
                 var twitterBinding = new TwitterBinding
                 {
-                    TwitterUsername = username,
+                    TwitterUsername = username.ToLower(),
                     LatestPost = DateTime.UtcNow,
                 };
 
-                if (db.TwitterChannelBindings.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return false;
+                if (db.TwitterChannelBindings.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return BindingStatus.AlreadyExists;
 
                 db.TwitterChannelBindings.Add(new TwitterChannelBinding
                 {
@@ -56,7 +49,7 @@ namespace Shinoa.Services.TimedServices
                 });
 
                 await db.SaveChangesAsync();
-                return true;
+                return BindingStatus.Added;
             }
         }
 
@@ -155,7 +148,7 @@ namespace Shinoa.Services.TimedServices
                         }
                     }
 
-                    // db.Update(user); // Unnecessary because of tracking queries
+                    db.TwitterBindings.Update(user);
                     await db.SaveChangesAsync();
                 }
             }
