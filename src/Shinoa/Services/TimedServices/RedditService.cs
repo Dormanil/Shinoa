@@ -133,8 +133,7 @@ namespace Shinoa.Services.TimedServices
                     foreach (var post in posts)
                     {
                         var creationTime = DateTimeOffset.FromUnixTimeSeconds((int)post["data"]["created_utc"]);
-                        if (creationTime <= subreddit.LatestPost)
-                            break;
+                        if (creationTime <= subreddit.LatestPost) break;
 
                         var title = WebUtility.HtmlDecode((string)post["data"]["title"]);
                         string username = post["data"]["author"];
@@ -208,8 +207,9 @@ namespace Shinoa.Services.TimedServices
                     if (newestCreationTime > subreddit.LatestPost) subreddit.LatestPost = newestCreationTime;
 
                     db.RedditBindings.Update(subreddit);
-                    await db.SaveChangesAsync();
                 }
+
+                await db.SaveChangesAsync();
             }
         }
     }

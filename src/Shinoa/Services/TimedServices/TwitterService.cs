@@ -119,13 +119,12 @@ namespace Shinoa.Services.TimedServices
                 foreach (var user in db.TwitterBindings.Include(b => b.ChannelBindings))
                 {
                     var response = await twitterSession.GetUserTimeline(user.TwitterUsername);
-                    var newestCreationTime = response.FirstOrDefault()?.Time ?? DateTimeOffset.FromUnixTimeSeconds(0);
+                    var newestCreationTime = response.FirstOrDefault()?.Time.DateTime ?? DateTime.UtcNow;
                     var postStack = new Stack<Embed>();
 
                     foreach (var tweet in response)
                     {
-                        if (tweet.Time <= user.LatestPost) break;
-                        user.LatestPost = tweet.Time.DateTime;
+                        if (tweet.Time.DateTime <= user.LatestPost) break;
 
                         var embed = new EmbedBuilder()
                             .WithUrl($"https://twitter.com/{tweet.User.ScreenName}/status/{tweet.Id}")
@@ -138,7 +137,7 @@ namespace Shinoa.Services.TimedServices
                         postStack.Push(embed.Build());
                     }
 
-                    if (newestCreationTime > user.LatestPost) user.LatestPost = newestCreationTime.DateTime;
+                    if (newestCreationTime > user.LatestPost) user.LatestPost = newestCreationTime;
 
                     foreach (var embed in postStack)
                     {
@@ -149,8 +148,9 @@ namespace Shinoa.Services.TimedServices
                     }
 
                     db.TwitterBindings.Update(user);
-                    await db.SaveChangesAsync();
                 }
+
+                await db.SaveChangesAsync();
             }
         }
     }
