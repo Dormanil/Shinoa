@@ -7,6 +7,7 @@
 
 namespace Shinoa.Modules
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -189,6 +190,7 @@ namespace Shinoa.Modules
         /// Command group to manage image spamming.
         /// </summary>
         [Group("imagespam")]
+        [RequireContext(ContextType.Guild)]
         public class ImageSpamModule : ModuleBase<SocketCommandContext>
         {
             /// <summary>
@@ -201,7 +203,6 @@ namespace Shinoa.Modules
             /// </summary>
             /// <returns></returns>
             [Command("block")]
-            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Block()
             {
@@ -217,7 +218,6 @@ namespace Shinoa.Modules
             /// </summary>
             /// <returns></returns>
             [Command("unblock")]
-            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Unblock()
             {
@@ -233,7 +233,6 @@ namespace Shinoa.Modules
             /// </summary>
             /// <returns></returns>
             [Command("check")]
-            [RequireContext(ContextType.Guild)]
             public async Task Check()
             {
                 var channel = Context.Channel as ITextChannel;
@@ -248,6 +247,7 @@ namespace Shinoa.Modules
         /// Command group to manage command usage for specific users.
         /// </summary>
         [Group("blacklist")]
+        [RequireContext(ContextType.Guild)]
         public class BlacklistModule : ModuleBase<SocketCommandContext>
         {
             /// <summary>
@@ -261,7 +261,6 @@ namespace Shinoa.Modules
             /// <param name="user">The user in question.</param>
             /// <returns></returns>
             [Command("add")]
-            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Add(IGuildUser user)
             {
@@ -277,7 +276,6 @@ namespace Shinoa.Modules
             /// <param name="user">The user in question.</param>
             /// <returns></returns>
             [Command("remove")]
-            [RequireContext(ContextType.Guild)]
             [RequireUserPermission(GuildPermission.MuteMembers)]
             public async Task Remove(IGuildUser user)
             {
@@ -293,7 +291,6 @@ namespace Shinoa.Modules
             /// <param name="user">The user in question.</param>
             /// <returns></returns>
             [Command("check")]
-            [RequireContext(ContextType.Guild)]
             public async Task Check(IGuildUser user = null)
             {
                 if (user == null) user = (IGuildUser) Context.User;
@@ -301,6 +298,117 @@ namespace Shinoa.Modules
                     await ReplyAsync($"Command usage on this server is currently blocked for {user.Mention}.");
                 else
                     await ReplyAsync("Command usage on this server is currently not blocked for that user.");
+            }
+        }
+
+        [Group("badword")]
+        [RequireContext(ContextType.Guild)]
+        public class BadWordModule : ModuleBase<SocketCommandContext>
+        {
+            public BadWordService Service { get; set; }
+
+            [Group("add")]
+            [RequireUserPermission(GuildPermission.ManageChannels)]
+            public class AddBadWordModule : ModuleBase<SocketCommandContext>
+            {
+                public BadWordService Service { get; set; }
+
+                [Command]
+                public async Task Add([Remainder]string badWord)
+                {
+                    switch (await Service.AddBinding(false, Context, badWord))
+                    {
+                        case BindingStatus.AlreadyExists:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it are already blocked in this channel.");
+                            break;
+                        case BindingStatus.Added:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it are now blocked in this channel.");
+                            break;
+                        case BindingStatus.Error:
+                        default:
+                            throw new Exception("!badword add command failed due to an unknown error.");
+                    }
+                }
+
+                [Command("global")]
+                [RequireUserPermission(GuildPermission.ManageGuild)]
+                public async Task AddGlobal([Remainder]string badWord)
+                {
+                    switch (await Service.AddBinding(true, Context, badWord))
+                    {
+                        case BindingStatus.AlreadyExists:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it are already blocked on this server.");
+                            break;
+                        case BindingStatus.Added:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it are now blocked on this server.");
+                            break;
+                        case BindingStatus.Error:
+                        default:
+                            throw new Exception("!badword add global command failed due to an unknown error.");
+                    }
+                }
+            }
+
+            [Group("remove")]
+            [RequireUserPermission(GuildPermission.ManageChannels)]
+            public class RemoveBadWordModule : ModuleBase<SocketCommandContext>
+            {
+                public BadWordService Service { get; set; }
+
+                [Command]
+                public async Task Remove([Remainder]string badWord)
+                {
+                    switch (await Service.RemoveBinding(false, Context, badWord))
+                    {
+                        case BindingStatus.NotExisting:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it were not blocked in this channel.");
+                            break;
+                        case BindingStatus.Removed:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it are now no longer blocked in this channel.");
+                            break;
+                        default:
+                            throw new Exception("!badword remove command failed due to an unknown error.");
+                    }
+                }
+
+                [Command("global")]
+                [RequireUserPermission(GuildPermission.ManageGuild)]
+                public async Task RemoveGlobal([Remainder]string badWord)
+                {
+                    switch (await Service.RemoveBinding(true, Context, badWord))
+                    {
+                        case BindingStatus.NotExisting:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it were not blocked on this server.");
+                            break;
+                        case BindingStatus.Removed:
+                            await ReplyAsync($"Badword `{badWord}` and messages containing it are now no longer blocked on this server.");
+                            break;
+                        case BindingStatus.Error:
+                        default:
+                            throw new Exception("!badword remove global command failed due to an unknown error.");
+                    }
+                }
+            }
+
+            [Command("list")]
+            public async Task List()
+            {
+                var bindings = Service.ListBindings(Context);
+
+                var serverBadWords = bindings
+                    .Where(b => b.Key.isGuild && b.Key.entity.ServerId == Context.Guild.Id)
+                    .SelectMany(b => b.Value)
+                    .Aggregate("The following words or expressions are banned on this server:```", (total, next) => total + $"\n  - {next}") + "\n```";
+                var channelBadWords = bindings
+                    .Where(b => !b.Key.isGuild && b.Key.entity.ServerId == Context.Guild.Id)
+                    .Aggregate("The following words or expressions are banned in the following channels:```", (total, next) => total + $"\n#{(Context.Client.GetChannel(next.Key.entity.ChannelId ?? 0ul) as ITextChannel)?.Name}:{next.Value.Aggregate(string.Empty, (channelTotal, channelNext) => channelTotal + $"\n  - {channelNext}")}\n```");
+
+                var embed = new EmbedBuilder
+                {
+                    Description = serverBadWords + "\n\n" + channelBadWords,
+                };
+
+                await ReplyAsync(string.Empty, embed: embed);
             }
         }
     }
