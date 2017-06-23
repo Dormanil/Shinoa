@@ -36,7 +36,7 @@ namespace Shinoa.Services
                         ServerId = context.Guild.Id,
                     };
 
-                    if (await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.IBadWords.Contains(badWordDbEntry)))
+                    if (await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
                         return BindingStatus.AlreadyExists;
 
                     if (!await db.BadWordServerBindings.AnyAsync(b => b.ServerId == context.Guild.Id))
@@ -44,7 +44,7 @@ namespace Shinoa.Services
                         var serverDbEntry = new BadWordServerBinding
                         {
                             ServerId = context.Guild.Id,
-                            IBadWords = new List<IBadWord>
+                            BadWords = new List<ServerBadWord>
                             {
                                 badWordDbEntry,
                             },
@@ -56,7 +56,7 @@ namespace Shinoa.Services
                         foreach (var server in db.BadWordServerBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
                         {
                             db.BadWordServerBindings.Update(server);
-                            server.IBadWords.Add(badWordDbEntry);
+                            server.BadWords.Add(badWordDbEntry);
                         }
                     }
 
@@ -72,7 +72,7 @@ namespace Shinoa.Services
                         ServerId = context.Guild.Id,
                     };
 
-                    if (await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.IBadWords.Contains(badWordDbEntry)))
+                    if (await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
                         return BindingStatus.AlreadyExists;
 
                     if (!await db.BadWordChannelBindings.AnyAsync(b => b.ChannelId == context.Guild.Id))
@@ -81,7 +81,7 @@ namespace Shinoa.Services
                         {
                             ChannelId = context.Guild.Id,
                             ServerId = context.Guild.Id,
-                            IBadWords = new List<IBadWord>
+                            BadWords = new List<ChannelBadWord>
                             {
                                 badWordDbEntry,
                             },
@@ -93,7 +93,7 @@ namespace Shinoa.Services
                         foreach (var channel in db.BadWordChannelBindings.Include(b => b.BadWords).Where(b => b.ChannelId == context.Channel.Id))
                         {
                             db.BadWordChannelBindings.Update(channel);
-                            channel.IBadWords.Add(badWordDbEntry);
+                            channel.BadWords.Add(badWordDbEntry);
                         }
                     }
 
@@ -115,13 +115,13 @@ namespace Shinoa.Services
                         ServerId = context.Guild.Id,
                     };
 
-                    if (!await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.IBadWords.Contains(badWordDbEntry)))
+                    if (!await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
                         return BindingStatus.NotExisting;
 
                     foreach (var server in db.BadWordServerBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
                     {
                         db.BadWordServerBindings.Update(server);
-                        server.IBadWords.Remove(badWordDbEntry);
+                        server.BadWords.Remove(badWordDbEntry);
                     }
 
                     await db.SaveChangesAsync();
@@ -136,13 +136,13 @@ namespace Shinoa.Services
                         ChannelId = context.Channel.Id,
                     };
 
-                    if (!await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.IBadWords.Contains(badWordDbEntry)))
+                    if (!await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
                         return BindingStatus.NotExisting;
 
                     foreach (var channel in db.BadWordChannelBindings.Include(b => b.BadWords).Where(b => b.ChannelId == context.Channel.Id))
                     {
                         db.BadWordChannelBindings.Update(channel);
-                        channel.IBadWords.Remove(badWordDbEntry);
+                        channel.BadWords.Remove(badWordDbEntry);
                     }
 
                     await db.SaveChangesAsync();
@@ -151,15 +151,15 @@ namespace Shinoa.Services
             }
         }
 
-        public IDictionary<(IBadWordBinding entity, bool isGuild), IEnumerable<string>> ListBindings(ICommandContext context)
+        public IDictionary<(object entity, bool isGuild), IEnumerable<string>> ListBindings(ICommandContext context)
         {
             using (var db = new BadWordContext(dbOptions))
             {
-                IDictionary<(IBadWordBinding entity, bool isGuild), IEnumerable<string>> bindingList = new Dictionary<(IBadWordBinding entity, bool isGuild), IEnumerable<string>>();
+                IDictionary<(object entity, bool isGuild), IEnumerable<string>> bindingList = new Dictionary<(object entity, bool isGuild), IEnumerable<string>>();
                 foreach (var server in db.BadWordServerBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
-                    bindingList.Add((server, true), server.IBadWords.Select(b => b.Entry).ToList());
+                    bindingList.Add((server, true), server.BadWords.Select(b => b.Entry).ToList());
                 foreach (var channel in db.BadWordChannelBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
-                    bindingList.Add((channel, true), channel.IBadWords.Select(b => b.Entry).ToList());
+                    bindingList.Add((channel, true), channel.BadWords.Select(b => b.Entry).ToList());
                 return bindingList;
             }
         }
@@ -184,7 +184,7 @@ namespace Shinoa.Services
 
                     if (serverBindings.Any())
                     {
-                        var badwords = serverBindings.SelectMany(b => b.IBadWords.Select(w => w.Entry));
+                        var badwords = serverBindings.SelectMany(b => b.BadWords.Select(w => w.Entry));
                         if (badwords.Any(w => arg.Content.ToLowerInvariant().Contains(w.ToLowerInvariant())))
                             toBeDeleted = true;
                     }
@@ -192,7 +192,7 @@ namespace Shinoa.Services
 
                 if (channelBindings.Any())
                 {
-                    var badwords = channelBindings.SelectMany(b => b.IBadWords.Select(w => w.Entry));
+                    var badwords = channelBindings.SelectMany(b => b.BadWords.Select(w => w.Entry));
                     if (badwords.Any(w => arg.Content.ToLowerInvariant().Contains(w.ToLowerInvariant())))
                         toBeDeleted = true;
                 }

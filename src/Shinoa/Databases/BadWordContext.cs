@@ -21,20 +21,6 @@ namespace Shinoa.Databases
         {
         }
 
-        public interface IBadWordBinding
-        {
-            ulong? ChannelId { get; set; }
-
-            ulong ServerId { get; set; }
-
-            List<IBadWord> IBadWords { get; set; }
-        }
-
-        public interface IBadWord
-        {
-            string Entry { get; set; }
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder
@@ -69,13 +55,13 @@ namespace Shinoa.Databases
 
         public DbSet<BadWordServerBinding> BadWordServerBindings { get; set; }
 
-        public class BadWordChannelBinding : IBadWordBinding
+        public class BadWordChannelBinding
         {
             [Key]
             public string ChannelIdString { get; set; }
 
             [NotMapped]
-            public ulong? ChannelId
+            public ulong ChannelId
             {
                 get => ulong.Parse(ChannelIdString);
                 set => ChannelIdString = value.ToString();
@@ -91,16 +77,9 @@ namespace Shinoa.Databases
             }
 
             public List<ChannelBadWord> BadWords { get; set; }
-
-            [NotMapped]
-            public List<IBadWord> IBadWords
-            {
-                get => BadWords.Cast<IBadWord>().ToList();
-                set => BadWords = value.Cast<ChannelBadWord>().ToList();
-            }
         }
 
-        public class BadWordServerBinding : IBadWordBinding
+        public class BadWordServerBinding
         {
             [Key]
             public string ServerIdString { get; set; }
@@ -113,19 +92,9 @@ namespace Shinoa.Databases
             }
 
             public List<ServerBadWord> BadWords { get; set; }
-
-            [NotMapped]
-            public List<IBadWord> IBadWords
-            {
-                get => BadWords.Cast<IBadWord>().ToList();
-                set => BadWords = value.Cast<ServerBadWord>().ToList();
-            }
-
-            [NotMapped]
-            public ulong? ChannelId { get { return null; } set { } }
         }
 
-        public class ServerBadWord : IBadWord
+        public class ServerBadWord
         {
             public string ServerIdString { get; set; }
 
@@ -139,7 +108,7 @@ namespace Shinoa.Databases
             public string Entry { get; set; }
         }
 
-        public class ChannelBadWord : IBadWord
+        public class ChannelBadWord
         {
             public string ChannelIdString { get; set; }
 

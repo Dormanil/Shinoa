@@ -14,6 +14,7 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
     using Services;
+    using static Databases.BadWordContext;
 
     /// <summary>
     /// Module for Moderative uses.
@@ -396,12 +397,12 @@ namespace Shinoa.Modules
                 var bindings = Service.ListBindings(Context);
 
                 var serverBadWords = bindings
-                    .Where(b => b.Key.isGuild && b.Key.entity.ServerId == Context.Guild.Id)
+                    .Where(b => b.Key.isGuild && (b.Key.entity as BadWordServerBinding)?.ServerId == Context.Guild.Id)
                     .SelectMany(b => b.Value)
                     .Aggregate("The following words or expressions are banned on this server:```", (total, next) => total + $"\n  - {next}") + "\n```";
                 var channelBadWords = bindings
-                    .Where(b => !b.Key.isGuild && b.Key.entity.ServerId == Context.Guild.Id)
-                    .Aggregate("The following words or expressions are banned in the following channels:```", (total, next) => total + $"\n#{(Context.Client.GetChannel(next.Key.entity.ChannelId ?? 0ul) as ITextChannel)?.Name}:{next.Value.Aggregate(string.Empty, (channelTotal, channelNext) => channelTotal + $"\n  - {channelNext}")}\n```");
+                    .Where(b => !b.Key.isGuild && (b.Key.entity as BadWordChannelBinding)?.ServerId == Context.Guild.Id)
+                    .Aggregate("The following words or expressions are banned in the following channels:```", (total, next) => total + $"\n#{(Context.Client.GetChannel((next.Key.entity as BadWordChannelBinding)?.ChannelId ?? 0ul) as ITextChannel)?.Name}:{next.Value.Aggregate(string.Empty, (channelTotal, channelNext) => channelTotal + $"\n  - {channelNext}")}\n```");
 
                 var embed = new EmbedBuilder
                 {
