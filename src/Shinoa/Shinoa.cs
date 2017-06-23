@@ -5,6 +5,8 @@
 // Licensed under the MIT license.
 // </copyright>
 
+using MySQL.Data.EntityFrameworkCore.Extensions;
+
 namespace Shinoa
 {
     using System;
@@ -146,14 +148,15 @@ namespace Shinoa
         {
             #region Prerequisites
 
-            var configurationFileStream = Alpha
-                ? new FileStream("config_alpha.yaml", FileMode.Open)
-                : new FileStream("config.yaml", FileMode.Open);
-
             InitLoggingToFile();
 
             Console.Title = $"Shinoa v{Version}";
 
+            var configurationFileStream = Alpha
+                ? new FileStream("config_alpha.yaml", FileMode.Open)
+                : new FileStream("config.yaml", FileMode.Open);
+
+            using (configurationFileStream) // Ensure closure of FileStream object after the config file is loaded
             using (var streamReader = new StreamReader(configurationFileStream))
             {
                 var deserializer = new Deserializer();
@@ -212,6 +215,9 @@ namespace Shinoa
                         break;
                     case DatabaseProvider.SQLServer:
                         optionsBuilder.UseSqlServer(connectString);
+                        break;
+                    case DatabaseProvider.MySQL:
+                        optionsBuilder.UseMySQL(connectString);
                         break;
                     default:
                         await LogError("The given database provider was invalid. Exiting.");
