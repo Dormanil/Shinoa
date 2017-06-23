@@ -10,6 +10,7 @@ namespace Shinoa.Databases
     public enum DatabaseProvider
     {
         SQLServer = 1,
-        PostgreSQL = 2
+        PostgreSQL,
+        MySQL
     }
 }
