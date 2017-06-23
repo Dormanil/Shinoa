@@ -174,6 +174,7 @@ namespace Shinoa.Services
 
         private async Task Handler(SocketMessage arg)
         {
+            if (arg.Content.StartsWith($"{(string)Shinoa.Config["global"]["command_prefix"]}badword")) return;
             using (var db = new BadWordContext(dbOptions))
             {
                 var toBeDeleted = false;

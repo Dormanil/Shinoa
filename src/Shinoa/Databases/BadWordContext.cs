@@ -7,6 +7,7 @@
 
 namespace Shinoa.Databases
 {
+    using System;
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
     using System.ComponentModel.DataAnnotations.Schema;
@@ -94,7 +95,7 @@ namespace Shinoa.Databases
             public List<ServerBadWord> BadWords { get; set; }
         }
 
-        public class ServerBadWord
+        public class ServerBadWord : IEquatable<ServerBadWord>
         {
             public string ServerIdString { get; set; }
 
@@ -106,9 +107,33 @@ namespace Shinoa.Databases
             }
 
             public string Entry { get; set; }
+
+            public static bool operator ==(ServerBadWord left, ServerBadWord right)
+            {
+                return Equals(left, right);
+            }
+
+            public static bool operator !=(ServerBadWord left, ServerBadWord right)
+            {
+                return !Equals(left, right);
+            }
+
+            public bool Equals(ServerBadWord other)
+            {
+                if (ReferenceEquals(null, other)) return false;
+                if (ReferenceEquals(this, other)) return true;
+                return string.Equals(ServerIdString, other.ServerIdString) && string.Equals(Entry, other.Entry);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                return obj.GetType() == this.GetType() && Equals((ServerBadWord)obj);
+            }
         }
 
-        public class ChannelBadWord
+        public class ChannelBadWord : IEquatable<ChannelBadWord>
         {
             public string ChannelIdString { get; set; }
 
@@ -129,6 +154,30 @@ namespace Shinoa.Databases
             }
 
             public string Entry { get; set; }
+
+            public static bool operator ==(ChannelBadWord left, ChannelBadWord right)
+            {
+                return Equals(left, right);
+            }
+
+            public static bool operator !=(ChannelBadWord left, ChannelBadWord right)
+            {
+                return !Equals(left, right);
+            }
+
+            public bool Equals(ChannelBadWord other)
+            {
+                if (ReferenceEquals(null, other)) return false;
+                if (ReferenceEquals(this, other)) return true;
+                return string.Equals(ChannelIdString, other.ChannelIdString) && string.Equals(ServerIdString, other.ServerIdString) && string.Equals(Entry, other.Entry);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                return obj.GetType() == this.GetType() && Equals((ChannelBadWord)obj);
+            }
         }
     }
 }

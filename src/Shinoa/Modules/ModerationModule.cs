@@ -367,6 +367,7 @@ namespace Shinoa.Modules
                         case BindingStatus.Removed:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are now no longer blocked in this channel.");
                             break;
+                        case BindingStatus.Error:
                         default:
                             throw new Exception("!badword remove command failed due to an unknown error.");
                     }
