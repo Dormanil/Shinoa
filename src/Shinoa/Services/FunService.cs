@@ -72,11 +72,11 @@ namespace Shinoa.Services
                     await m.Channel.SendMessageAsync(@"/o/");
                     break;
                 default:
-                    if (m.Content.ToLower() == "wake me up")
+                    if (m.Content.Trim().TrimEnd('.').ToLower() == "wake me up")
                     {
-                        await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname : m.Author.Username)} up inside._");
+                        await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname ?? m.Author.Username : m.Author.Username)} up inside._");
                     }
-                    else if (m.Content.ToLower().StartsWith("wake") && m.Content.ToLower().EndsWith("up"))
+                    else if (m.Content.Trim().TrimEnd('.').ToLower().StartsWith("wake") && m.Content.Trim().TrimEnd('.').ToLower().EndsWith("up"))
                     {
                         var messageArray = m.Content.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
                             .Skip(1)
@@ -85,6 +85,15 @@ namespace Shinoa.Services
                             .Reverse();
 
                         await m.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} up inside._");
+                    }
+                    else if (m.Content.Trim().TrimEnd('.').ToLower().StartsWith("these aren't the") &&
+                             m.Content.Trim().TrimEnd('.').ToLower().EndsWith("you're looking for"))
+                    {
+                        var messageArray = m.Content.Split(new[] { " ", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                            .Reverse()
+                            .Skip(3)
+                            .Reverse();
+                        await m.Channel.SendMessageAsync($"{messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} I'm looking for.");
                     }
 
                     break;
