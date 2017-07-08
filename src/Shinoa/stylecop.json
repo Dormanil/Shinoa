@@ -9,7 +9,7 @@
   "settings": {
     "documentationRules": {
       "companyName": "The Shinoa Development Team",
-      "copyrightText": "Copyright (c) 2016 - 2017 OmegaVesko.\nCopyright (c)        2017 {companyName}.\nAll rights reserved.\nLicensed under the MIT license."
+      "copyrightText": "Copyright (c) 2016 - 2017 OmegaVesko.\nCopyright (c)        2017 {companyName}.\nLicensed under the MIT license."
     }
   }
 }

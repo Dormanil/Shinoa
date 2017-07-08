@@ -1,7 +1,6 @@
 ﻿// <copyright file="DbContextFactory.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -11,6 +10,8 @@ namespace Shinoa.Databases.Migrations
     using System.IO;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.EntityFrameworkCore.Infrastructure;
+
+    using MySQL.Data.EntityFrameworkCore.Extensions;
 
     /// <summary>
     /// A factory for creating migrations.
@@ -37,13 +38,16 @@ namespace Shinoa.Databases.Migrations
                 case DatabaseProvider.PostgreSQL:
                     optionsBuilder.UseNpgsql(connectionString);
                     break;
+                case DatabaseProvider.MySQL:
+                    optionsBuilder.UseMySQL(connectionString);
+                    break;
                 default:
                     throw new NotSupportedException("The given database provider is not supported.");
             }
 
-            options = optionsBuilder.Options;
+            Options = optionsBuilder.Options;
         }
 
-        protected readonly DbContextOptions options;
-    }
+        protected DbContextOptions Options { get; }
+}
 }

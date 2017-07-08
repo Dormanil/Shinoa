@@ -1,16 +1,14 @@
 ﻿// <copyright file="BlacklistService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
-
-using System.Threading.Tasks;
 
 namespace Shinoa.Services
 {
     using System;
     using System.Linq;
+    using System.Threading.Tasks;
     using Databases;
     using Discord;
     using Microsoft.EntityFrameworkCore;
@@ -22,7 +20,7 @@ namespace Shinoa.Services
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
         }
 
         public async Task<bool> RemoveBinding(IEntity<ulong> guild)

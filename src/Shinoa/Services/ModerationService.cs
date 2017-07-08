@@ -1,11 +1,8 @@
 ﻿// <copyright file="ModerationService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
-
-using Microsoft.EntityFrameworkCore;
 
 namespace Shinoa.Services
 {
@@ -16,6 +13,7 @@ namespace Shinoa.Services
     using Discord;
     using Discord.Net;
     using Discord.WebSocket;
+    using Microsoft.EntityFrameworkCore;
     using static Databases.ImageSpamContext;
 
     public class ModerationService : IDatabaseService
@@ -58,7 +56,7 @@ namespace Shinoa.Services
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
 
             var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += Handler;

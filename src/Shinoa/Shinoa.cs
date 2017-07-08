@@ -1,11 +1,8 @@
 ﻿// <copyright file="Shinoa.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
-
-using MySQL.Data.EntityFrameworkCore.Extensions;
 
 namespace Shinoa
 {
@@ -17,23 +14,17 @@ namespace Shinoa
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-
     using Attributes;
-
     using Databases;
-
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
-
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.DependencyInjection;
-
+    using MySQL.Data.EntityFrameworkCore.Extensions;
     using Services;
     using Services.TimedServices;
-
     using YamlDotNet.Serialization;
-
     using static Logging;
 
     public static class Shinoa
@@ -51,8 +42,8 @@ namespace Shinoa
         });
 
         private static readonly IServiceCollection Map = new ServiceCollection();
-        private static IServiceProvider provider;
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
+        private static IServiceProvider provider;
         private static Timer globalRefreshTimer;
 
         public static dynamic Config { get; private set; }

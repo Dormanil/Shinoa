@@ -1,16 +1,15 @@
 ﻿// <copyright file="BadWordContextFactory.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
 namespace Shinoa.Databases.Migrations
 {
-    using Microsoft.EntityFrameworkCore.Infrastructure;
+    using Microsoft.EntityFrameworkCore.Design;
 
-    public class BadWordContextFactory : DbContextFactory, IDbContextFactory<BadWordContext>
+    public class BadWordContextFactory : DbContextFactory, IDesignTimeDbContextFactory<BadWordContext>
     {
-        public BadWordContext Create(string[] args) => new BadWordContext(options);
+        public BadWordContext CreateDbContext(string[] args) => new BadWordContext(Options);
     }
 }

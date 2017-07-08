@@ -1,7 +1,6 @@
 ﻿// <copyright file="BadWordService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -166,10 +165,31 @@ namespace Shinoa.Services
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database options were not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             client.MessageReceived += Handler;
+        }
+
+        // Does both channel and server if applicable, because that's the only thing that makes sense.
+        // TODO: Switch the interface to ICommandContext instead.
+        async Task<bool> IDatabaseService.RemoveBinding(IEntity<ulong> binding)
+        {
+            var response = false;
+            if (client.GetChannel(binding.Id) is ITextChannel channel)
+            {
+                response = await RemoveChannelBinding(channel);
+            }
+
+            if (client.GetGuild(binding.Id) is IGuild guild)
+            {
+                var response2 = await RemoveGuildBinding(guild);
+                return response && response2;
+            }
+            else
+            {
+                return response;
+            }
         }
 
         private async Task Handler(SocketMessage arg)
@@ -200,27 +220,6 @@ namespace Shinoa.Services
 
                 if (toBeDeleted)
                     await arg.DeleteAsync();
-            }
-        }
-
-        // Does both channel and server if applicable, because that's the only thing that makes sense.
-        // TODO: Switch the interface to ICommandContext instead.
-        async Task<bool> IDatabaseService.RemoveBinding(IEntity<ulong> binding)
-        {
-            var response = false;
-            if (client.GetChannel(binding.Id) is ITextChannel channel)
-            {
-                response = await RemoveChannelBinding(channel);
-            }
-
-            if (client.GetGuild(binding.Id) is IGuild guild)
-            {
-                var response2 = await RemoveGuildBinding(guild);
-                return response && response2;
-            }
-            else
-            {
-                return response;
             }
         }
 

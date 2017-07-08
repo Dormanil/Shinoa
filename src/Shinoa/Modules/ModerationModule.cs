@@ -1,7 +1,6 @@
 ﻿// <copyright file="ModerationModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -294,7 +293,7 @@ namespace Shinoa.Modules
             [Command("check")]
             public async Task Check(IGuildUser user = null)
             {
-                if (user == null) user = (IGuildUser) Context.User;
+                if (user == null) user = (IGuildUser)Context.User;
                 if (Service.CheckBinding(Context.Guild, user))
                     await ReplyAsync($"Command usage on this server is currently blocked for {user.Mention}.");
                 else
@@ -307,6 +306,27 @@ namespace Shinoa.Modules
         public class BadWordModule : ModuleBase<SocketCommandContext>
         {
             public BadWordService Service { get; set; }
+
+            [Command("list")]
+            public async Task List()
+            {
+                var bindings = Service.ListBindings(Context);
+
+                var serverBadWords = bindings
+                    .Where(b => b.Key.isGuild && (b.Key.entity as BadWordServerBinding)?.ServerId == Context.Guild.Id)
+                    .SelectMany(b => b.Value)
+                    .Aggregate("The following words or expressions are banned on this server:```", (total, next) => total + $"\n  - {next}") + "\n```";
+                var channelBadWords = bindings
+                    .Where(b => !b.Key.isGuild && (b.Key.entity as BadWordChannelBinding)?.ServerId == Context.Guild.Id)
+                    .Aggregate("The following words or expressions are banned in the following channels:```", (total, next) => total + $"\n#{(Context.Client.GetChannel((next.Key.entity as BadWordChannelBinding)?.ChannelId ?? 0ul) as ITextChannel)?.Name}:{next.Value.Aggregate(string.Empty, (channelTotal, channelNext) => channelTotal + $"\n  - {channelNext}")}\n```");
+
+                var embed = new EmbedBuilder
+                {
+                    Description = serverBadWords + "\n\n" + channelBadWords,
+                };
+
+                await ReplyAsync(string.Empty, embed: embed);
+            }
 
             [Group("add")]
             [RequireUserPermission(GuildPermission.ManageChannels)]
@@ -390,27 +410,6 @@ namespace Shinoa.Modules
                             throw new Exception("!badword remove global command failed due to an unknown error.");
                     }
                 }
-            }
-
-            [Command("list")]
-            public async Task List()
-            {
-                var bindings = Service.ListBindings(Context);
-
-                var serverBadWords = bindings
-                    .Where(b => b.Key.isGuild && (b.Key.entity as BadWordServerBinding)?.ServerId == Context.Guild.Id)
-                    .SelectMany(b => b.Value)
-                    .Aggregate("The following words or expressions are banned on this server:```", (total, next) => total + $"\n  - {next}") + "\n```";
-                var channelBadWords = bindings
-                    .Where(b => !b.Key.isGuild && (b.Key.entity as BadWordChannelBinding)?.ServerId == Context.Guild.Id)
-                    .Aggregate("The following words or expressions are banned in the following channels:```", (total, next) => total + $"\n#{(Context.Client.GetChannel((next.Key.entity as BadWordChannelBinding)?.ChannelId ?? 0ul) as ITextChannel)?.Name}:{next.Value.Aggregate(string.Empty, (channelTotal, channelNext) => channelTotal + $"\n  - {channelNext}")}\n```");
-
-                var embed = new EmbedBuilder
-                {
-                    Description = serverBadWords + "\n\n" + channelBadWords,
-                };
-
-                await ReplyAsync(string.Empty, embed: embed);
             }
         }
     }

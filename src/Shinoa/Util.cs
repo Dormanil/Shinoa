@@ -1,7 +1,6 @@
 ﻿// <copyright file="Util.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -96,7 +95,7 @@ namespace Shinoa
             return source.Where((x, i) => i % step == 0);
         }
 
-        public static KeyValuePair<T1, T2> ToKeyValuePair<T1, T2>(this (T1, T2) tuple)
+        public static KeyValuePair<T1, T2> ToKeyValuePair<T1, T2>(this(T1, T2) tuple)
         {
             return new KeyValuePair<T1, T2>(tuple.Item1, tuple.Item2);
         }
