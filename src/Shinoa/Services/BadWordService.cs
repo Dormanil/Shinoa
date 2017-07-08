@@ -35,7 +35,7 @@ namespace Shinoa.Services
                         ServerId = context.Guild.Id,
                     };
 
-                    if (await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
+                    if (await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.BadWords.Any(e => e == badWordDbEntry)))
                         return BindingStatus.AlreadyExists;
 
                     if (!await db.BadWordServerBindings.AnyAsync(b => b.ServerId == context.Guild.Id))
@@ -71,7 +71,7 @@ namespace Shinoa.Services
                         ServerId = context.Guild.Id,
                     };
 
-                    if (await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
+                    if (await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.BadWords.Any(e => e == badWordDbEntry)))
                         return BindingStatus.AlreadyExists;
 
                     if (!await db.BadWordChannelBindings.AnyAsync(b => b.ChannelId == context.Guild.Id))
@@ -114,7 +114,7 @@ namespace Shinoa.Services
                         ServerId = context.Guild.Id,
                     };
 
-                    if (!await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
+                    if (!await db.BadWordServerBindings.Include(b => b.BadWords).AnyAsync(b => b.ServerId == context.Guild.Id && b.BadWords.Any(e => e == badWordDbEntry)))
                         return BindingStatus.NotExisting;
 
                     foreach (var server in db.BadWordServerBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
@@ -135,7 +135,7 @@ namespace Shinoa.Services
                         ChannelId = context.Channel.Id,
                     };
 
-                    if (!await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.BadWords.Contains(badWordDbEntry)))
+                    if (!await db.BadWordChannelBindings.Include(b => b.BadWords).AnyAsync(b => b.ChannelId == context.Guild.Id && b.BadWords.Any(e => e == badWordDbEntry)))
                         return BindingStatus.NotExisting;
 
                     foreach (var channel in db.BadWordChannelBindings.Include(b => b.BadWords).Where(b => b.ChannelId == context.Channel.Id))
