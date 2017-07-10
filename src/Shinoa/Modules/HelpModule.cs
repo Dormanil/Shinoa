@@ -23,9 +23,9 @@ namespace Shinoa.Modules
         /// <param name="arg">Unwanted argument, the command won't do anything if there is one.</param>
         /// <returns></returns>
         [Command("help")]
-        public async Task HelpMessage([Remainder]string arg)
+        public async Task HelpMessage([Remainder]string arg = null)
         {
-            if (string.IsNullOrWhiteSpace(arg)) return;
+            if (!string.IsNullOrWhiteSpace(arg)) return;
 
             var embed = new EmbedBuilder()
                     .AddField(f => f.WithName("Command List").WithValue("http://dormanil.github.io/Shinoa/commands.html"))
