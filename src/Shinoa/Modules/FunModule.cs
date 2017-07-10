@@ -1,7 +1,6 @@
 ﻿// <copyright file="FunModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -36,7 +35,7 @@ namespace Shinoa.Modules
         [Alias("choose")]
         public async Task Pick([Remainder]string args)
         {
-            if (Service.CheckBinding(Context.Channel as ITextChannel))
+            if (Service.CheckBinding(Context.Channel))
             {
                 await ReplyAsync("This command is currently not available.");
                 return;
@@ -61,7 +60,7 @@ namespace Shinoa.Modules
         [Alias("rolldice")]
         public async Task RollDice(string arg)
         {
-            if (Service.CheckBinding(Context.Channel as ITextChannel))
+            if (Service.CheckBinding(Context.Channel))
             {
                 await ReplyAsync("This command is currently not available.");
                 return;
@@ -110,7 +109,7 @@ namespace Shinoa.Modules
         [Command("lenny")]
         public async Task LennyFace()
         {
-            if (Service.CheckBinding(Context.Channel as ITextChannel))
+            if (Service.CheckBinding(Context.Channel))
             {
                 await ReplyAsync("This command is currently not available.");
                 return;
@@ -147,8 +146,8 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Enable()
             {
-                var channel = Context.Channel as ITextChannel;
-                if (Service.AddBinding(channel))
+                var channel = Context.Channel;
+                if (await Service.AddBinding(channel))
                     await ReplyAsync($"Usage of fun commands and responses in this channel (#{channel.Name}) is no longer blocked.");
                 else
                     await ReplyAsync("Usage of fun commands and responses in this channel was not blocked.");
@@ -163,8 +162,8 @@ namespace Shinoa.Modules
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public async Task Disable()
             {
-                var channel = Context.Channel as ITextChannel;
-                if (Service.RemoveBinding(channel))
+                var channel = Context.Channel;
+                if (await Service.RemoveBinding(channel))
                     await ReplyAsync($"Usage of fun commands and responses in this channel (#{channel.Name}) is now blocked.");
                 else
                     await ReplyAsync("Usage of fun commands and responses in this channel is already blocked.");
@@ -178,7 +177,7 @@ namespace Shinoa.Modules
             [RequireContext(ContextType.Guild)]
             public async Task Check()
             {
-                var channel = Context.Channel as ITextChannel;
+                var channel = Context.Channel;
                 if (Service.CheckBinding(channel))
                     await ReplyAsync("Usage of fun commands and responses in this channel is blocked.");
                 else

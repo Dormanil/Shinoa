@@ -1,75 +1,85 @@
 ﻿// <copyright file="BlacklistService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
 namespace Shinoa.Services
 {
+    using System;
     using System.Linq;
+    using System.Threading.Tasks;
+    using Databases;
     using Discord;
-    using Discord.Commands;
-    using SQLite;
+    using Microsoft.EntityFrameworkCore;
+    using static Databases.BlacklistUserContext;
 
+    /// <summary>
+    /// Service for adding and removing users from being able to use bot functions.
+    /// </summary>
     public class BlacklistService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private DbContextOptions dbOptions;
 
-        public void Init(dynamic config, IDependencyMap map)
+        /// <inheritdoc cref="IService.Init"/>
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<BlacklistUserBinding>();
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
         }
 
-        public bool RemoveBinding(IEntity<ulong> guild)
+        /// <inheritdoc cref="IDatabaseService.RemoveBinding"/>
+        public async Task<bool> RemoveBinding(IEntity<ulong> guild)
         {
-            var guildId = guild.Id.ToString();
-            return db.Table<BlacklistUserBinding>().Delete(b => b.GuildId == guildId) != 0;
-        }
-
-        public bool AddBinding(IGuild guild, IGuildUser user)
-        {
-            var guildId = guild.Id.ToString();
-            var userId = user.Id.ToString();
-            if (db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId)) return false;
-
-            db.Insert(new BlacklistUserBinding
+            using (var db = new BlacklistUserContext(dbOptions))
             {
-                GuildId = guildId,
-                UserId = userId,
-            });
-            return true;
+                var entities = db.BlacklistUserBindings.Where(b => b.GuildId == guild.Id);
+                if (!entities.Any()) return false;
+
+                db.BlacklistUserBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
-        public bool RemoveBinding(IGuild guild, IGuildUser user)
+        /// <summary>
+        /// Adds a binding to blacklist a user in a specific guild to not be able to use botfunctions.
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public async Task<bool> AddBinding(IGuild guild, IGuildUser user)
         {
-            var guildId = guild.Id.ToString();
-            var userId = user.Id.ToString();
-            if (!db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId)) return false;
-
-            db.Delete(new BlacklistUserBinding
+            using (var db = new BlacklistUserContext(dbOptions))
             {
-                GuildId = guildId,
-                UserId = userId,
-            });
-            return true;
+                if (db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
+
+                db.BlacklistUserBindings.Add(new BlacklistUserBinding
+                {
+                    GuildId = guild.Id,
+                    UserId = user.Id,
+                });
+                await db.SaveChangesAsync();
+                return true;
+            }
+        }
+
+        public async Task<bool> RemoveBinding(IGuild guild, IGuildUser user)
+        {
+            using (var db = new BlacklistUserContext(dbOptions))
+            {
+                var entity = await db.BlacklistUserBindings.FirstOrDefaultAsync(b => b.GuildId == guild.Id && b.UserId == user.Id);
+                if (entity == null) return false;
+
+                db.BlacklistUserBindings.Remove(entity);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
         public bool CheckBinding(IGuild guild, IGuildUser user)
         {
-            var guildId = guild.Id.ToString();
-            var userId = user.Id.ToString();
-            return db.Table<BlacklistUserBinding>().Any(b => b.GuildId == guildId && b.UserId == userId);
-        }
-
-        public class BlacklistUserBinding
-        {
-            [Indexed]
-            public string GuildId { get; set; }
-
-            [Indexed]
-            public string UserId { get; set; }
+            using (var db = new BlacklistUserContext(dbOptions))
+            return db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
         }
     }
 }

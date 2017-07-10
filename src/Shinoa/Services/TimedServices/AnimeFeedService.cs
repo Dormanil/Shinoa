@@ -1,7 +1,6 @@
 ﻿// <copyright file="AnimeFeedService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -17,42 +16,52 @@ namespace Shinoa.Services.TimedServices
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Xml.Linq;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+    using Microsoft.EntityFrameworkCore;
+    using static Databases.AnimeFeedContext;
 
     public class AnimeFeedService : IDatabaseService, ITimedService
     {
         private static readonly Color ModuleColor = new Color(0, 150, 136);
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.si/") };
-        private SQLiteConnection db;
+        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
-        public bool AddBinding(IMessageChannel channel)
+        public async Task<bool> AddBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            if (db.Table<AnimeFeedBinding>().Any(b => b.ChannelId == channelId)) return false;
-
-            db.Insert(new AnimeFeedBinding
+            using (var db = new AnimeFeedContext(dbOptions))
             {
-                ChannelId = channelId,
-            });
-            return true;
+                if (db.AnimeFeedBindings.Any(b => b.ChannelId == channel.Id)) return false;
+
+                db.AnimeFeedBindings.Add(new AnimeFeedBinding
+                {
+                    ChannelId = channel.Id,
+                });
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            return db.Delete<AnimeFeedBinding>(bindingId) != 0;
+            using (var db = new AnimeFeedContext(dbOptions))
+            {
+                var entities = db.AnimeFeedBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
+
+                db.AnimeFeedBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<AnimeFeedBinding>();
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
 
-            client = map.Get<DiscordSocketClient>();
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
         }
 
         async Task ITimedService.Callback()
@@ -69,14 +78,12 @@ namespace Shinoa.Services.TimedServices
 
             var newestCreationTimeString = entries[0].Elements()
                 .First(i => i.Name.LocalName == "pubDate").Value.Replace(" -0000", string.Empty);
-            var newestCreationTime = new DateTimeOffset(DateTime.ParseExact(
-                newestCreationTimeString, "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
+            var newestCreationTime = DateTime.ParseExact(newestCreationTimeString, "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture);
             var postStack = new Stack<Embed>();
 
             foreach (var entry in entries)
             {
-                var creationTime = new DateTimeOffset(DateTime.ParseExact(
-                    entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value.Replace(" -0000", string.Empty), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
+                var creationTime = DateTime.ParseExact(entry.Elements().First(i => i.Name.LocalName.ToLower() == "pubdate").Value.Replace(" -0000", string.Empty), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture);
                 if (creationTime <= AnimeFeedBinding.LatestPost) break;
 
                 var title = entry.Elements().First(i => i.Name.LocalName == "title").Value;
@@ -107,18 +114,8 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            return db.Table<AnimeFeedBinding>()
-                .Where(binding => client.GetChannel(ulong.Parse(binding.ChannelId)) is ITextChannel)
-                .Cast<IMessageChannel>()
-                .ToList();
-        }
-
-        private class AnimeFeedBinding
-        {
-            public static DateTimeOffset LatestPost { get; set; } = DateTimeOffset.UtcNow;
-
-            [PrimaryKey]
-            public string ChannelId { get; set; }
+            using (var db = new AnimeFeedContext(dbOptions))
+                return db.AnimeFeedBindings.Select(binding => client.GetChannel(binding.ChannelId)).OfType<IMessageChannel>().ToList();
         }
     }
 }

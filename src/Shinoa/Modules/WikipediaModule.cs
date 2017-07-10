@@ -1,7 +1,6 @@
 ﻿// <copyright file="WikipediaModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -16,12 +15,20 @@ namespace Shinoa.Modules
     using Microsoft.CSharp.RuntimeBinder;
     using Newtonsoft.Json;
 
+    /// <summary>
+    /// Module to search Wikipedia.
+    /// </summary>
     [RequireNotBlacklisted]
     public class WikipediaModule : ModuleBase<SocketCommandContext>
     {
         private static readonly Color ModuleColor = new Color(33, 150, 243);
         private static readonly HttpClient HttpClient = new HttpClient { BaseAddress = new Uri("https://en.wikipedia.org/w/") };
 
+        /// <summary>
+        /// Searches Wikipedia.
+        /// </summary>
+        /// <param name="queryText">Query to search for.</param>
+        /// <returns></returns>
         [Command("wiki")]
         [Alias("wikipedia", "wikisearch")]
         public async Task WikipediaSearch([Remainder]string queryText)

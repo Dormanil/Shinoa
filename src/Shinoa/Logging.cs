@@ -1,7 +1,6 @@
 ﻿// <copyright file="Logging.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -149,7 +148,7 @@ namespace Shinoa
                 {
                     foreach (var path in Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), ".logs")))
                     {
-                        archive.CreateEntryFromFile(path, Path.GetFileName(path));
+                        archive.CreateEntry(path);
                         File.Delete(path);
                     }
                 }

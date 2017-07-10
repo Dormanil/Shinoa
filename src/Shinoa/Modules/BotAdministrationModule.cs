@@ -1,7 +1,6 @@
 ﻿// <copyright file="BotAdministrationModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -136,6 +135,11 @@ namespace Shinoa.Modules
             Shinoa.Cts.CancelAfter(2000);
         }
 
+        /// <summary>
+        /// Command to leave the server.
+        /// </summary>
+        /// <param name="args">Optional: ID of the Guild to leave.</param>
+        /// <returns></returns>
         [Command("leave")]
         [RequireOwner]
         public async Task Leave([Remainder]string args = null)

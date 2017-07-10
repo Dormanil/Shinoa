@@ -1,7 +1,6 @@
 ﻿// <copyright file="MALService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -16,7 +15,6 @@ namespace Shinoa.Services
     using System.Xml.Linq;
     using Attributes;
     using Discord;
-    using Discord.Commands;
 
     [Config("mal")]
     public class MalService : IService
@@ -132,7 +130,7 @@ namespace Shinoa.Services
             }
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             httpClient.SetBasicHttpCredentials((string)config["username"], (string)config["password"]);
 

@@ -1,7 +1,6 @@
 ﻿// <copyright file="TwitterService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -14,102 +13,84 @@ namespace Shinoa.Services.TimedServices
     using Attributes;
     using BoxKite.Twitter;
     using BoxKite.Twitter.Models;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+    using Microsoft.EntityFrameworkCore;
+    using static Databases.TwitterContext;
 
     [Config("twitter")]
     public class TwitterService : IDatabaseService, ITimedService
     {
-        private SQLiteConnection db;
+        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
         private ApplicationSession twitterSession;
 
         public Color ModuleColor { get; private set; }
 
-        public bool AddBinding(string username, IMessageChannel channel)
+        public async Task<BindingStatus> AddBinding(string username, IMessageChannel channel)
         {
-            var name = username.ToLower();
-            var channelId = channel.Id.ToString();
-
-            if (db.Table<TwitterChannelBinding>()
-                    .Any(b => b.ChannelId == channelId && b.TwitterUsername == name)) return false;
-
-            if (db.Table<TwitterBinding>().All(b => b.TwitterUsername != name))
+            if (string.IsNullOrEmpty((await twitterSession.GetUserProfile(username)).Name)) return BindingStatus.Error;
+            using (var db = new TwitterContext(dbOptions))
             {
-                db.Insert(new TwitterBinding
+                var twitterBinding = new TwitterBinding
                 {
-                    TwitterUsername = name,
-                    LatestPost = DateTimeOffset.UtcNow,
-                });
-            }
+                    TwitterUsername = username.ToLower(),
+                    LatestPost = DateTime.UtcNow,
+                };
 
-            db.Insert(new TwitterChannelBinding
-            {
-                TwitterUsername = name,
-                ChannelId = channelId,
-            });
-            return true;
+                if (db.TwitterChannelBindings.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return BindingStatus.AlreadyExists;
+
+                db.TwitterChannelBindings.Add(new TwitterChannelBinding
+                {
+                    TwitterBinding = twitterBinding,
+                    ChannelId = channel.Id,
+                });
+
+                await db.SaveChangesAsync();
+                return BindingStatus.Added;
+            }
         }
 
-        public bool RemoveBinding(string username, IMessageChannel channel)
+        public async Task<bool> RemoveBinding(string username, IMessageChannel channel)
         {
-            var name = username.ToLower();
-            var idString = channel.Id.ToString();
-
-            var found = db.Table<TwitterChannelBinding>()
-                .Delete(b => b.ChannelId == idString && b.TwitterUsername == name) != 0;
-            if (!found) return false;
-
-            if (db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != name))
+            using (var db = new TwitterContext(dbOptions))
             {
-                db.Delete(new TwitterBinding
-                {
-                    TwitterUsername = name,
-                });
-            }
+                var name = username.ToLower();
 
-            return true;
+                var found = await db.TwitterChannelBindings.FirstOrDefaultAsync(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == name);
+                if (found == default(TwitterChannelBinding)) return false;
+
+                db.TwitterChannelBindings.Remove(found);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            var channelId = binding.Id.ToString();
-            var usernames = db.Table<TwitterChannelBinding>()
-                .Where(b => b.ChannelId == channelId)
-                .Select(b => b.TwitterUsername);
-
-            var found = db.Table<TwitterChannelBinding>().Delete(b => b.ChannelId == channelId) != 0;
-            if (!found) return false;
-
-            foreach (var username in usernames)
+            using (var db = new TwitterContext(dbOptions))
             {
-                if (db.Table<TwitterChannelBinding>().All(b => b.TwitterUsername != username))
-                {
-                    db.Delete(new TwitterBinding
-                    {
-                        TwitterUsername = username,
-                    });
-                }
-            }
+                var entities = db.TwitterChannelBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
 
-            return true;
+                db.TwitterChannelBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
         public IEnumerable<TwitterChannelBinding> GetBindings(IMessageChannel channel)
         {
-            var idString = channel.Id.ToString();
-            return db.Table<TwitterChannelBinding>().Where(b => b.ChannelId == idString);
+            using (var db = new TwitterContext(dbOptions))
+                return db.TwitterChannelBindings.Where(b => b.ChannelId == channel.Id).Include(b => b.TwitterBinding).ToList();
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<TwitterBinding>();
-            db.CreateTable<TwitterChannelBinding>();
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
 
-            client = map.Get<DiscordSocketClient>();
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             ModuleColor = new Color(33, 155, 243);
             try
@@ -132,94 +113,44 @@ namespace Shinoa.Services.TimedServices
 
         async Task ITimedService.Callback()
         {
-            foreach (var user in GetFromDb())
+            using (var db = new TwitterContext(dbOptions))
             {
-                var response = await twitterSession.GetUserTimeline(user.Username);
-                var newestCreationTime = response.FirstOrDefault()?.Time ?? DateTimeOffset.FromUnixTimeSeconds(0);
-                var postStack = new Stack<Embed>();
-
-                foreach (var tweet in response)
+                foreach (var user in db.TwitterBindings.Include(b => b.ChannelBindings))
                 {
-                    if (tweet.Time <= user.LatestPost) break;
-                    user.LatestPost = tweet.Time;
+                    var response = await twitterSession.GetUserTimeline(user.TwitterUsername);
+                    var newestCreationTime = response.FirstOrDefault()?.Time.DateTime ?? DateTime.UtcNow;
+                    var postStack = new Stack<Embed>();
 
-                    var embed = new EmbedBuilder()
-                        .WithUrl($"https://twitter.com/{tweet.User.ScreenName}/status/{tweet.Id}")
-                        .WithDescription(tweet.Text)
-                        .WithThumbnailUrl(tweet.User.Avatar)
-                        .WithColor(ModuleColor);
-
-                    embed.Title = tweet.IsARetweet() ? $"{tweet.RetweetedStatus.User.Name} (retweeted by @{tweet.User.ScreenName})" : $"{tweet.User.Name} (@{tweet.User.ScreenName})";
-
-                    postStack.Push(embed.Build());
-                }
-
-                if (newestCreationTime > user.LatestPost) user.LatestPost = newestCreationTime;
-
-                foreach (var embed in postStack)
-                {
-                    foreach (var channel in user.Channels)
+                    foreach (var tweet in response)
                     {
-                        await channel.SendEmbedAsync(embed);
+                        if (tweet.Time.DateTime <= user.LatestPost) break;
+
+                        var embed = new EmbedBuilder()
+                            .WithUrl($"https://twitter.com/{tweet.User.ScreenName}/status/{tweet.Id}")
+                            .WithDescription(tweet.Text)
+                            .WithThumbnailUrl(tweet.User.Avatar)
+                            .WithColor(ModuleColor);
+
+                        embed.Title = tweet.IsARetweet() ? $"{tweet.RetweetedStatus.User.Name} (retweeted by @{tweet.User.ScreenName})" : $"{tweet.User.Name} (@{tweet.User.ScreenName})";
+
+                        postStack.Push(embed.Build());
                     }
+
+                    if (newestCreationTime > user.LatestPost) user.LatestPost = newestCreationTime;
+
+                    foreach (var embed in postStack)
+                    {
+                        foreach (var channelBinding in user.ChannelBindings)
+                        {
+                            if (client.GetChannel(channelBinding.ChannelId) is IMessageChannel channel) await channel.SendEmbedAsync(embed);
+                        }
+                    }
+
+                    db.TwitterBindings.Update(user);
                 }
 
-                db.Update(new TwitterBinding
-                {
-                    TwitterUsername = user.Username,
-                    LatestPost = user.LatestPost,
-                });
+                await db.SaveChangesAsync();
             }
-        }
-
-        private IEnumerable<SubscribedUser> GetFromDb()
-        {
-            var ret = new List<SubscribedUser>();
-            foreach (var binding in db.Table<TwitterBinding>())
-            {
-                var tmpSub = new SubscribedUser
-                {
-                    Username = binding.TwitterUsername,
-                    LatestPost = binding.LatestPost,
-                };
-                foreach (var channelBinding in db.Table<TwitterChannelBinding>().Where(b => b.TwitterUsername == tmpSub.Username))
-                {
-                    var tmpChannel = client.GetChannel(ulong.Parse(channelBinding.ChannelId)) as IMessageChannel;
-                    if (tmpChannel == null) continue;
-                    tmpSub.Channels.Add(tmpChannel);
-                }
-
-                ret.Add(tmpSub);
-            }
-
-            return ret;
-        }
-
-        // TODO: Migrate to Microsoft.EntityFrameworkCore.SQLite
-        public class TwitterChannelBinding
-        {
-            [Indexed]
-            public string TwitterUsername { get; set; }
-
-            [Indexed]
-            public string ChannelId { get; set; }
-        }
-
-        private class TwitterBinding
-        {
-            [PrimaryKey]
-            public string TwitterUsername { get; set; }
-
-            public DateTimeOffset LatestPost { get; set; }
-        }
-
-        private class SubscribedUser
-        {
-            public string Username { get; set; }
-
-            public ICollection<IMessageChannel> Channels { get; } = new List<IMessageChannel>();
-
-            public DateTimeOffset LatestPost { get; set; } = DateTimeOffset.UtcNow;
         }
     }
 }

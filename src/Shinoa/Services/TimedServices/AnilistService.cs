@@ -1,7 +1,6 @@
 ﻿// <copyright file="AnilistService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -49,7 +48,7 @@ namespace Shinoa.Services.TimedServices
             accessToken = responseObject.access_token;
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
             clientId = config["client_id"];
             clientSecret = config["client_secret"];

@@ -1,7 +1,6 @@
 ﻿// <copyright file="FunService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -10,45 +9,55 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+    using Microsoft.EntityFrameworkCore;
+    using static Databases.BotFunctionSpamContext;
 
     public class FunService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private DbContextOptions dbOptions;
 
-        public bool AddBinding(IMessageChannel channel)
+        public async Task<bool> AddBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            if (db.Table<BotFunctionSpamBinding>().Any(b => b.ChannelId == channelId)) return false;
-
-            db.Insert(new BotFunctionSpamBinding
+            using (var db = new BotFunctionSpamContext(dbOptions))
             {
-                ChannelId = channelId,
-            });
-            return true;
+                if (db.BotFunctionSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
+
+                db.BotFunctionSpamBindings.Add(new BotFunctionSpamBinding
+                {
+                    ChannelId = channel.Id,
+                });
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            return db.Delete<BotFunctionSpamBinding>(bindingId) != 0;
+            using (var db = new BotFunctionSpamContext(dbOptions))
+            {
+                var entities = db.BotFunctionSpamBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
+
+                db.BotFunctionSpamBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            return db.Table<BotFunctionSpamBinding>().All(b => b.ChannelId != channelId);
+            using (var db = new BotFunctionSpamContext(dbOptions))
+            return db.BotFunctionSpamBindings.All(b => b.ChannelId != channel.Id);
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<BotFunctionSpamBinding>();
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options not found in service provider.");
 
-            var client = map.Get<DiscordSocketClient>();
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += MessageReceivedHandler;
         }
 
@@ -98,12 +107,6 @@ namespace Shinoa.Services
 
                     break;
             }
-        }
-
-        private class BotFunctionSpamBinding
-        {
-            [PrimaryKey]
-            public string ChannelId { get; set; }
         }
     }
 }

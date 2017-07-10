@@ -1,7 +1,6 @@
 ﻿// <copyright file="AnimeFeedModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -33,7 +32,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Enable()
         {
-            if (Service.AddBinding(Context.Channel))
+            if (await Service.AddBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
                     await ReplyAsync($"Anime notifications have been bound to this channel (#{Context.Channel.Name}).");
@@ -57,7 +56,7 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Disable()
         {
-            if (Service.RemoveBinding(Context.Channel))
+            if (await Service.RemoveBinding(Context.Channel))
             {
                 if (!(Context.Channel is IPrivateChannel))
                     await ReplyAsync($"Anime notifications have been unbound from this channel (#{Context.Channel.Name}).");

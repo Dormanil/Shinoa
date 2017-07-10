@@ -1,7 +1,6 @@
 ﻿// <copyright file="ModerationService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -10,46 +9,56 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.Net;
     using Discord.WebSocket;
-    using SQLite;
+    using Microsoft.EntityFrameworkCore;
+    using static Databases.ImageSpamContext;
 
     public class ModerationService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private DbContextOptions dbOptions;
 
-        public bool AddBinding(IMessageChannel channel)
+        public async Task<bool> AddBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            if (db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channelId)) return false;
-
-            db.Insert(new ImageSpamBinding
+            using (var db = new ImageSpamContext(dbOptions))
             {
-                ChannelId = channelId,
-            });
-            return true;
+                if (db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
+
+                db.ImageSpamBindings.Add(new ImageSpamBinding
+                {
+                    ChannelId = channel.Id,
+                });
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
-        public bool RemoveBinding(IEntity<ulong> binding)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            var bindingId = binding.Id.ToString();
-            return db.Delete<ImageSpamBinding>(bindingId) != 0;
+            using (var db = new ImageSpamContext(dbOptions))
+            {
+                var entities = db.ImageSpamBindings.Where(b => b.ChannelId == binding.Id);
+                if (!entities.Any()) return false;
+
+                db.ImageSpamBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
+                return true;
+            }
         }
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            var channelId = channel.Id.ToString();
-            return db.Table<ImageSpamBinding>().Any(b => b.ChannelId == channelId);
+            using (var db = new ImageSpamContext(dbOptions))
+            return db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id);
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        void IService.Init(dynamic config, IServiceProvider map)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<ImageSpamBinding>();
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
 
-            var client = map.Get<DiscordSocketClient>();
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += Handler;
         }
 
@@ -57,39 +66,36 @@ namespace Shinoa.Services
         {
             try
             {
-                if (msg.Author is IGuildUser user &&
-                    db.Table<ImageSpamBinding>().Any(b => b.ChannelId == msg.Channel.Id.ToString()) &&
-                    msg.Attachments.Count > 0)
+                using (var db = new ImageSpamContext(dbOptions))
                 {
-                    var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
-                    var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
-                                         let timeDifference = DateTimeOffset.Now - message.Timestamp
-                                         where timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 && message.Author.Id == msg.Author.Id
-                                         select message).Count();
+                   if (msg.Author is IGuildUser user &&
+                        db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
+                        msg.Attachments.Count > 0)
+                   {
+                        var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
+                        var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
+                                             let timeDifference = DateTimeOffset.Now - message.Timestamp
+                                             where timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 && message.Author.Id == msg.Author.Id
+                                             select message).Count();
 
-                    if (imagesCounter > 2)
-                    {
-                        await msg.DeleteAsync();
-                        await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
+                        if (imagesCounter > 2)
+                        {
+                            await msg.DeleteAsync();
+                            await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
 
-                        var mutedRole = user.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
+                            var mutedRole = user.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
 
-                        await user.AddRoleAsync(mutedRole);
-                        await Task.Delay(5 * 60 * 1000);
-                        await user.RemoveRoleAsync(mutedRole);
-                        await msg.Channel.SendMessageAsync($"User {user.Mention} has been unmuted automatically.");
-                    }
+                            await user.AddRoleAsync(mutedRole);
+                            await Task.Delay(5 * 60 * 1000);
+                            await user.RemoveRoleAsync(mutedRole);
+                            await msg.Channel.SendMessageAsync($"User {user.Mention} has been unmuted automatically.");
+                        }
+                   }
                 }
             }
             catch (HttpException)
             {
             }
-        }
-
-        private class ImageSpamBinding
-        {
-            [PrimaryKey]
-            public string ChannelId { get; set; }
         }
     }
 }

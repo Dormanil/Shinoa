@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26608.5
+VisualStudioVersion = 15.0.26510.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2F12060D-E2DE-435F-BD94-FC3CD0EA221B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shinoa", "src\Shinoa\Shinoa.csproj", "{1BE2BEFB-F94D-4F8E-9FE0-920D78DED9E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shinoa.Tests", "test\Shinoa.Tests\Shinoa.Tests.csproj", "{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,18 @@ Global
 		{1BE2BEFB-F94D-4F8E-9FE0-920D78DED9E1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1BE2BEFB-F94D-4F8E-9FE0-920D78DED9E1}.Release|x64.ActiveCfg = Release|Any CPU
 		{1BE2BEFB-F94D-4F8E-9FE0-920D78DED9E1}.Release|x64.Build.0 = Release|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Alpha|Any CPU.ActiveCfg = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Alpha|Any CPU.Build.0 = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Alpha|x64.ActiveCfg = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Alpha|x64.Build.0 = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Debug|x64.Build.0 = Debug|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Release|x64.ActiveCfg = Release|Any CPU
+		{21335E87-9630-4BF1-8B1B-B43D9DBFFB93}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

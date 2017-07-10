@@ -1,7 +1,6 @@
 ﻿// <copyright file="HelpModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -21,10 +20,13 @@ namespace Shinoa.Modules
         /// <summary>
         /// Command to print the help message.
         /// </summary>
+        /// <param name="arg">Unwanted argument, the command won't do anything if there is one.</param>
         /// <returns></returns>
         [Command("help")]
-        public async Task HelpMessage()
+        public async Task HelpMessage([Remainder]string arg = null)
         {
+            if (!string.IsNullOrWhiteSpace(arg)) return;
+
             var embed = new EmbedBuilder()
                     .AddField(f => f.WithName("Command List").WithValue("http://dormanil.github.io/Shinoa/commands.html"))
                     .AddField(f => f.WithName("GitHub").WithValue("https://github.com/Dormanil/Shinoa"))

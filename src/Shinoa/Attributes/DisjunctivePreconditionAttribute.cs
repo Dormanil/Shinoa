@@ -1,7 +1,6 @@
 ﻿// <copyright file="DisjunctivePreconditionAttribute.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -40,7 +39,7 @@ namespace Shinoa.Attributes
         /// <param name="command">The command used.</param>
         /// <param name="map">The map of dependencies.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map) =>
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider map) =>
             Task.FromResult(preconditions.Any(precondition => precondition.CheckPermissions(context, command, map).Result.IsSuccess)
                 ? PreconditionResult.FromSuccess()
                 : PreconditionResult.FromError("You lack the necessary permissions to use this command."));

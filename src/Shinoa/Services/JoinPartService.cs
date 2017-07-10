@@ -1,59 +1,65 @@
 ﻿// <copyright file="JoinPartService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
 namespace Shinoa.Services
 {
-    using System.Collections.Generic;
+    using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Databases;
     using Discord;
-    using Discord.Commands;
     using Discord.WebSocket;
-    using SQLite;
+    using Microsoft.EntityFrameworkCore;
+    using static Databases.JoinPartServerContext;
 
     public class JoinPartService : IDatabaseService
     {
-        private SQLiteConnection db;
+        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
-        public bool AddBinding(IGuild guild, IMessageChannel channel, bool move = false)
+        public async Task<bool> AddBinding(IGuild guild, IMessageChannel channel, bool move = false)
         {
-            var binding = new JoinPartServer
+            using (var db = new JoinPartServerContext(dbOptions))
             {
-                ServerId = guild.Id.ToString(),
-                ChannelId = channel.Id.ToString(),
-            };
+                var binding = new JoinPartServerBinding
+                {
+                    ServerId = guild.Id,
+                    ChannelId = channel.Id,
+                };
 
-            if (db.Table<JoinPartServer>().Any(b => b.ServerId == binding.ServerId) && !move) return false;
-            if (move) db.Update(binding);
-            else db.Insert(binding);
-            return true;
-        }
+                var bindingExists = db.JoinPartServerBindings.Any(b => b.ServerId == binding.ServerId);
 
-        public bool RemoveBinding(IEntity<ulong> binding)
-        {
-            var bindingId = binding.Id.ToString();
-            if (db.Table<JoinPartServer>().All(b => b.ChannelId != bindingId)) return false;
-            var serverIds = db.Table<JoinPartServer>()
-                .Where(b => b.ChannelId == bindingId)
-                .Select(server => server.ServerId).ToList();
-            foreach (var server in serverIds)
-            {
-                db.Delete<JoinPartServer>(server);
+                if (bindingExists && !move) return false;
+                if (bindingExists) db.JoinPartServerBindings.Update(binding);
+                else db.JoinPartServerBindings.Add(binding);
+
+                await db.SaveChangesAsync();
+                return true;
             }
-
-            return true;
         }
 
-        void IService.Init(dynamic config, IDependencyMap map)
+        public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            if (!map.TryGet(out db)) db = new SQLiteConnection(config["db_path"]);
-            db.CreateTable<JoinPartServer>();
-            client = map.Get<DiscordSocketClient>();
+            using (var db = new JoinPartServerContext(dbOptions))
+            {
+                var entities = db.JoinPartServerBindings.Where(b => b.ChannelId == binding.Id);
+
+                if (!entities.Any()) return false;
+
+                db.JoinPartServerBindings.RemoveRange(entities);
+                await db.SaveChangesAsync();
+                return true;
+            }
+        }
+
+        void IService.Init(dynamic config, IServiceProvider map)
+        {
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
+
+            client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             client.UserJoined += async user =>
             {
@@ -76,30 +82,27 @@ namespace Shinoa.Services
             };
         }
 
-        private IMessageChannel GetGreetingChannel(IGuild guild)
+        private async Task<IMessageChannel> GetGreetingChannel(IGuild guild)
         {
-            var server = Enumerable.FirstOrDefault(db.Table<JoinPartServer>(), srv => srv.ServerId == guild.Id.ToString());
-            if (server == default(JoinPartServer)) return null;
-            var greetingChannel = client.GetChannel(ulong.Parse(server.ChannelId));
+            using (var db = new JoinPartServerContext(dbOptions))
+            {
+                var server = await db.JoinPartServerBindings.FirstOrDefaultAsync(srv => srv.ServerId == guild.Id);
+                if (server == default(JoinPartServerBinding)) return null;
+                var greetingChannel = client.GetChannel(server.ChannelId);
 
-            if (greetingChannel != null) return greetingChannel as IMessageChannel;
-            db.Delete<JoinPartServer>(new JoinPartServer { ServerId = server.ServerId });
-            return null;
+                if (greetingChannel is IMessageChannel msgChannel) return msgChannel;
+                db.JoinPartServerBindings.Remove(server);
+
+                await db.SaveChangesAsync();
+                return null;
+            }
         }
 
         private async Task SendGreetingAsync(IGuild guild, string message)
         {
-            var channel = GetGreetingChannel(guild);
+            var channel = await GetGreetingChannel(guild);
             if (channel == null) return;
             await channel.SendMessageAsync(message);
-        }
-
-        public class JoinPartServer
-        {
-            [PrimaryKey]
-            public string ServerId { get; set; }
-
-            public string ChannelId { get; set; }
         }
     }
 }

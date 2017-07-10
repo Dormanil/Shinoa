@@ -1,7 +1,6 @@
 ﻿// <copyright file="Shinoa.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -15,29 +14,25 @@ namespace Shinoa
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-
     using Attributes;
-
+    using Databases;
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
-
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+    using MySQL.Data.EntityFrameworkCore.Extensions;
     using Services;
     using Services.TimedServices;
-
-    using SQLite;
-    using SQLite.Extensions;
-
     using YamlDotNet.Serialization;
-
     using static Logging;
 
     public static class Shinoa
     {
-        public const string Version = "2.7.4K";
+        public const string Version = "3.0.0-preview";
 
         public static readonly string VersionString =
-            $"Shinoa v{Version}, built by OmegaVesko, FallenWarrior2k & Kazumi";
+            $"Shinoa v{Version}, built with love by OmegaVesko, FallenWarrior2k & Kazumi";
 
         private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
         private static readonly CommandService Commands = new CommandService(new CommandServiceConfig
@@ -46,9 +41,9 @@ namespace Shinoa
             DefaultRunMode = RunMode.Async,
         });
 
-        private static readonly OpaqueDependencyMap Map = new OpaqueDependencyMap();
+        private static readonly IServiceCollection Map = new ServiceCollection();
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
-        private static SQLiteConnection databaseConnection;
+        private static IServiceProvider provider;
         private static Timer globalRefreshTimer;
 
         public static dynamic Config { get; private set; }
@@ -108,17 +103,17 @@ namespace Shinoa
 
                 foreach (var service in services)
                 {
-                    object instance;
-                    if (!Map.TryGet(service.UnderlyingSystemType, out instance)) continue;
+                    var instance = provider.GetService(service.UnderlyingSystemType);
+                    if (instance == null) continue;
                     if (instance is BlacklistService blacklistService)
                     {
-                        blacklistService.RemoveBinding(Client.GetGuild(guildId));
+                        await blacklistService.RemoveBinding(Client.GetGuild(guildId));
                         continue;
                     }
 
                     channels.ForEach(async channel =>
                     {
-                        ((IDatabaseService)instance).RemoveBinding(channel);
+                        await ((IDatabaseService)instance).RemoveBinding(channel);
                         try
                         {
                             if (channel.Id.ToString() == (string)Config["global"]["logging_channel_id"]) StopLoggingToChannel();
@@ -144,18 +139,15 @@ namespace Shinoa
         {
             #region Prerequisites
 
-            databaseConnection = Alpha
-                ? new SQLiteConnection("db_alpha.sqlite")
-                : new SQLiteConnection("db.sqlite");
+            InitLoggingToFile();
+
+            Console.Title = $"Shinoa v{Version}";
 
             var configurationFileStream = Alpha
                 ? new FileStream("config_alpha.yaml", FileMode.Open)
                 : new FileStream("config.yaml", FileMode.Open);
 
-            InitLoggingToFile();
-
-            Console.Title = $"Shinoa v{Version}";
-
+            using (configurationFileStream) // Ensure closure of FileStream object after the config file is loaded
             using (var streamReader = new StreamReader(configurationFileStream))
             {
                 var deserializer = new Deserializer();
@@ -183,9 +175,75 @@ namespace Shinoa
 
             #region Modules
 
-            Map.Add(Client);
-            Map.Add(Commands);
-            Map.Add(databaseConnection);
+            Map.AddSingleton(Client);
+            Map.AddSingleton(Commands);
+
+            DatabaseProvider dbProvider;
+            try
+            {
+                string providerString = Config["global"]["database"]["provider"];
+                dbProvider = Enum.Parse<DatabaseProvider>(providerString);
+            }
+            catch (KeyNotFoundException)
+            {
+                await LogError("No database provider found. Exiting");
+                return;
+            }
+            catch (ArgumentException)
+            {
+                await LogError("The given database provider was invalid. Exiting.");
+                return;
+            }
+
+            try
+            {
+                string connectString = Config["global"]["database"]["connect_string"];
+                var optionsBuilder = new DbContextOptionsBuilder();
+                switch (dbProvider)
+                {
+                    case DatabaseProvider.PostgreSQL:
+                        optionsBuilder.UseNpgsql(connectString);
+                        break;
+                    case DatabaseProvider.SQLServer:
+                        optionsBuilder.UseSqlServer(connectString);
+                        break;
+                    case DatabaseProvider.MySQL:
+                        optionsBuilder.UseMySQL(connectString);
+                        break;
+                    case DatabaseProvider.InMemory:
+                        optionsBuilder.UseInMemoryDatabase($"{Guid.NewGuid()}");
+                        break;
+                    default:
+                        await LogError("The given database provider was invalid. Exiting.");
+                        break;
+                }
+
+                var contextOptions = optionsBuilder.Options;
+
+                Map.AddSingleton(contextOptions);
+            }
+            catch (KeyNotFoundException)
+            {
+                await LogError("No database connection string was provided. Exiting.");
+                return;
+            }
+            catch (Exception e)
+            {
+                await LogError("The given connection string was invalid. Exiting.");
+                await LogError(e.ToString());
+                return;
+            }
+
+            // Obsoleted because not concurrency-safe
+            /*var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
+                    .Select(t => t.GetTypeInfo())
+                    .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseContext)) && !(t.IsAbstract || t.IsInterface))
+                    .Select(t => t.UnderlyingSystemType);
+
+            foreach (var database in databases)
+            {
+                Map.AddSingleton(database);
+            }*/
 
             #region Services
 
@@ -265,6 +323,7 @@ namespace Shinoa
             };
             Client.MessageReceived += async message =>
             {
+                if (provider == null) return;
                 var userMessage = message as SocketUserMessage;
                 var argPos = 0;
                 if (userMessage == null
@@ -273,7 +332,7 @@ namespace Shinoa
 
                 var contextSock = new SocketCommandContext(Client, userMessage);
                 await LogMessage(contextSock);
-                var res = await Commands.ExecuteAsync(contextSock, argPos, Map);
+                var res = await Commands.ExecuteAsync(contextSock, argPos, provider);
                 if (res.IsSuccess) return;
 
                 await LogError(res.ErrorReason);
@@ -327,7 +386,8 @@ namespace Shinoa
                 foreach (var service in services)
                 {
                     var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
-                    if (!Map.TryAddOpaque(instance)) continue;
+                    var descriptor = new ServiceDescriptor(service.UnderlyingSystemType, instance);
+                    if (Map.Contains(descriptor)) continue;
 
                     var configAttr = service.GetCustomAttribute<ConfigAttribute>();
                     dynamic config = null;
@@ -346,13 +406,15 @@ namespace Shinoa
 
                     try
                     {
-                        instance.Init(config, Map);
+                        provider = Map.BuildServiceProvider();
+                        instance.Init(config, provider);
+                        Map.AddSingleton(service.UnderlyingSystemType, instance);
                     }
                     catch (Exception e)
                     {
                         await LogError($"Initialization of service \"{service.Name}\" failed.");
                         await LogError(e.ToString());
-                        Map.TryRemove(service.UnderlyingSystemType);
+                        Map.Remove(descriptor);
                     }
 
                     if (instance is ITimedService timedService)
@@ -398,6 +460,7 @@ namespace Shinoa
                     TimeSpan.Zero,
                     TimeSpan.FromSeconds(refreshRate));
 
+                provider = Map.BuildServiceProvider();
                 await Log("All modules initialized successfully. Shinoa is up and running.");
             };
 
@@ -419,5 +482,5 @@ namespace Shinoa
 
             #endregion
         }
-}
+    }
 }

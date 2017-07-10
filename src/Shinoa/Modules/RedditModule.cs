@@ -1,7 +1,6 @@
 ﻿// <copyright file="RedditModule.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
-// All rights reserved.
 // Licensed under the MIT license.
 // </copyright>
 
@@ -12,6 +11,7 @@ namespace Shinoa.Modules
     using Attributes;
     using Discord;
     using Discord.Commands;
+    using Services;
     using Services.TimedServices;
 
     /// <summary>
@@ -35,13 +35,21 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string subredditName)
         {
-            if (Service.AddBinding(subredditName, Context.Channel))
+            subredditName = subredditName.Replace("r/", string.Empty).TrimStart('/'); // Extract name
+
+            switch (await Service.AddBinding(subredditName, Context.Channel))
             {
-                await ReplyAsync($"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
-            }
-            else
-            {
-                await ReplyAsync($"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
+                case BindingStatus.Added:
+                    await ReplyAsync(
+                        $"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
+                    break;
+                case BindingStatus.AlreadyExists:
+                    await ReplyAsync(
+                        $"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
+                    break;
+                case BindingStatus.Error:
+                    await ReplyAsync($"Could not access subreddit /r/{subredditName}. Does it exist?");
+                    break;
             }
         }
 
@@ -54,7 +62,9 @@ namespace Shinoa.Modules
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string subredditName)
         {
-            if (Service.RemoveBinding(subredditName, Context.Channel))
+            subredditName = subredditName.Replace("r/", string.Empty).TrimStart('/');
+
+            if (await Service.RemoveBinding(subredditName, Context.Channel))
             {
                 await ReplyAsync($"Notifications for /r/{subredditName} have been unbound from this channel (#{Context.Channel.Name}).");
             }
@@ -72,7 +82,7 @@ namespace Shinoa.Modules
         public async Task List()
         {
             var response = Service.GetBindings(Context.Channel)
-                        .Aggregate(string.Empty, (current, binding) => current + $"/r/{binding.SubredditName}\n");
+                        .Aggregate(string.Empty, (current, binding) => current + $"/r/{binding.Subreddit.SubredditName}\n");
 
             if (response == string.Empty) response = "N/A";
 
