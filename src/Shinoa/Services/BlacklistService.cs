@@ -28,7 +28,7 @@ namespace Shinoa.Services
         }
 
         /// <inheritdoc cref="IDatabaseService.RemoveBinding"/>
-        async Task<bool> IDatabaseService.RemoveBinding(IEntity<ulong> guild)
+        public async Task<bool> RemoveBinding(IEntity<ulong> guild)
         {
             using (var db = new BlacklistUserContext(dbOptions))
             {
