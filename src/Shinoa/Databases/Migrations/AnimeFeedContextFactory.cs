@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating Anime Feed Contexts.
+    /// </summary>
     public class AnimeFeedContextFactory : DbContextFactory, IDesignTimeDbContextFactory<AnimeFeedContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public AnimeFeedContext CreateDbContext(string[] args) => new AnimeFeedContext(Options);
     }
 }

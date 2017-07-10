@@ -14,6 +14,9 @@ namespace Shinoa.Modules
     using Services;
     using Services.TimedServices;
 
+    /// <summary>
+    /// Command group to add, remove and list twitter subscriptions for channels.
+    /// </summary>
     [Group("twitter")]
     [RequireNotBlacklisted]
     public class TwitterModule : ModuleBase<SocketCommandContext>
@@ -23,6 +26,11 @@ namespace Shinoa.Modules
         /// </summary>
         public TwitterService Service { get; set; }
 
+        /// <summary>
+        /// Adds a twitter feed to the channel.
+        /// </summary>
+        /// <param name="user">User to follow.</param>
+        /// <returns></returns>
         [Command("add")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Add(string user)
@@ -43,6 +51,11 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Removes a twitter feed from the channel.
+        /// </summary>
+        /// <param name="user">User to unfollow.</param>
+        /// <returns></returns>
         [Command("remove")]
         [RequireGuildUserPermission(GuildPermission.ManageGuild)]
         public async Task Remove(string user)
@@ -58,6 +71,10 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Lists all twitter feed in this channel.
+        /// </summary>
+        /// <returns></returns>
         [Command("list")]
         public async Task List()
         {

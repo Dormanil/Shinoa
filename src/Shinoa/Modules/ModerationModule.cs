@@ -301,12 +301,22 @@ namespace Shinoa.Modules
             }
         }
 
+        /// <summary>
+        /// Command group to add, remove and list blacklisted words.
+        /// </summary>
         [Group("badword")]
         [RequireContext(ContextType.Guild)]
         public class BadWordModule : ModuleBase<SocketCommandContext>
         {
+            /// <summary>
+            /// Gets or sets the backing service instance.
+            /// </summary>
             public BadWordService Service { get; set; }
 
+            /// <summary>
+            /// Lists bad words blacklisted in each channel of the server and globally on the server.
+            /// </summary>
+            /// <returns></returns>
             [Command("list")]
             public async Task List()
             {
@@ -328,12 +338,23 @@ namespace Shinoa.Modules
                 await ReplyAsync(string.Empty, embed: embed);
             }
 
+            /// <summary>
+            /// Command group to add bad word bindings.
+            /// </summary>
             [Group("add")]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public class AddBadWordModule : ModuleBase<SocketCommandContext>
             {
+                /// <summary>
+                /// Gets or sets the backing service instance.
+                /// </summary>
                 public BadWordService Service { get; set; }
 
+                /// <summary>
+                /// Adds a bad word to the list of filtered words for the channel the command was used in.
+                /// </summary>
+                /// <param name="badWord">Bad word to add to the filtered words.</param>
+                /// <returns></returns>
                 [Command]
                 public async Task Add([Remainder]string badWord)
                 {
@@ -351,6 +372,11 @@ namespace Shinoa.Modules
                     }
                 }
 
+                /// <summary>
+                /// Adds a bad word to the list of filtered words for the guild the command was used in.
+                /// </summary>
+                /// <param name="badWord">Bad word to add to the filtered words.</param>
+                /// <returns></returns>
                 [Command("global")]
                 [RequireUserPermission(GuildPermission.ManageGuild)]
                 public async Task AddGlobal([Remainder]string badWord)
@@ -370,12 +396,23 @@ namespace Shinoa.Modules
                 }
             }
 
+            /// <summary>
+            /// Command group to remove bad word bindings.
+            /// </summary>
             [Group("remove")]
             [RequireUserPermission(GuildPermission.ManageChannels)]
             public class RemoveBadWordModule : ModuleBase<SocketCommandContext>
             {
+                /// <summary>
+                /// Gets or sets the backing service instance.
+                /// </summary>
                 public BadWordService Service { get; set; }
 
+                /// <summary>
+                /// Removes a bad word from the list of filtered words for the channel the command was used in.
+                /// </summary>
+                /// <param name="badWord">Bad word to add to the filtered words.</param>
+                /// <returns></returns>
                 [Command]
                 public async Task Remove([Remainder]string badWord)
                 {
@@ -389,10 +426,15 @@ namespace Shinoa.Modules
                             break;
                         case BindingStatus.Error:
                         default:
-                            throw new Exception("!badword remove command failed due to an unknown error.");
+                            throw new Exception($"{(string)Shinoa.Config["global"]["command_prefix"]}badword remove command failed due to an unknown error.");
                     }
                 }
 
+                /// <summary>
+                /// Removes a bad word from the list of filtered words for the guild the command was used in.
+                /// </summary>
+                /// <param name="badWord">Bad word to add to the filtered words.</param>
+                /// <returns></returns>
                 [Command("global")]
                 [RequireUserPermission(GuildPermission.ManageGuild)]
                 public async Task RemoveGlobal([Remainder]string badWord)
@@ -407,7 +449,7 @@ namespace Shinoa.Modules
                             break;
                         case BindingStatus.Error:
                         default:
-                            throw new Exception("!badword remove global command failed due to an unknown error.");
+                            throw new Exception($"{(string)Shinoa.Config["global"]["command_prefix"]}badword remove global command failed due to an unknown error.");
                     }
                 }
             }

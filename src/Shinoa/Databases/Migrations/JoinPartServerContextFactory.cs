@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating server joining/parting contexts.
+    /// </summary>
     public class JoinPartServerContextFactory : DbContextFactory, IDesignTimeDbContextFactory<JoinPartServerContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public JoinPartServerContext CreateDbContext(string[] args) => new JoinPartServerContext(Options);
     }
 }

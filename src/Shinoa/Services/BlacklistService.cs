@@ -14,16 +14,21 @@ namespace Shinoa.Services
     using Microsoft.EntityFrameworkCore;
     using static Databases.BlacklistUserContext;
 
+    /// <summary>
+    /// Service for adding and removing users from being able to use bot functions.
+    /// </summary>
     public class BlacklistService : IDatabaseService
     {
         private DbContextOptions dbOptions;
 
+        /// <inheritdoc cref="IService.Init"/>
         void IService.Init(dynamic config, IServiceProvider map)
         {
             dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
         }
 
-        public async Task<bool> RemoveBinding(IEntity<ulong> guild)
+        /// <inheritdoc cref="IDatabaseService.RemoveBinding"/>
+        async Task<bool> IDatabaseService.RemoveBinding(IEntity<ulong> guild)
         {
             using (var db = new BlacklistUserContext(dbOptions))
             {
@@ -36,6 +41,12 @@ namespace Shinoa.Services
             }
         }
 
+        /// <summary>
+        /// Adds a binding to blacklist a user in a specific guild to not be able to use botfunctions.
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public async Task<bool> AddBinding(IGuild guild, IGuildUser user)
         {
             using (var db = new BlacklistUserContext(dbOptions))

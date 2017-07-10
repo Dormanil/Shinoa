@@ -184,7 +184,7 @@ namespace Shinoa.Services.TimedServices
                             try
                             {
                                 var sauce = SauceModule.GetSauce(imageUrl);
-                                if (sauce.SimilarityPercentage > 90) postStack.Push(sauce.GetEmbed());
+                                if (sauce.SimilarityPercentage > 90) postStack.Push(sauce.Embed);
                             }
                             catch (SauceModule.SauceNotFoundException sauceNotFoundException)
                             {

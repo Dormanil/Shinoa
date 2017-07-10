@@ -135,6 +135,11 @@ namespace Shinoa.Modules
             Shinoa.Cts.CancelAfter(2000);
         }
 
+        /// <summary>
+        /// Command to leave the server.
+        /// </summary>
+        /// <param name="args">Optional: ID of the Guild to leave.</param>
+        /// <returns></returns>
         [Command("leave")]
         [RequireOwner]
         public async Task Leave([Remainder]string args = null)

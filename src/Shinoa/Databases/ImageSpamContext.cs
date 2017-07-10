@@ -10,25 +10,42 @@ namespace Shinoa.Databases
     using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
+    /// <summary>
+    /// A <see cref="DbContext"/> to limit image spam.
+    /// </summary>
     public class ImageSpamContext : DbContext, IDatabaseContext
     {
+        /// <inheritdoc cref="DbContext" />
         public ImageSpamContext(DbContextOptions dbContextOptions)
             : base(dbContextOptions)
         {
         }
 
+        /// <summary>
+        /// Gets or sets the <see cref="DbSet{TEntity}"/> for image spam bindings.
+        /// </summary>
         public DbSet<ImageSpamBinding> ImageSpamBindings { get; set; }
 
+        /// <inheritdoc />
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("imagespam");
         }
 
+        /// <summary>
+        /// Bindings to limit image spam.
+        /// </summary>
         public class ImageSpamBinding
         {
+            /// <summary>
+            /// Gets or sets the channel ID string.
+            /// </summary>
             [Key]
             public string ChannelIdString { get; set; }
 
+            /// <summary>
+            /// Gets or sets the channel ID, backed by <see cref="ChannelIdString"/>.
+            /// </summary>
             [NotMapped]
             public ulong ChannelId
             {

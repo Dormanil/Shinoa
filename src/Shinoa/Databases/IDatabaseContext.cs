@@ -6,6 +6,10 @@
 
 namespace Shinoa.Databases
 {
+    /// <summary>
+    /// Common interface for ease of access of database contexts via Reflection.
+    /// TODO: Remove, since apparently no longer in use.
+    /// </summary>
     public interface IDatabaseContext
     {
     }

@@ -210,6 +210,9 @@ namespace Shinoa
                     case DatabaseProvider.MySQL:
                         optionsBuilder.UseMySQL(connectString);
                         break;
+                    case DatabaseProvider.InMemory:
+                        optionsBuilder.UseInMemoryDatabase($"{Guid.NewGuid()}");
+                        break;
                     default:
                         await LogError("The given database provider was invalid. Exiting.");
                         break;

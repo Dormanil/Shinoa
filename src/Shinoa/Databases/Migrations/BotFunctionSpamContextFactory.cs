@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating botfunctionspam contexts.
+    /// </summary>
     public class BotFunctionSpamContextFactory : DbContextFactory, IDesignTimeDbContextFactory<BotFunctionSpamContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public BotFunctionSpamContext CreateDbContext(string[] args) => new BotFunctionSpamContext(Options);
     }
 }

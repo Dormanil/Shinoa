@@ -9,7 +9,6 @@ namespace Shinoa.Databases.Migrations
     using System;
     using System.IO;
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.EntityFrameworkCore.Infrastructure;
 
     using MySQL.Data.EntityFrameworkCore.Extensions;
 
@@ -18,6 +17,9 @@ namespace Shinoa.Databases.Migrations
     /// </summary>
     public abstract class DbContextFactory
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DbContextFactory"/> class.
+        /// </summary>
         protected DbContextFactory()
         {
             dynamic config;
@@ -41,6 +43,9 @@ namespace Shinoa.Databases.Migrations
                 case DatabaseProvider.MySQL:
                     optionsBuilder.UseMySQL(connectionString);
                     break;
+                case DatabaseProvider.InMemory:
+                    optionsBuilder.UseInMemoryDatabase($"{Guid.NewGuid()}");
+                    break;
                 default:
                     throw new NotSupportedException("The given database provider is not supported.");
             }
@@ -48,6 +53,9 @@ namespace Shinoa.Databases.Migrations
             Options = optionsBuilder.Options;
         }
 
+        /// <summary>
+        /// Gets the DbContextOptions used by subclass factories.
+        /// </summary>
         protected DbContextOptions Options { get; }
 }
 }

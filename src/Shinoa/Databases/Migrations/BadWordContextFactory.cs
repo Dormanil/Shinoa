@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating badword contexts.
+    /// </summary>
     public class BadWordContextFactory : DbContextFactory, IDesignTimeDbContextFactory<BadWordContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public BadWordContext CreateDbContext(string[] args) => new BadWordContext(Options);
     }
 }

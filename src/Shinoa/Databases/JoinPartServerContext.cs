@@ -10,25 +10,42 @@ namespace Shinoa.Databases
     using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
+    /// <summary>
+    /// A <see cref="DbContext"/> for managing join and parting messages.
+    /// </summary>
     public class JoinPartServerContext : DbContext, IDatabaseContext
     {
+        /// <inheritdoc cref="DbContext" />
         public JoinPartServerContext(DbContextOptions dbContextOptions)
             : base(dbContextOptions)
         {
         }
 
+        /// <summary>
+        /// Gets or sets the <see cref="DbSet{TEntity}"/> for join/part bindings.
+        /// </summary>
         public DbSet<JoinPartServerBinding> JoinPartServerBindings { get; set; }
 
+        /// <inheritdoc />
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("joinpartserver");
         }
 
+        /// <summary>
+        /// Bindings to enable notifications of users joining/parting a guild.
+        /// </summary>
         public class JoinPartServerBinding
         {
+            /// <summary>
+            /// Gets or sets the server ID string.
+            /// </summary>
             [Key]
             public string ServerIdString { get; set; }
 
+            /// <summary>
+            /// Gets or sets the server ID, backed by <see cref="ServerIdString"/>.
+            /// </summary>
             [NotMapped]
             public ulong ServerId
             {
@@ -36,8 +53,14 @@ namespace Shinoa.Databases
                 set => ServerIdString = value.ToString();
             }
 
+            /// <summary>
+            /// Gets or sets the channel ID string.
+            /// </summary>
             public string ChannelIdString { get; set; }
 
+            /// <summary>
+            /// Gets or sets the channel ID, backed by <see cref="ChannelIdString"/>.
+            /// </summary>
             [NotMapped]
             public ulong ChannelId
             {

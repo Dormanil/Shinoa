@@ -6,7 +6,7 @@
     <OutputType>Exe</OutputType>
     <PackageId>Shinoa</PackageId>
     <RuntimeIdentifiers>win10-x64;win81-x64;win8-x64;win7-x64;ubuntu.16.04-x64;ubuntu.16.10-x64;debian.8-x64;rhel.7.4-x64;fedora.24-x64;opensuse.42.1-x64;linuxmint.18-x64;osx.10.12-x64</RuntimeIdentifiers>
-    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
+    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
@@ -16,10 +16,14 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>latest</LangVersion>
+    <WarningsAsErrors>NU1605</WarningsAsErrors>
+    <NoWarn>1701;1702;1705;NU1701</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>latest</LangVersion>
+    <WarningsAsErrors>NU1605</WarningsAsErrors>
+    <NoWarn>1701;1702;1705;NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +40,7 @@
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.0-preview2-final" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.0-preview2-final" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="2.0.0-preview2-final" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.0-preview2-final" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="2.0.0-preview1-final" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.0-preview2-final" />

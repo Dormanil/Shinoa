@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating image spam contexts.
+    /// </summary>
     public class ImageSpamContextFactory : DbContextFactory, IDesignTimeDbContextFactory<ImageSpamContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public ImageSpamContext CreateDbContext(string[] args) => new ImageSpamContext(Options);
     }
 }

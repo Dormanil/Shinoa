@@ -6,9 +6,13 @@
 
 namespace Shinoa.Databases
 {
+    /// <summary>
+    /// Enum of supported database providers.
+    /// </summary>
     public enum DatabaseProvider
     {
-        SQLServer = 1,
+        InMemory,
+        SQLServer,
         PostgreSQL,
         MySQL,
     }

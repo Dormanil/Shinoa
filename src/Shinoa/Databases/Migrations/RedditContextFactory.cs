@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating Reddit contexts.
+    /// </summary>
     public class RedditContextFactory : DbContextFactory, IDesignTimeDbContextFactory<RedditContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public RedditContext CreateDbContext(string[] args) => new RedditContext(Options);
     }
 }

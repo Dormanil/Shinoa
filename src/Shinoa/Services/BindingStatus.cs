@@ -6,6 +6,9 @@
 
 namespace Shinoa.Services
 {
+    /// <summary>
+    /// Enum for the status a binding change can result in.
+    /// </summary>
     public enum BindingStatus
     {
         Error,

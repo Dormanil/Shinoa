@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating user blacklist contexts.
+    /// </summary>
     public class BlacklistUserContextFactory : DbContextFactory, IDesignTimeDbContextFactory<BlacklistUserContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public BlacklistUserContext CreateDbContext(string[] args) => new BlacklistUserContext(Options);
     }
 }

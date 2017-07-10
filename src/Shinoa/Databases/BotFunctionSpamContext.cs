@@ -10,25 +10,42 @@ namespace Shinoa.Databases
     using System.ComponentModel.DataAnnotations.Schema;
     using Microsoft.EntityFrameworkCore;
 
+    /// <summary>
+    /// A <see cref="DbContext"/> to limit botfunction spam.
+    /// </summary>
     public class BotFunctionSpamContext : DbContext, IDatabaseContext
     {
+        /// <inheritdoc cref="DbContext" />
         public BotFunctionSpamContext(DbContextOptions dbContextOptions)
             : base(dbContextOptions)
         {
         }
 
+        /// <summary>
+        /// Gets or sets the <see cref="DbSet{TEntity}"/> for botfunction spam bindings.
+        /// </summary>
         public DbSet<BotFunctionSpamBinding> BotFunctionSpamBindings { get; set; }
 
+        /// <inheritdoc />
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("botfunctionspam");
         }
 
+        /// <summary>
+        /// Bindings to limit botfunction spam.
+        /// </summary>
         public class BotFunctionSpamBinding
         {
+            /// <summary>
+            /// Gets or sets the channel ID string.
+            /// </summary>
             [Key]
             public string ChannelIdString { get; set; }
 
+            /// <summary>
+            /// Gets or sets the channel ID, backed by <see cref="ChannelIdString"/>.
+            /// </summary>
             [NotMapped]
             public ulong ChannelId
             {

@@ -8,8 +8,12 @@ namespace Shinoa.Databases.Migrations
 {
     using Microsoft.EntityFrameworkCore.Design;
 
+    /// <summary>
+    /// Factory for creating Twitter contexts.
+    /// </summary>
     public class TwitterContextFactory : DbContextFactory, IDesignTimeDbContextFactory<TwitterContext>
     {
+        /// <inheritdoc cref="IDesignTimeDbContextFactory{TContext}"/>
         public TwitterContext CreateDbContext(string[] args) => new TwitterContext(Options);
     }
 }

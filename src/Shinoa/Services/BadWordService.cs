@@ -17,12 +17,22 @@ namespace Shinoa.Services
     using Microsoft.EntityFrameworkCore;
     using static Databases.BadWordContext;
 
+    /// <summary>
+    /// Backing service for managing badword filters across guilds and channels.
+    /// </summary>
     public class BadWordService : IDatabaseService
     {
         private DbContextOptions dbOptions;
 
         private DiscordSocketClient client;
 
+        /// <summary>
+        /// Adds a binding of a specific badword.
+        /// </summary>
+        /// <param name="global">global == true means across the entire guild, else restricted to the channel</param>
+        /// <param name="context">context of the command</param>
+        /// <param name="badWord">word to be banned</param>
+        /// <returns></returns>
         public async Task<BindingStatus> AddBinding(bool global, ICommandContext context, string badWord)
         {
             using (var db = new BadWordContext(dbOptions))
@@ -102,6 +112,13 @@ namespace Shinoa.Services
             }
         }
 
+        /// <summary>
+        /// Removes a binding of a specific badword.
+        /// </summary>
+        /// <param name="global">global == true means across the entire guild, else restricted to the channel</param>
+        /// <param name="context">context of the command</param>
+        /// <param name="badWord">word to be unbanned</param>
+        /// <returns></returns>
         public async Task<BindingStatus> RemoveBinding(bool global, ICommandContext context, string badWord)
         {
             using (var db = new BadWordContext(dbOptions))
@@ -150,11 +167,16 @@ namespace Shinoa.Services
             }
         }
 
+        /// <summary>
+        /// Lists the bindings of every channel of the guild and the guild specified in context.
+        /// </summary>
+        /// <param name="context">context of the command</param>
+        /// <returns>A dictionary with key of the binding and a indicator of the scope of the binding, and value being the banned words for that binding.</returns>
         public IDictionary<(object entity, bool isGuild), IEnumerable<string>> ListBindings(ICommandContext context)
         {
             using (var db = new BadWordContext(dbOptions))
             {
-                IDictionary<(object entity, bool isGuild), IEnumerable<string>> bindingList = new Dictionary<(object entity, bool isGuild), IEnumerable<string>>();
+                var bindingList = new Dictionary<(object entity, bool isGuild), IEnumerable<string>>();
                 foreach (var server in db.BadWordServerBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
                     bindingList.Add((server, true), server.BadWords.Select(b => b.Entry).ToList());
                 foreach (var channel in db.BadWordChannelBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
@@ -163,6 +185,7 @@ namespace Shinoa.Services
             }
         }
 
+        /// <inheritdoc cref="IService.Init"/>
         void IService.Init(dynamic config, IServiceProvider map)
         {
             dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
@@ -171,6 +194,7 @@ namespace Shinoa.Services
             client.MessageReceived += Handler;
         }
 
+        /// <inheritdoc cref="IDatabaseService.RemoveBinding"/>
         // Does both channel and server if applicable, because that's the only thing that makes sense.
         // TODO: Switch the interface to ICommandContext instead.
         async Task<bool> IDatabaseService.RemoveBinding(IEntity<ulong> binding)
@@ -195,6 +219,7 @@ namespace Shinoa.Services
         private async Task Handler(SocketMessage arg)
         {
             if (arg.Content.StartsWith($"{(string)Shinoa.Config["global"]["command_prefix"]}badword")) return;
+            if (arg.Author.IsBot) return;
             using (var db = new BadWordContext(dbOptions))
             {
                 var toBeDeleted = false;
