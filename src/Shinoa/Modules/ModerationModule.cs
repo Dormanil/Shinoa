@@ -6,14 +6,12 @@
 
 namespace Shinoa.Modules
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
     using Services;
-    using static Databases.BadWordContext;
 
     /// <summary>
     /// Module for Moderative uses.
