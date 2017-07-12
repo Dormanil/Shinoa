@@ -69,7 +69,7 @@ namespace Shinoa.Services
                 using (var db = new ImageSpamContext(dbOptions))
                 {
                    if (msg.Author is IGuildUser user &&
-                        db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
+                        !db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
                         msg.Attachments.Count > 0)
                    {
                         var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();

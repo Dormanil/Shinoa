@@ -22,6 +22,15 @@ namespace Shinoa.Modules
         private static readonly Color ModuleColor = new Color(63, 81, 181);
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="FunModule"/> class.
+        /// </summary>
+        /// <param name="service">Backing service instance.</param>
+        public FunModule(FunService service)
+        {
+            Service = service;
+        }
+
+        /// <summary>
         /// Gets or sets the backing service instance.
         /// </summary>
         public static FunService Service { get; set; }
