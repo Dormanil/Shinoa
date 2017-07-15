@@ -29,10 +29,10 @@ namespace Shinoa
 
     public static class Shinoa
     {
-        public const string Version = "3.0.0-preview";
+        public const string Version = "3.0.0-rc2";
 
         public static readonly string VersionString =
-            $"Shinoa v{Version}, built with love by OmegaVesko, FallenWarrior2k & Kazumi";
+            $"Shinoa v{Version}, built with \u2764 by OmegaVesko, FallenWarrior2k & Kazumi";
 
         private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
         private static readonly CommandService Commands = new CommandService(new CommandServiceConfig

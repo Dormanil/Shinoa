@@ -54,16 +54,6 @@ namespace Shinoa.Databases
             modelBuilder
                 .Entity<BadWordChannelBinding>()
                 .HasIndex(b => b.ServerIdString);
-
-            modelBuilder
-                .Entity<BadWordChannelBinding>()
-                .HasMany(b => b.BadWords)
-                .WithOne();
-
-            modelBuilder
-                .Entity<BadWordServerBinding>()
-                .HasMany(b => b.BadWords)
-                .WithOne();
         }
 
         /// <summary>
@@ -113,6 +103,7 @@ namespace Shinoa.Databases
         /// </summary>
         public class BadWordServerBinding
         {
+            [Key]
             /// <summary>
             /// Gets or sets the server ID string.
             /// </summary>
@@ -139,6 +130,12 @@ namespace Shinoa.Databases
         /// </summary>
         public class ServerBadWord : IEquatable<ServerBadWord>
         {
+            /// <summary>
+            /// Gets or sets the server.
+            /// </summary>
+            public BadWordServerBinding Server { get; set; }
+
+            [ForeignKey("Server")]
             /// <summary>
             /// Gets or sets the server ID string.
             /// </summary>
@@ -201,9 +198,14 @@ namespace Shinoa.Databases
         public class ChannelBadWord : IEquatable<ChannelBadWord>
         {
             /// <summary>
+            /// Gets or sets the channel.
+            /// </summary>
+            public BadWordChannelBinding Channel { get; set; }
+            
+            /// <summary>
             /// Gets or sets the channel ID string.
             /// </summary>
-            [Key]
+            [ForeignKey("Channel")]
             public string ChannelIdString { get; set; }
 
             /// <summary>
