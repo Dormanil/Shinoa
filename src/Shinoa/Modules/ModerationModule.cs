@@ -356,6 +356,7 @@ namespace Shinoa.Modules
                 /// <param name="badWord">Bad word to add to the filtered words.</param>
                 /// <returns></returns>
                 [Command]
+                [Priority(0)]
                 public async Task Add([Remainder]string badWord)
                 {
                     switch (await Service.AddBinding(false, Context, badWord))
@@ -378,6 +379,7 @@ namespace Shinoa.Modules
                 /// <param name="badWord">Bad word to add to the filtered words.</param>
                 /// <returns></returns>
                 [Command("global")]
+                [Priority(10)]
                 [RequireUserPermission(GuildPermission.ManageGuild)]
                 public async Task AddGlobal([Remainder]string badWord)
                 {
@@ -414,6 +416,7 @@ namespace Shinoa.Modules
                 /// <param name="badWord">Bad word to add to the filtered words.</param>
                 /// <returns></returns>
                 [Command]
+                [Priority(0)]
                 public async Task Remove([Remainder]string badWord)
                 {
                     switch (await Service.RemoveBinding(false, Context, badWord))
@@ -436,6 +439,7 @@ namespace Shinoa.Modules
                 /// <param name="badWord">Bad word to add to the filtered words.</param>
                 /// <returns></returns>
                 [Command("global")]
+                [Priority(10)]
                 [RequireUserPermission(GuildPermission.ManageGuild)]
                 public async Task RemoveGlobal([Remainder]string badWord)
                 {
