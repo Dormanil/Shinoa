@@ -231,7 +231,7 @@ namespace Shinoa.Services
                     if (serverBindings.Any())
                     {
                         var badwords = serverBindings.SelectMany(b => b.BadWords.Select(w => w.Entry));
-                        if (badwords.Any(w => arg.Content.ToLowerInvariant().Contains(w.ToLowerInvariant())))
+                        if (badwords.Any(w => arg.Content.ToLowerInvariant().RemovePunctuation().Contains(w.ToLowerInvariant())))
                             toBeDeleted = true;
                     }
                 }
@@ -239,7 +239,7 @@ namespace Shinoa.Services
                 if (channelBindings.Any())
                 {
                     var badwords = channelBindings.SelectMany(b => b.BadWords.Select(w => w.Entry));
-                    if (badwords.Any(w => arg.Content.ToLowerInvariant().Contains(w.ToLowerInvariant())))
+                    if (badwords.Any(w => arg.Content.ToLowerInvariant().RemovePunctuation().Contains(w.ToLowerInvariant())))
                         toBeDeleted = true;
                 }
 

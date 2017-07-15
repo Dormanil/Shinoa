@@ -359,7 +359,7 @@ namespace Shinoa.Modules
                 [Priority(0)]
                 public async Task Add([Remainder]string badWord)
                 {
-                    switch (await Service.AddBinding(false, Context, badWord))
+                    switch (await Service.AddBinding(false, Context, badWord.RemovePunctuation()))
                     {
                         case BindingStatus.AlreadyExists:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are already blocked in this channel.");
@@ -383,7 +383,7 @@ namespace Shinoa.Modules
                 [RequireUserPermission(GuildPermission.ManageGuild)]
                 public async Task AddGlobal([Remainder]string badWord)
                 {
-                    switch (await Service.AddBinding(true, Context, badWord))
+                    switch (await Service.AddBinding(true, Context, badWord.RemovePunctuation()))
                     {
                         case BindingStatus.AlreadyExists:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are already blocked on this server.");
@@ -419,7 +419,7 @@ namespace Shinoa.Modules
                 [Priority(0)]
                 public async Task Remove([Remainder]string badWord)
                 {
-                    switch (await Service.RemoveBinding(false, Context, badWord))
+                    switch (await Service.RemoveBinding(false, Context, badWord.RemovePunctuation()))
                     {
                         case BindingStatus.NotExisting:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it were not blocked in this channel.");
@@ -443,7 +443,7 @@ namespace Shinoa.Modules
                 [RequireUserPermission(GuildPermission.ManageGuild)]
                 public async Task RemoveGlobal([Remainder]string badWord)
                 {
-                    switch (await Service.RemoveBinding(true, Context, badWord))
+                    switch (await Service.RemoveBinding(true, Context, badWord.RemovePunctuation()))
                     {
                         case BindingStatus.NotExisting:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it were not blocked on this server.");

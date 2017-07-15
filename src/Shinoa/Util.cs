@@ -12,12 +12,15 @@ namespace Shinoa
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
 
     using Discord;
 
     public static class Util
     {
+        private static readonly Regex punctuation = new Regex("\\p{P}+");
+
         public static Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, Embed embed)
         {
             return channel.SendMessageAsync(string.Empty, embed: embed);
@@ -109,6 +112,11 @@ namespace Shinoa
                 action(item);
                 yield return item;
             }
+        }
+
+        public static string RemovePunctuation(this string value)
+        {
+            return punctuation.Replace(value, string.Empty);
         }
     }
 }
