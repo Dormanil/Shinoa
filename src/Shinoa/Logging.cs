@@ -65,6 +65,7 @@ namespace Shinoa
         {
             PrintErrorWithTime(message);
             if (loggingFilePath != null) await WriteLogWithTime(message, true);
+            if (message.Length > 2042) message = message.Substring(0, 2039) + "...";
             DiscordLogQueue.Enqueue(new Task(
                 () =>
                 {
