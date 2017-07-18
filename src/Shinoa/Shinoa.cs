@@ -103,7 +103,7 @@ namespace Shinoa
 
                 foreach (var service in services)
                 {
-                    var instance = provider.GetService(service.UnderlyingSystemType);
+                    var instance = provider.GetService(service);
                     if (instance == null) continue;
                     if (instance is BlacklistService blacklistService)
                     {
@@ -238,7 +238,7 @@ namespace Shinoa
             /*var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
                     .Select(t => t.GetTypeInfo())
                     .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseContext)) && !(t.IsAbstract || t.IsInterface))
-                    .Select(t => t.UnderlyingSystemType);
+                    .Select(t => t);
 
             foreach (var database in databases)
             {
@@ -385,9 +385,9 @@ namespace Shinoa
             {
                 foreach (var service in services)
                 {
-                    var instance = (IService)Activator.CreateInstance(service.UnderlyingSystemType);
-                    var descriptor = new ServiceDescriptor(service.UnderlyingSystemType, instance);
-                    if (Map.Contains(descriptor)) continue;
+                    var instance = (IService)Activator.CreateInstance(service);
+                    var descriptor = new ServiceDescriptor(service, instance);
+                    if (Map.Count(d => d.ServiceType == service) != 0) continue;
 
                     var configAttr = service.GetCustomAttribute<ConfigAttribute>();
                     dynamic config = null;
@@ -408,7 +408,7 @@ namespace Shinoa
                     {
                         provider = Map.BuildServiceProvider();
                         instance.Init(config, provider);
-                        Map.AddSingleton(service.UnderlyingSystemType, instance);
+                        Map.AddSingleton(service, instance);
                     }
                     catch (Exception e)
                     {
@@ -419,7 +419,7 @@ namespace Shinoa
 
                     if (instance is ITimedService timedService)
                     {
-                        Callbacks.TryAdd(service.UnderlyingSystemType, timedService.Callback);
+                        Callbacks.TryAdd(service, timedService.Callback);
                         await Log($"Service \"{service.Name}\" added to callbacks");
                     }
 
