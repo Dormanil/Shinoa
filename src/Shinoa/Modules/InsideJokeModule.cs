@@ -52,39 +52,6 @@ namespace Shinoa.Modules
         }
 
         /// <summary>
-        /// Displays information about Catsy.
-        /// </summary>
-        /// <returns></returns>
-        [Command("catsy")]
-        public async Task CatsyMessage()
-        {
-            var embed = new EmbedBuilder();
-            embed.WithTitle("Catsy:")
-                .WithDescription(@"Catsy is the author of the original story of ""Fairy Dance of Death"" (FDD/FDoD).
-He is here in an advisory function and it is a great honour for us to have him.
-To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + "fdod` or `" + Shinoa.Config["global"]["command_prefix"] + "fdd`, whatever suits you more.")
-                .WithUrl("https://www.fanfiction.net/u/46508/Catsy");
-
-            await Context.Channel.SendEmbedAsync(embed);
-        }
-
-        /// <summary>
-        /// Displays information about Fairy Dance of Death.
-        /// </summary>
-        /// <returns></returns>
-        [Command("fdd")]
-        [Alias("fdod")]
-        public async Task FdoDMessage()
-        {
-            var embed = new EmbedBuilder();
-            embed.WithTitle("Fairy Dance of Death:")
-                .WithDescription("Fairy Dance of Death is an Alternate Universe fan-fiction novel of Sword Art Online, exploring the idea of what would have happened if Kayaba Akihiko liked Norse mythology more than a floating castle and created ALO instead of SAO, death game and all that included. It is currently 41 chapters long, still being written, and in its third arc.")
-                .WithUrl("https://www.fanfiction.net/s/8679666/1/Fairy-Dance-of-Death");
-
-            await Context.Channel.SendEmbedAsync(embed);
-        }
-
-        /// <summary>
         /// Tells people that this is not how it works.
         /// </summary>
         /// <returns></returns>
@@ -111,22 +78,5 @@ To learn more about FDoD, type `" + Shinoa.Config["global"]["command_prefix"] + 
             await Context.Channel.SendEmbedAsync(embed);
             await deleteAsync;
         }
-
-        /// <summary>
-        /// Tells the current time in Alfheim.
-        /// </summary>
-        /// <returns></returns>
-        [Command("time")]
-        public async Task TimeMessage()
-        {
-            var alfheimTime = GetAlfheimTime();
-            var embed = new EmbedBuilder()
-                .WithTitle("Current Date and Time in Alfheim")
-                .AddField(field => field.WithName("Date:").WithValue($"{alfheimTime.ToString(new CultureInfo("en-US").DateTimeFormat.LongDatePattern)}"))
-                .AddField(field => field.WithName("Time:").WithValue($"{alfheimTime.ToString(new CultureInfo("de-DE").DateTimeFormat.LongTimePattern)}"));
-            await Context.Channel.SendEmbedAsync(embed);
-        }
-
-        private static DateTimeOffset GetAlfheimTime() => new DateTimeOffset(2022, 11, 6, 4, 0, 0, TimeSpan.FromHours(9)).AddTicks(DateTimeOffset.Now.Subtract(new DateTimeOffset(2017, 1, 21, 4, 0, 0, TimeSpan.FromHours(9))).Ticks);
     }
 }
