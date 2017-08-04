@@ -201,7 +201,7 @@ namespace Shinoa.Databases
             /// Gets or sets the channel.
             /// </summary>
             public BadWordChannelBinding Channel { get; set; }
-            
+
             /// <summary>
             /// Gets or sets the channel ID string.
             /// </summary>
