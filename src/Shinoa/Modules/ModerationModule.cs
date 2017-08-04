@@ -36,17 +36,21 @@ namespace Shinoa.Modules
         /// Command to ban a user.
         /// </summary>
         /// <param name="user">The user in question.</param>
+        /// <param name="pruneDays">How many days of messages to prune.</param>
+        /// <param name="reason">The reason for banning the user.</param>
         /// <returns></returns>
         [Command("ban")]
         [Alias("gulag", "getout")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.BanMembers)]
-        public async Task Ban(IUser user)
+        public async Task Ban(IGuildUser user, int pruneDays = 0, [Remainder] string reason = null)
         {
             if (Context.Guild == null) return;
             var delTask = Context.Message.DeleteAsync();
 
-            await Context.Guild.AddBanAsync(user);
+            if (pruneDays < 0) pruneDays = 0;
+            else if (pruneDays > 7) pruneDays = 7;
+            await Context.Guild.AddBanAsync(user, pruneDays, reason);
             await delTask;
             await ReplyAsync($"User {user.Username} has been banned by {Context.User.Mention}.");
         }
@@ -55,15 +59,16 @@ namespace Shinoa.Modules
         /// Command to kick a user.
         /// </summary>
         /// <param name="user">The user in question.</param>
+        /// <param name="reason">The reason for kicking the user.</param>
         /// <returns></returns>
         [Command("kick")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task Kick(IGuildUser user)
+        public async Task Kick(IGuildUser user, [Remainder] string reason = null)
         {
             var delTask = Context.Message.DeleteAsync();
 
-            var kickTask = user.KickAsync();
+            var kickTask = user.KickAsync(reason);
             await delTask;
             if (kickTask == null) return;
             await kickTask;
