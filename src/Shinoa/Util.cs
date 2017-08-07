@@ -118,5 +118,16 @@ namespace Shinoa
         {
             return punctuation.Replace(value, string.Empty);
         }
+
+        public static string TrimPunctuation(this string value)
+        {
+            return value.TrimEnd('.', ',', '!', '?');
+        }
+
+        public static IEnumerable<string> TrimPunctuation(this IEnumerable<string> value)
+        {
+            foreach (var word in value)
+                yield return word.TrimPunctuation();
+        } 
     }
 }

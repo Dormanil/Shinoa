@@ -80,31 +80,31 @@ namespace Shinoa.Services
                 case @"\o\":
                     await m.Channel.SendMessageAsync(@"/o/");
                     break;
+                case string sleepy when sleepy.Trim().TrimPunctuation().ToLower() == "wake me up":
+                    await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname ?? m.Author.Username : m.Author.Username)} up inside._");
+                    break;
+                case string sleepyDefault when sleepyDefault.Trim().TrimPunctuation().ToLower().StartsWith("wake") && 
+                        sleepyDefault.Trim().TrimPunctuation().ToLower().EndsWith("up"):
+                    var messageArray = m.Content.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
+                        .Skip(1)
+                        .Reverse()
+                        .Skip(1)
+                        .Reverse();
+
+                    await m.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} up inside._");
+                    break;
+                case string jediMindTrick when jediMindTrick.Trim().TrimPunctuation().ToLower().StartsWith("these aren't the") &&
+                        jediMindTrick.Trim().TrimPunctuation().ToLower().EndsWith("you're looking for"):
+                    var mindTrickArray = m.Content.Split(new[] { " ", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                        .Reverse()
+                        .Skip(3)
+                        .Reverse();
+                    await m.Channel.SendMessageAsync($"{mindTrickArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} I'm looking for.");
+                    break;
+                case string sunPraiser when sunPraiser.Trim().ToLower().Split(' ', '\n').TrimPunctuation().Contains("sol"):
+                    await m.Channel.SendMessageAsync("PRAISE THE SUN!");
+                    break;
                 default:
-                    if (m.Content.Trim().TrimEnd('.').ToLower() == "wake me up")
-                    {
-                        await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname ?? m.Author.Username : m.Author.Username)} up inside._");
-                    }
-                    else if (m.Content.Trim().TrimEnd('.').ToLower().StartsWith("wake") && m.Content.Trim().TrimEnd('.').ToLower().EndsWith("up"))
-                    {
-                        var messageArray = m.Content.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
-                            .Skip(1)
-                            .Reverse()
-                            .Skip(1)
-                            .Reverse();
-
-                        await m.Channel.SendMessageAsync($"_Wakes {messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} up inside._");
-                    }
-                    else if (m.Content.Trim().TrimEnd('.').ToLower().StartsWith("these aren't the") &&
-                             m.Content.Trim().TrimEnd('.').ToLower().EndsWith("you're looking for"))
-                    {
-                        var messageArray = m.Content.Split(new[] { " ", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-                            .Reverse()
-                            .Skip(3)
-                            .Reverse();
-                        await m.Channel.SendMessageAsync($"{messageArray.Aggregate(string.Empty, (current, word) => current + word + " ").Trim()} I'm looking for.");
-                    }
-
                     break;
             }
         }
