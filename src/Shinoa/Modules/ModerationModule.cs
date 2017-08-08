@@ -13,6 +13,8 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
     using Services;
+    using Services.TimedServices;
+
     using static Databases.BadWordContext;
 
     /// <summary>
@@ -31,6 +33,8 @@ namespace Shinoa.Modules
             { "day",       1000 * 60 * 60 * 24 },
             { "days",      1000 * 60 * 60 * 24 },
         };
+
+        public ModerationService Service { get; set; }
 
         /// <summary>
         /// Command to ban a user.
@@ -52,7 +56,7 @@ namespace Shinoa.Modules
             else if (pruneDays > 7) pruneDays = 7;
             await Context.Guild.AddBanAsync(user, pruneDays, reason);
             await delTask;
-            await ReplyAsync($"User {user.Username} has been banned by {Context.User.Mention}.");
+            await this.ReplyEmbedAsync($"User {user.Username}#{user.Discriminator} has been banned by {Context.User.Mention}.");
         }
 
         /// <summary>
@@ -72,7 +76,25 @@ namespace Shinoa.Modules
             await delTask;
             if (kickTask == null) return;
             await kickTask;
-            await ReplyAsync($"User {user.Username} has been kicked by {Context.User.Mention}.");
+            await this.ReplyEmbedAsync($"User {user.Username}#{user.Discriminator} has been kicked by {Context.User.Mention}.");
+        }
+
+        [Command("initMuteRole")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        public async Task InitMuteRole([Remainder] string roleName = "Muted")
+        {
+            if (Service.GetRole(Context.Guild) is IRole role)
+            {
+                await this.ReplyEmbedAsync($"This server already has a role to mute users registered, `{role.Name}`. Did you perchance mean to update the role?", Color.Red);
+                return;
+            }
+
+            var permissions = Context.Guild.EveryoneRole.Permissions.Modify(readMessages: false);
+            var mutedRole = await Context.Guild.CreateRoleAsync(roleName, permissions, Color.DarkRed);
+
+            await Service.AddRole(Context.Guild, mutedRole);
+            await Context.Message.DeleteAsync();
+            await this.ReplyEmbedAsync($"{roleName} role has been set up successfully.", Color.Green);
         }
 
         /// <summary>
@@ -201,7 +223,7 @@ namespace Shinoa.Modules
             /// <summary>
             /// Gets or sets the backing service instance.
             /// </summary>
-            public ModerationService Service { get; set; }
+            public ImageSpamService Service { get; set; }
 
             /// <summary>
             /// Command to block image spam in this channel.

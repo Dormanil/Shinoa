@@ -1,4 +1,4 @@
-﻿// <copyright file="ModerationService.cs" company="The Shinoa Development Team">
+﻿// <copyright file="ImageSpamService.cs" company="The Shinoa Development Team">
 // Copyright (c) 2016 - 2017 OmegaVesko.
 // Copyright (c)        2017 The Shinoa Development Team.
 // Licensed under the MIT license.
@@ -16,7 +16,7 @@ namespace Shinoa.Services
     using Microsoft.EntityFrameworkCore;
     using static Databases.ImageSpamContext;
 
-    public class ModerationService : IDatabaseService
+    public class ImageSpamService : IDatabaseService
     {
         private DbContextOptions dbOptions;
 

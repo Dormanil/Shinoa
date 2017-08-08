@@ -16,10 +16,12 @@ namespace Shinoa
     using System.Threading.Tasks;
 
     using Discord;
+    using Discord.Commands;
 
     public static class Util
     {
-        private static readonly Regex punctuation = new Regex("\\p{P}+");
+        private static readonly Regex Punctuation = new Regex("\\p{P}+");
+        private static readonly EmbedFooterBuilder EmbedFooter = new EmbedFooterBuilder { Text = Shinoa.VersionString };
 
         public static Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, Embed embed)
         {
@@ -116,7 +118,7 @@ namespace Shinoa
 
         public static string RemovePunctuation(this string value)
         {
-            return punctuation.Replace(value, string.Empty);
+            return Punctuation.Replace(value, string.Empty);
         }
 
         public static string TrimPunctuation(this string value)
@@ -126,8 +128,20 @@ namespace Shinoa
 
         public static IEnumerable<string> TrimPunctuation(this IEnumerable<string> value)
         {
-            foreach (var word in value)
-                yield return word.TrimPunctuation();
-        } 
+            return value.Select(word => word.TrimPunctuation());
+        }
+
+        public static Task<IUserMessage> ReplyEmbedAsync(
+            this ModuleBase<SocketCommandContext> moduleBase,
+            string description,
+            Color? color = null)
+        {
+            return moduleBase.Context.Channel.SendEmbedAsync(new EmbedBuilder
+            {
+                Color = color,
+                Description = description,
+                Footer = EmbedFooter,
+            });
+        }
     }
 }
