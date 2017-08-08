@@ -12,6 +12,7 @@ namespace Shinoa.Modules
     using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
+
     using Services;
     using Services.TimedServices;
 
@@ -22,7 +23,7 @@ namespace Shinoa.Modules
     /// </summary>
     public class ModerationModule : ModuleBase<SocketCommandContext>
     {
-        private static readonly Dictionary<string, int> TimeUnits = new Dictionary<string, int>
+        private static readonly Dictionary<string, long> TimeUnits = new Dictionary<string, long>
         {
             { "second",    1000 },
             { "seconds",   1000 },
@@ -89,12 +90,67 @@ namespace Shinoa.Modules
                 return;
             }
 
-            var permissions = Context.Guild.EveryoneRole.Permissions.Modify(readMessages: false);
-            var mutedRole = await Context.Guild.CreateRoleAsync(roleName, permissions, Color.DarkRed);
+            await CreateMuteRole(roleName);
+        }
 
-            await Service.AddRole(Context.Guild, mutedRole);
-            await Context.Message.DeleteAsync();
-            await this.ReplyEmbedAsync($"{roleName} role has been set up successfully.", Color.Green);
+        [Command("updateMuteRole")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        public async Task UpdateMuteRole([Remainder] string roleName = "Muted")
+        {
+            var role = Service.GetRole(Context.Guild) as IRole;
+            if (role == null)
+            {
+                await this.ReplyEmbedAsync($"This server has no role to mute users registered yet. Registering new role instead...", Color.Orange);
+                await InitMuteRole(roleName);
+                return;
+            }
+
+            if (role.Name == roleName)
+            {
+                await this.ReplyEmbedAsync($"A mute-role with the name `{roleName}` exists already. Nothing to update.", Color.Red);
+                return;
+            }
+
+            switch (await Service.RemoveRole(Context.Guild, role))
+            {
+                case BindingStatus.Error:
+                    await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
+                    return;
+                case BindingStatus.NotExisting:
+                case BindingStatus.Removed:
+                    break;
+                default:
+                    break;
+            }
+
+            await role.DeleteAsync();
+            await CreateMuteRole(roleName);
+        }
+
+        [Command("updateMuteRole")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        public async Task RemoveMuteRole()
+        {
+            var role = Service.GetRole(Context.Guild);
+            if (role == null)
+            {
+                await this.ReplyEmbedAsync("This server has no role to mute users registered yet. Nothing to remove.", Color.Red);
+                return;
+            }
+
+            switch (await Service.RemoveRole(Context.Guild, role))
+            {
+                case BindingStatus.Error:
+                    await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
+                    return;
+                case BindingStatus.NotExisting:
+                case BindingStatus.Removed:
+                default:
+                    break;
+            }
+
+            await role.DeleteAsync();
+            await this.ReplyEmbedAsync("The mute-role has been removed successfully.", Color.Green);
         }
 
         /// <summary>
@@ -116,37 +172,77 @@ namespace Shinoa.Modules
 
             var delTask = Context.Message.DeleteAsync();
 
-            IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
-            var duration = 0;
+            var mutedRole = Service.GetRole(Context.Guild);
+            if (mutedRole == null)
+            {
+                await this.ReplyEmbedAsync("This server has no role to mute users registered yet. Registering default role...", Color.Orange);
+                await InitMuteRole();
+                mutedRole = Service.GetRole(Context.Guild) ?? throw new Exception();
+            }
+
+            var duration = TimeSpan.Zero;
             try
             {
-                duration = amount * TimeUnits[unitName];
+                duration = TimeSpan.FromSeconds(amount * TimeUnits[unitName]);
             }
             catch (KeyNotFoundException)
             {
             }
 
-            if (duration == 0)
+            if (duration == TimeSpan.Zero)
             {
+                switch (await Service.AddMute(Context.Guild, user))
+                {
+                    case BindingStatus.Error:
+                        await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
+                        return;
+                    case BindingStatus.AlreadyExists:
+                        await this.ReplyEmbedAsync("The user is already muted. Aborting...", Color.Red);
+                        return;
+                    case BindingStatus.Added:
+                    default:
+                        break;
+                }
+
                 await user.AddRoleAsync(mutedRole);
                 await delTask;
-                await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
+                await this.ReplyEmbedAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
                 return;
             }
 
-            if (duration < 0)
+            if (duration < TimeSpan.Zero)
             {
-                await ReplyAsync($"User <@{user.Id}> has not been {gagString}, since the duration of the {(gagString == "gagged" ? "gag" : "mute")} was negative.");
+                await this.ReplyEmbedAsync($"User {user.Username}#{user.Discriminator} has not been {gagString}, since the duration of the {(gagString == "gagged" ? "gag" : "mute")} was negative.");
                 return;
+            }
+
+            if (duration > TimeSpan.FromSeconds(30))
+            {
+                switch (await Service.AddMute(Context.Guild, user, DateTime.Now + duration))
+                {
+                    case BindingStatus.Error:
+                        await this.ReplyEmbedAsync($"An unexpected error muting {user.Username}#{user.Discriminator} has occured. Aborting...", Color.Red);
+                        return;
+                    case BindingStatus.AlreadyExists:
+                        await this.ReplyEmbedAsync("The user is already muted. Aborting...", Color.Red);
+                        return;
+                    case BindingStatus.Added:
+                    default:
+                        break;
+                }
             }
 
             await user.AddRoleAsync(mutedRole);
             await delTask;
-            await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention} for {amount} {unitName}.");
-            await Task.Delay(duration);
+            await this.ReplyEmbedAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention} for {amount} {unitName}.");
 
-            await user.RemoveRoleAsync(mutedRole);
-            await ReplyAsync($"User <@{user.Id}> has been un{gagString} automatically.");
+            if (duration <= TimeSpan.FromSeconds(30))
+            {
+                await Task.Delay(duration);
+
+                await user.RemoveRoleAsync(mutedRole);
+                await this.ReplyEmbedAsync($"User <@{user.Id}> has been un{gagString} automatically.");
+            }
         }
 
         /// <summary>
@@ -165,11 +261,45 @@ namespace Shinoa.Modules
                 : "unmuted";
 
             var delTask = Context.Message.DeleteAsync();
-            IRole mutedRole = Context.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
+            var mutedRole = Service.GetRole(Context.Guild) ?? throw new Exception();
+
+            switch (await Service.RemoveMute(Context.Guild, user))
+            {
+                case BindingStatus.Error:
+                    await this.ReplyEmbedAsync($"An unexpected error unmuting {user.Username}#{user.Discriminator} has occured. Aborting...", Color.Red);
+                    return;
+                case BindingStatus.NotExisting:
+                    await this.ReplyEmbedAsync($"The user is not muted. Aborting...", Color.Red);
+                    return;
+                case BindingStatus.Removed:
+                default:
+                    break;
+            }
 
             await user.RemoveRoleAsync(mutedRole);
             await delTask;
             await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
+        }
+
+        private async Task CreateMuteRole(string roleName)
+        {
+            IRole mutedRole;
+            try
+            {
+                mutedRole = Context.Guild.Roles.First(guildRole => guildRole.Name == roleName);
+            }
+            catch (InvalidOperationException)
+            {
+                var permissions = Context.Guild.EveryoneRole.Permissions.Modify(readMessages: false);
+                var position = Context.Guild.Roles.Where(botRole => botRole.Members.Contains(Context.Guild.CurrentUser))
+                                   .OrderBy(botRole => botRole.Position).First().Position + 1;
+                mutedRole = await Context.Guild.CreateRoleAsync(roleName, permissions, Color.DarkRed);
+                await mutedRole.ModifyAsync(prop => prop.Position = position);
+            }
+
+            await Service.AddRole(Context.Guild, mutedRole);
+            await Context.Message.DeleteAsync();
+            await this.ReplyEmbedAsync($"{roleName} role has been set up successfully.", Color.Green);
         }
 
         /// <summary>
@@ -189,9 +319,9 @@ namespace Shinoa.Modules
             {
                 var channel = (IGuildChannel)Context.Channel;
 
-                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been restricted.").WithColor(new Color(244, 67, 54));
-                await ReplyAsync(string.Empty, embed: embed.Build());
-                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, new OverwritePermissions(sendMessages: PermValue.Deny, addReactions: PermValue.Deny));
+                await this.ReplyEmbedAsync("Sending to this channel has been restricted.", new Color(244, 67, 54));
+                var newPerms = channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)?.Modify(sendMessages: PermValue.Deny) ?? default(OverwritePermissions).Modify(sendMessages: PermValue.Deny);
+                await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole, newPerms);
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
             }
 
@@ -206,10 +336,62 @@ namespace Shinoa.Modules
             {
                 var channel = (IGuildChannel)Context.Channel;
 
-                await channel.AddPermissionOverwriteAsync(Context.User, default(OverwritePermissions));
-                await channel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, default(OverwritePermissions));
-                var embed = new EmbedBuilder().WithTitle("Sending to this channel has been unrestricted.").WithColor(new Color(139, 195, 74));
-                await ReplyAsync(string.Empty, embed: embed.Build());
+                await channel.AddPermissionOverwriteAsync(Context.User, default);
+                var newPerms = channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)?.Modify(sendMessages: PermValue.Inherit) ?? default(OverwritePermissions).Modify(sendMessages: PermValue.Inherit);
+                await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole, newPerms);
+                await this.ReplyEmbedAsync("Sending to this channel has been unrestricted.", new Color(139, 195, 74));
+            }
+
+            /// <summary>
+            /// Command group to restrict messaging in all channels of the server.
+            /// </summary>
+            [Group("all")]
+            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(GuildPermission.ManageChannels)]
+            public class StopAllModule : ModuleBase<SocketCommandContext>
+            {
+                /// <summary>
+                /// Command to restrict sending messages to all channels.
+                /// </summary>
+                /// <returns></returns>
+                [Command("on")]
+                [RequireContext(ContextType.Guild)]
+                [RequireUserPermission(GuildPermission.ManageChannels)]
+                public async Task On()
+                {
+                    await this.ReplyEmbedAsync("Sending to all channels has been restricted.", new Color(244, 67, 54));
+                    Context.Guild.Channels.ForEach(async channel =>
+                    {
+                        var newPerms =
+                            channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)
+                                ?.Modify(sendMessages: PermValue.Deny) ??
+                            default(OverwritePermissions).Modify(sendMessages: PermValue.Deny);
+                        await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole, newPerms);
+                        await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
+                    });
+                }
+
+                /// <summary>
+                /// Command to revoke an earlier restriction to all channels.
+                /// </summary>
+                /// <returns></returns>
+                [Command("off")]
+                [RequireContext(ContextType.Guild)]
+                [RequireUserPermission(GuildPermission.ManageChannels)]
+                public async Task Off()
+                {
+                    Context.Guild.Channels.ForEach(async channel =>
+                    {
+                        await channel.AddPermissionOverwriteAsync(Context.User, default);
+                        var newPerms =
+                            channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)
+                                ?.Modify(sendMessages: PermValue.Inherit) ??
+                            default(OverwritePermissions).Modify(sendMessages: PermValue.Inherit);
+                        await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole, newPerms);
+                    });
+
+                    await this.ReplyEmbedAsync("Sending to all channels has been unrestricted.", new Color(139, 195, 74));
+                }
             }
         }
 
@@ -235,9 +417,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (await Service.RemoveBinding(channel))
-                    await ReplyAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
+                    await this.ReplyEmbedAsync($"Image spam in this channel (#{channel.Name}) is now blocked.");
                 else
-                    await ReplyAsync("Image spam in this channel is already blocked.");
+                    await this.ReplyEmbedAsync("Image spam in this channel is already blocked.");
             }
 
             /// <summary>
@@ -250,9 +432,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (await Service.AddBinding(channel))
-                    await ReplyAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
+                    await this.ReplyEmbedAsync($"Image spam in this channel (#{channel.Name}) is no longer blocked.");
                 else
-                    await ReplyAsync("Image spam in this channel was not blocked.");
+                    await this.ReplyEmbedAsync("Image spam in this channel was not blocked.");
             }
 
             /// <summary>
@@ -264,9 +446,9 @@ namespace Shinoa.Modules
             {
                 var channel = Context.Channel as ITextChannel;
                 if (!Service.CheckBinding(channel))
-                    await ReplyAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
+                    await this.ReplyEmbedAsync("Image spam in this channel is blocked. Sending more than three images within 15 seconds will get you muted.");
                 else
-                    await ReplyAsync("Image spam in this channel is not restricted.");
+                    await this.ReplyEmbedAsync("Image spam in this channel is not restricted.");
             }
         }
 
@@ -292,9 +474,9 @@ namespace Shinoa.Modules
             public async Task Add(IGuildUser user)
             {
                 if (await Service.AddBinding(Context.Guild, user))
-                    await ReplyAsync($"Command usage on this server is now blocked for {user.Mention}.");
+                    await this.ReplyEmbedAsync($"Command usage on this server is now blocked for {user.Mention}.");
                 else
-                    await ReplyAsync("Command usage on this server is already blocked for that user.");
+                    await this.ReplyEmbedAsync("Command usage on this server is already blocked for that user.");
             }
 
             /// <summary>
@@ -307,9 +489,9 @@ namespace Shinoa.Modules
             public async Task Remove(IGuildUser user)
             {
                 if (await Service.RemoveBinding(Context.Guild, user))
-                    await ReplyAsync($"Command usage on this server is now no longer blocked for {user.Mention}.");
+                    await this.ReplyEmbedAsync($"Command usage on this server is now no longer blocked for {user.Mention}.");
                 else
-                    await ReplyAsync("Command usage on this server was not blocked for that user.");
+                    await this.ReplyEmbedAsync("Command usage on this server was not blocked for that user.");
             }
 
             /// <summary>
@@ -322,9 +504,9 @@ namespace Shinoa.Modules
             {
                 if (user == null) user = (IGuildUser)Context.User;
                 if (Service.CheckBinding(Context.Guild, user))
-                    await ReplyAsync($"Command usage on this server is currently blocked for {user.Mention}.");
+                    await this.ReplyEmbedAsync($"Command usage on this server is currently blocked for {user.Mention}.");
                 else
-                    await ReplyAsync("Command usage on this server is currently not blocked for that user.");
+                    await this.ReplyEmbedAsync("Command usage on this server is currently not blocked for that user.");
             }
         }
 
@@ -348,20 +530,31 @@ namespace Shinoa.Modules
             public async Task List()
             {
                 var bindings = Service.ListBindings(Context);
+                var embed = new EmbedBuilder()
+                    .AddField(f =>
+                    {
+                        f.WithName("The following words or expressions are banned on this server:");
+                        f.WithValue(bindings
+                            .Where(b => b.Key.isGuild && (b.Key.entity as BadWordServerBinding)?.ServerId ==
+                                        Context.Guild.Id)
+                            .SelectMany(b => b.Value)
+                            .Aggregate((total, next) => $"{total}\n{next}"));
+                    });
 
-                var serverBadWords = bindings
-                    .Where(b => b.Key.isGuild && (b.Key.entity as BadWordServerBinding)?.ServerId == Context.Guild.Id)
-                    .SelectMany(b => b.Value)
-                    .Aggregate("The following words or expressions are banned on this server:```", (total, next) => total + $"\n  - {next}") + "\n```";
-                var channelBadWords = bindings
+                bindings
                     .Where(b => !b.Key.isGuild && (b.Key.entity as BadWordChannelBinding)?.ServerId == Context.Guild.Id)
-                    .Aggregate("The following words or expressions are banned in the following channels:```", (total, next) => total + $"\n#{(Context.Client.GetChannel((next.Key.entity as BadWordChannelBinding)?.ChannelId ?? 0ul) as ITextChannel)?.Name}:{next.Value.Aggregate(string.Empty, (channelTotal, channelNext) => channelTotal + $"\n  - {channelNext}")}\n```");
+                    .ForEach(b =>
+                    {
+                        embed.AddField(f =>
+                        {
+                            f.WithName(
+                                $"Banned in Channel <#{(b.Key.entity as BadWordChannelBinding)?.ChannelId ?? 0ul}>:");
+                            f.WithValue(b.Value
+                                .Aggregate((total, next) => $"{total}\n{next}"));
+                        });
+                    });
 
-                var embed = new EmbedBuilder
-                {
-                    Description = serverBadWords + "\n\n" + channelBadWords,
-                };
-
+                embed.WithFooter(Shinoa.VersionString);
                 await ReplyAsync(string.Empty, embed: embed);
             }
 

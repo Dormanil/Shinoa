@@ -10,6 +10,7 @@ namespace Shinoa.Services.TimedServices
     using System.Threading.Tasks;
 
     using Discord;
+    using Discord.WebSocket;
 
     public class ModerationService : ITimedService, IDatabaseService
     {
@@ -30,5 +31,15 @@ namespace Shinoa.Services.TimedServices
         {
             throw new NotImplementedException();
         }
+
+        public Task<BindingStatus> AddRole(SocketGuild guild, IRole mutedRole) => throw new NotImplementedException();
+
+        public IRole GetRole(SocketGuild guild) => throw new NotImplementedException();
+
+        public Task<BindingStatus> RemoveRole(SocketGuild guild, IRole role) => throw new NotImplementedException();
+
+        public Task<BindingStatus> AddMute(SocketGuild guild, IGuildUser user, DateTime? until = null) => throw new NotImplementedException();
+
+        public Task<BindingStatus> RemoveMute(SocketGuild guild, IGuildUser user) => throw new NotImplementedException();
     }
 }
