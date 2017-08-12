@@ -386,6 +386,14 @@ namespace Shinoa
             };
             Client.Ready += async () =>
             {
+                Map.AddSingleton<ModerationService>();
+                provider = Map.BuildServiceProvider();
+                var modServ = provider.GetService<ModerationService>();
+                modServ.Init(null, provider);
+                Callbacks.TryAdd(typeof(ModerationService), modServ.Callback);
+                await Log($"Service \"{typeof(ModerationService).Name}\" added to callbacks");
+                await Log($"Loaded service \"{typeof(ModerationService).Name}\"");
+
                 foreach (var service in services)
                 {
                     var instance = (IService)Activator.CreateInstance(service);
