@@ -9,6 +9,7 @@ namespace Shinoa.Modules
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Discord;
     using Discord.Commands;
@@ -238,10 +239,14 @@ namespace Shinoa.Modules
 
             if (duration <= TimeSpan.FromSeconds(30))
             {
-                await Task.Delay(duration);
-
-                await user.RemoveRoleAsync(mutedRole);
-                await this.ReplyEmbedAsync($"User <@{user.Id}> has been un{gagString} automatically.");
+                var autoUnmuteThread = new Thread(new ModerationService.AutoUnmuteService
+                {
+                    Channel = Context.Channel as ITextChannel,
+                    Role = mutedRole,
+                    TimeSpan = duration,
+                    User = user,
+                }.AutoUnmute);
+                autoUnmuteThread.Start();
             }
         }
 

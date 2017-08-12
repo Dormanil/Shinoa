@@ -29,12 +29,13 @@ namespace Shinoa
 
     public static class Shinoa
     {
-        public const string Version = "3.0.0-rc2";
+        public const string Version = "3.0.0-rc3";
 
         public static readonly string VersionString =
             $"Shinoa v{Version}, built with \u2764 by OmegaVesko, FallenWarrior2k & Kazumi";
 
         private static readonly bool Alpha = Assembly.GetEntryAssembly().Location.ToLower().Contains("alpha");
+        private static readonly bool Debug = Assembly.GetEntryAssembly().Location.ToLower().Contains("debug");
         private static readonly CommandService Commands = new CommandService(new CommandServiceConfig
         {
             CaseSensitiveCommands = true,
@@ -52,15 +53,12 @@ namespace Shinoa
 
         public static DiscordSocketClient Client { get; } = new DiscordSocketClient(new DiscordSocketConfig
         {
-            LogLevel = LogSeverity.Error,
-
-            // Can't do LogSeverity.Warning because the continuous ratelimit warnings cause a StackOverflow
+            LogLevel = Debug ? LogSeverity.Debug : LogSeverity.Warning,
         });
 
         public static DateTime StartTime { get; } = DateTime.Now;
 
-        public static void Main(string[] args) =>
-            StartAsync().GetAwaiter().GetResult();
+        public static async Task Main() => await StartAsync();
 
         public static async Task TryReenableLogging()
         {
@@ -105,15 +103,20 @@ namespace Shinoa
                 {
                     var instance = provider.GetService(service);
                     if (instance == null) continue;
-                    if (instance is BlacklistService blacklistService)
+                    if (instance is BlacklistService || instance is ModerationService)
                     {
-                        await blacklistService.RemoveBinding(Client.GetGuild(guildId));
+                        await ((instance as IDatabaseService)?.RemoveBinding(Client.GetGuild(guildId)) ?? Task.CompletedTask);
                         continue;
+                    }
+
+                    if (instance is BadWordService)
+                    {
+                        await ((instance as IDatabaseService)?.RemoveBinding(Client.GetGuild(guildId)) ?? Task.CompletedTask);
                     }
 
                     channels.ForEach(async channel =>
                     {
-                        await ((IDatabaseService)instance).RemoveBinding(channel);
+                        await ((instance as IDatabaseService)?.RemoveBinding(channel) ?? Task.CompletedTask);
                         try
                         {
                             if (channel.Id.ToString() == (string)Config["global"]["logging_channel_id"]) StopLoggingToChannel();
@@ -293,7 +296,7 @@ namespace Shinoa
             Client.Log += async msg =>
             {
                 await Log($"{msg.Severity}: {msg.Message}");
-                if (msg.Exception != null) await LogError($"{msg.Source}: {msg.Exception.ToString()}");
+                if (msg.Exception != null) await LogError($"{msg.Source}: {msg.Exception}");
             };
             Client.GuildAvailable += async g =>
             {

@@ -9,16 +9,23 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+
     using Databases;
+
     using Discord;
     using Discord.Net;
     using Discord.WebSocket;
+
     using Microsoft.EntityFrameworkCore;
+
+    using TimedServices;
+
     using static Databases.ImageSpamContext;
 
     public class ImageSpamService : IDatabaseService
     {
         private DbContextOptions dbOptions;
+        private ModerationService moderationService;
 
         public async Task<bool> AddBinding(IMessageChannel channel)
         {
@@ -57,8 +64,9 @@ namespace Shinoa.Services
         void IService.Init(dynamic config, IServiceProvider map)
         {
             dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
+            moderationService = map.GetService(typeof(ModerationService)) as ModerationService ?? throw new ServiceNotFoundException("Moderation Service was not found in service provider.");
 
-            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Discord Client was not found in service provider.");
             client.MessageReceived += Handler;
         }
 
@@ -68,29 +76,31 @@ namespace Shinoa.Services
             {
                 using (var db = new ImageSpamContext(dbOptions))
                 {
-                   if (msg.Author is IGuildUser user &&
+                    if (msg.Author is IGuildUser user &&
+                        !user.IsBot &&
                         !db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
                         msg.Attachments.Count > 0)
-                   {
+                    {
                         var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
                         var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
                                              let timeDifference = DateTimeOffset.Now - message.Timestamp
-                                             where timeDifference.TotalSeconds < 15 && message.Attachments.Count > 0 && message.Author.Id == msg.Author.Id
-                                             select message).Count();
+                                             where timeDifference.TotalSeconds < 15 && message.Attachments.Count + message.Embeds.Count > 0 && message.Author.Id == msg.Author.Id
+                                             select message).Sum(message => message.Attachments.Count + message.Embeds.Count);
 
-                        if (imagesCounter > 2)
+                        if (imagesCounter > 3)
                         {
                             await msg.DeleteAsync();
                             await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
 
-                            var mutedRole = user.Guild.Roles.FirstOrDefault(role => role.Name.ToLower().Contains("muted"));
+                            var mutedRole = moderationService.GetRole(user.Guild);
 
                             await user.AddRoleAsync(mutedRole);
-                            await Task.Delay(5 * 60 * 1000);
-                            await user.RemoveRoleAsync(mutedRole);
-                            await msg.Channel.SendMessageAsync($"User {user.Mention} has been unmuted automatically.");
+                            await moderationService.AddMute(
+                                user.Guild,
+                                user,
+                                DateTime.Now + TimeSpan.FromMinutes(5));
                         }
-                   }
+                    }
                 }
             }
             catch (HttpException)

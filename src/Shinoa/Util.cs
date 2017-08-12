@@ -143,5 +143,18 @@ namespace Shinoa
                 Footer = EmbedFooter,
             });
         }
+
+        public static Task<IUserMessage> SendEmbedAsync(
+            this IMessageChannel channel,
+            string description,
+            Color? color = null)
+        {
+            return channel.SendEmbedAsync(new EmbedBuilder
+            {
+                Color = color,
+                Description = description,
+                Footer = EmbedFooter,
+            });
+        }
     }
 }
