@@ -58,7 +58,7 @@ namespace Shinoa
 
         public static DateTime StartTime { get; } = DateTime.Now;
 
-        public static async Task Main() => await StartAsync();
+        public static Task Main() => StartAsync();
 
         public static async Task TryReenableLogging()
         {
@@ -105,13 +105,13 @@ namespace Shinoa
                     if (instance == null) continue;
                     if (instance is BlacklistService || instance is ModerationService)
                     {
-                        await ((instance as IDatabaseService)?.RemoveBinding(Client.GetGuild(guildId)) ?? Task.CompletedTask);
+                        await ((IDatabaseService)instance).RemoveBinding(Client.GetGuild(guildId));
                         continue;
                     }
 
                     if (instance is BadWordService)
                     {
-                        await ((instance as IDatabaseService)?.RemoveBinding(Client.GetGuild(guildId)) ?? Task.CompletedTask);
+                        await ((IDatabaseService)instance).RemoveBinding(Client.GetGuild(guildId));
                     }
 
                     channels.ForEach(async channel =>
@@ -386,20 +386,16 @@ namespace Shinoa
             };
             Client.Ready += async () =>
             {
-                Map.AddSingleton<ModerationService>();
-                provider = Map.BuildServiceProvider();
-                var modServ = provider.GetService<ModerationService>();
-                modServ.Init(null, provider);
-                Callbacks.TryAdd(typeof(ModerationService), modServ.Callback);
-                await Log($"Service \"{typeof(ModerationService).Name}\" added to callbacks");
-                await Log($"Loaded service \"{typeof(ModerationService).Name}\"");
-
                 foreach (var service in services)
                 {
+                    if (Map.Any(d => d.ServiceType == service)) continue;
                     var instance = (IService)Activator.CreateInstance(service);
-                    var descriptor = new ServiceDescriptor(service, instance);
-                    if (Map.Count(d => d.ServiceType == service) != 0) continue;
+                    Map.AddSingleton(service, instance);
+                }
 
+                foreach (var serviceDesc in Map)
+                {
+                    var service = serviceDesc.ServiceType;
                     var configAttr = service.GetCustomAttribute<ConfigAttribute>();
                     dynamic config = null;
                     try
@@ -415,16 +411,16 @@ namespace Shinoa
                         await LogError(e.ToString());
                     }
 
+                    var instance = (IService)serviceDesc.ImplementationInstance;
                     try
                     {
-                        provider = Map.BuildServiceProvider();
                         instance.Init(config, provider);
-                        Map.AddSingleton(service, instance);
                     }
                     catch (Exception e)
                     {
                         await LogError($"Initialization of service \"{service.Name}\" failed.");
                         await LogError(e.ToString());
+                        var descriptor = new ServiceDescriptor(service, instance);
                         Map.Remove(descriptor);
                     }
 
@@ -436,6 +432,8 @@ namespace Shinoa
 
                     await Log($"Loaded service \"{service.Name}\"");
                 }
+
+                provider = Map.BuildServiceProvider();
 
                 var refreshRate = 30;
                 try
@@ -471,7 +469,6 @@ namespace Shinoa
                     TimeSpan.Zero,
                     TimeSpan.FromSeconds(refreshRate));
 
-                provider = Map.BuildServiceProvider();
                 await Log("All modules initialized successfully. Shinoa is up and running.");
             };
 
