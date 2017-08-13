@@ -393,6 +393,8 @@ namespace Shinoa
                     Map.AddSingleton(service, instance);
                 }
 
+                provider = Map.BuildServiceProvider();
+
                 foreach (var serviceDesc in Map)
                 {
                     var service = serviceDesc.ServiceType;
@@ -432,8 +434,6 @@ namespace Shinoa
 
                     await Log($"Loaded service \"{service.Name}\"");
                 }
-
-                provider = Map.BuildServiceProvider();
 
                 var refreshRate = 30;
                 try
