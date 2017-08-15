@@ -9,8 +9,13 @@ namespace Shinoa.Modules
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
+
     using Attributes;
+
     using Discord.Commands;
+
+    using Extensions;
+
     using Microsoft.CSharp.RuntimeBinder;
     using Newtonsoft.Json;
 

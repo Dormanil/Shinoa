@@ -10,19 +10,27 @@ namespace Shinoa.Services.TimedServices
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+
     using Attributes;
+
     using BoxKite.Twitter;
     using BoxKite.Twitter.Models;
+
     using Databases;
+
     using Discord;
     using Discord.WebSocket;
+
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+
     using static Databases.TwitterContext;
 
     [Config("twitter")]
     public class TwitterService : IDatabaseService, ITimedService
     {
-        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
         private ApplicationSession twitterSession;
 
@@ -31,7 +39,7 @@ namespace Shinoa.Services.TimedServices
         public async Task<BindingStatus> AddBinding(string username, IMessageChannel channel)
         {
             if (string.IsNullOrEmpty((await twitterSession.GetUserProfile(username)).Name)) return BindingStatus.Error;
-            using (var db = new TwitterContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<TwitterContext>())
             {
                 var twitterBinding = new TwitterBinding
                 {
@@ -54,7 +62,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<bool> RemoveBinding(string username, IMessageChannel channel)
         {
-            using (var db = new TwitterContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<TwitterContext>())
             {
                 var name = username.ToLower();
 
@@ -69,7 +77,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = new TwitterContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<TwitterContext>())
             {
                 var entities = db.TwitterChannelBindings.Where(b => b.ChannelId == binding.Id);
                 if (!entities.Any()) return false;
@@ -82,14 +90,12 @@ namespace Shinoa.Services.TimedServices
 
         public IEnumerable<TwitterChannelBinding> GetBindings(IMessageChannel channel)
         {
-            using (var db = new TwitterContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<TwitterContext>())
                 return db.TwitterChannelBindings.Where(b => b.ChannelId == channel.Id).Include(b => b.TwitterBinding).ToList();
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
-
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             ModuleColor = new Color(33, 155, 243);
@@ -113,7 +119,7 @@ namespace Shinoa.Services.TimedServices
 
         async Task ITimedService.Callback()
         {
-            using (var db = new TwitterContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<TwitterContext>())
             {
                 foreach (var user in db.TwitterBindings.Include(b => b.ChannelBindings))
                 {

@@ -14,22 +14,30 @@ namespace Shinoa
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+
     using Attributes;
+
     using Databases;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.DependencyInjection;
+
     using MySQL.Data.EntityFrameworkCore.Extensions;
+
     using Services;
     using Services.TimedServices;
+
     using YamlDotNet.Serialization;
+
     using static Logging;
 
     public static class Shinoa
     {
-        public const string Version = "3.0.0-rc3";
+        public const string Version = "3.0.0-rc4";
 
         public static readonly string VersionString =
             $"Shinoa v{Version}, built with \u2764 by OmegaVesko, FallenWarrior2k & Kazumi";
@@ -44,10 +52,11 @@ namespace Shinoa
 
         private static readonly IServiceCollection Map = new ServiceCollection();
         private static readonly Dictionary<Type, Func<Task>> Callbacks = new Dictionary<Type, Func<Task>>();
-        private static IServiceProvider provider;
         private static Timer globalRefreshTimer;
 
         public static dynamic Config { get; private set; }
+
+        public static IServiceProvider Provider { get; private set; }
 
         public static CancellationTokenSource Cts { get; } = new CancellationTokenSource();
 
@@ -101,7 +110,7 @@ namespace Shinoa
 
                 foreach (var service in services)
                 {
-                    var instance = provider.GetService(service);
+                    var instance = Provider.GetService(service);
                     if (instance == null) continue;
                     if (instance is BlacklistService || instance is ModerationService)
                     {
@@ -109,9 +118,9 @@ namespace Shinoa
                         continue;
                     }
 
-                    if (instance is BadWordService)
+                    if (instance is BadWordService badWordService)
                     {
-                        await ((IDatabaseService)instance).RemoveBinding(Client.GetGuild(guildId));
+                        await (badWordService as IDatabaseService).RemoveBinding(Client.GetGuild(guildId));
                     }
 
                     channels.ForEach(async channel =>
@@ -201,29 +210,56 @@ namespace Shinoa
             try
             {
                 string connectString = Config["global"]["database"]["connect_string"];
-                var optionsBuilder = new DbContextOptionsBuilder();
+
+                // Obsoleted because not concurrency-safe
+                // Except I do this not singleton any longer.
+                // So consider it unobsoleted.
+                var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
+                    .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseContext)) && !(t.IsAbstract || t.IsInterface))
+                    .Select(t => t);
+
                 switch (dbProvider)
                 {
                     case DatabaseProvider.PostgreSQL:
-                        optionsBuilder.UseNpgsql(connectString);
+                        foreach (var database in databases)
+                        {
+                            typeof(EntityFrameworkServiceCollectionExtensions).GetMethod(nameof(EntityFrameworkServiceCollectionExtensions.AddDbContextPool))
+                                .MakeGenericMethod(database.UnderlyingSystemType)
+                                .Invoke(null, new object[] { Map, (Action<DbContextOptionsBuilder>)(cb => cb.UseNpgsql(connectString)) });
+                        }
+
                         break;
                     case DatabaseProvider.SQLServer:
-                        optionsBuilder.UseSqlServer(connectString);
+                        foreach (var database in databases)
+                        {
+                            typeof(EntityFrameworkServiceCollectionExtensions).GetMethod(nameof(EntityFrameworkServiceCollectionExtensions.AddDbContextPool))
+                                .MakeGenericMethod(database.UnderlyingSystemType)
+                                .Invoke(null, new object[] { Map, (Action<DbContextOptionsBuilder>)(cb => cb.UseSqlServer(connectString)) });
+                        }
+
                         break;
                     case DatabaseProvider.MySQL:
-                        optionsBuilder.UseMySQL(connectString);
+                        foreach (var database in databases)
+                        {
+                            typeof(EntityFrameworkServiceCollectionExtensions).GetMethod(nameof(EntityFrameworkServiceCollectionExtensions.AddDbContextPool))
+                                .MakeGenericMethod(database.UnderlyingSystemType)
+                                .Invoke(null, new object[] { Map, (Action<DbContextOptionsBuilder>)(cb => cb.UseMySQL(connectString)) });
+                        }
+
                         break;
                     case DatabaseProvider.InMemory:
-                        optionsBuilder.UseInMemoryDatabase($"{Guid.NewGuid()}");
+                        foreach (var database in databases)
+                        {
+                            typeof(EntityFrameworkServiceCollectionExtensions).GetMethod(nameof(EntityFrameworkServiceCollectionExtensions.AddDbContextPool))
+                                .MakeGenericMethod(database.UnderlyingSystemType)
+                                .Invoke(null, new object[] { Map, (Action<DbContextOptionsBuilder>)(cb => cb.UseInMemoryDatabase($"{Guid.NewGuid()}")) });
+                        }
+
                         break;
                     default:
                         await LogError("The given database provider was invalid. Exiting.");
                         break;
                 }
-
-                var contextOptions = optionsBuilder.Options;
-
-                Map.AddSingleton(contextOptions);
             }
             catch (KeyNotFoundException)
             {
@@ -236,17 +272,6 @@ namespace Shinoa
                 await LogError(e.ToString());
                 return;
             }
-
-            // Obsoleted because not concurrency-safe
-            /*var databases = typeof(Shinoa).GetTypeInfo().Assembly.GetExportedTypes()
-                    .Select(t => t.GetTypeInfo())
-                    .Where(t => t.GetInterfaces().Contains(typeof(IDatabaseContext)) && !(t.IsAbstract || t.IsInterface))
-                    .Select(t => t);
-
-            foreach (var database in databases)
-            {
-                Map.AddSingleton(database);
-            }*/
 
             #region Services
 
@@ -326,7 +351,7 @@ namespace Shinoa
             };
             Client.MessageReceived += async message =>
             {
-                if (provider == null) return;
+                if (Provider == null) return;
                 var userMessage = message as SocketUserMessage;
                 var argPos = 0;
                 if (userMessage == null
@@ -335,7 +360,7 @@ namespace Shinoa
 
                 var contextSock = new SocketCommandContext(Client, userMessage);
                 await LogMessage(contextSock);
-                var res = await Commands.ExecuteAsync(contextSock, argPos, provider);
+                var res = await Commands.ExecuteAsync(contextSock, argPos, Provider);
                 if (res.IsSuccess) return;
 
                 await LogError(res.ErrorReason);
@@ -359,6 +384,8 @@ namespace Shinoa
                         break;
                     case CommandError.Exception:
                         responseMessage = "An exception occurred.";
+                        break;
+                    case CommandError.Unsuccessful:
                         break;
                     case null:
                         break;
@@ -393,7 +420,7 @@ namespace Shinoa
                     Map.AddSingleton(service, instance);
                 }
 
-                provider = Map.BuildServiceProvider();
+                Provider = Map.BuildServiceProvider();
 
                 foreach (var serviceDesc in Map)
                 {
@@ -416,7 +443,7 @@ namespace Shinoa
                     var instance = (IService)serviceDesc.ImplementationInstance;
                     try
                     {
-                        instance.Init(config, provider);
+                        instance.Init(config, Provider);
                     }
                     catch (Exception e)
                     {

@@ -16,22 +16,28 @@ namespace Shinoa.Services.TimedServices
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Xml.Linq;
+
     using Databases;
+
     using Discord;
     using Discord.WebSocket;
+
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+
     using static Databases.AnimeFeedContext;
 
     public class AnimeFeedService : IDatabaseService, ITimedService
     {
         private static readonly Color ModuleColor = new Color(0, 150, 136);
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("http://www.nyaa.si/") };
-        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
         public async Task<bool> AddBinding(IMessageChannel channel)
         {
-            using (var db = new AnimeFeedContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<AnimeFeedContext>())
             {
                 if (db.AnimeFeedBindings.Any(b => b.ChannelId == channel.Id)) return false;
 
@@ -46,7 +52,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = new AnimeFeedContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<AnimeFeedContext>())
             {
                 var entities = db.AnimeFeedBindings.Where(b => b.ChannelId == binding.Id);
                 if (!entities.Any()) return false;
@@ -59,8 +65,6 @@ namespace Shinoa.Services.TimedServices
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
-
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
         }
 
@@ -114,7 +118,7 @@ namespace Shinoa.Services.TimedServices
 
         private IEnumerable<IMessageChannel> GetFromDb()
         {
-            using (var db = new AnimeFeedContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<AnimeFeedContext>())
                 return db.AnimeFeedBindings.Select(binding => client.GetChannel(binding.ChannelId)).OfType<IMessageChannel>().ToList();
         }
     }

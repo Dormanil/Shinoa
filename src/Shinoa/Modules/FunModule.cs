@@ -11,6 +11,9 @@ namespace Shinoa.Modules
     using Attributes;
     using Discord;
     using Discord.Commands;
+
+    using Extensions;
+
     using Services;
 
     /// <summary>

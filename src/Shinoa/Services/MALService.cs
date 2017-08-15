@@ -13,8 +13,12 @@ namespace Shinoa.Services
     using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Xml.Linq;
+
     using Attributes;
+
     using Discord;
+
+    using Extensions;
 
     [Config("mal")]
     public class MalService : IService

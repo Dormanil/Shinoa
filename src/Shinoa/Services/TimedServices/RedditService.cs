@@ -12,13 +12,23 @@ namespace Shinoa.Services.TimedServices
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
+
     using Attributes;
+
     using Databases;
+
     using Discord;
     using Discord.WebSocket;
+
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+
     using Modules;
+
     using Newtonsoft.Json;
+
     using static Databases.RedditContext;
 
     [Config("reddit")]
@@ -26,7 +36,6 @@ namespace Shinoa.Services.TimedServices
     {
         private readonly HttpClient httpClient = new HttpClient { BaseAddress = new Uri("https://www.reddit.com/r/") };
 
-        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
         private string[] compactKeywords;
         private string[] filterKeywords;
@@ -36,7 +45,7 @@ namespace Shinoa.Services.TimedServices
         public async Task<BindingStatus> AddBinding(string subredditName, IMessageChannel channel)
         {
             if (!(await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, subredditName))).IsSuccessStatusCode) return BindingStatus.Error;
-            using (var db = new RedditContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<RedditContext>())
             {
                 var subreddit = new RedditBinding
                 {
@@ -59,7 +68,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<bool> RemoveBinding(string subredditName, IMessageChannel channel)
         {
-            using (var db = new RedditContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<RedditContext>())
             {
                 var name = subredditName.ToLower();
 
@@ -74,7 +83,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = new RedditContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<RedditContext>())
             {
                 var entities = db.RedditChannelBindings.Where(b => b.ChannelId == binding.Id);
                 if (!entities.Any()) return false;
@@ -87,14 +96,12 @@ namespace Shinoa.Services.TimedServices
 
         public IEnumerable<RedditChannelBinding> GetBindings(IMessageChannel channel)
         {
-            using (var db = new RedditContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<RedditContext>())
                 return db.RedditChannelBindings.Where(b => b.ChannelId == channel.Id).Include(b => b.Subreddit).ToList();
         }
 
         async void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
-
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             compactKeywords = ((List<object>)config["compact_keywords"]).Cast<string>().ToArray();
@@ -117,7 +124,7 @@ namespace Shinoa.Services.TimedServices
 
         async Task ITimedService.Callback()
         {
-            using (var db = new RedditContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<RedditContext>())
             {
                 foreach (var subreddit in db.RedditBindings.Include(b => b.ChannelBindings))
                 {
@@ -125,7 +132,7 @@ namespace Shinoa.Services.TimedServices
                     if (responseText == null) continue;
 
                     dynamic responseObject = JsonConvert.DeserializeObject(responseText);
-                    dynamic posts = responseObject["data"]["children"];
+                    var posts = responseObject["data"]["children"];
                     var newestCreationTime = DateTimeOffset.FromUnixTimeSeconds((int)posts[0]["data"]["created_utc"]);
                     var postStack = new Stack<Embed>();
 

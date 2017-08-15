@@ -10,11 +10,18 @@ namespace Shinoa.Services
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+
     using Databases;
+
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
+
     using static Databases.BadWordContext;
 
     /// <summary>
@@ -22,8 +29,6 @@ namespace Shinoa.Services
     /// </summary>
     public class BadWordService : IDatabaseService
     {
-        private DbContextOptions dbOptions;
-
         private DiscordSocketClient client;
 
         /// <summary>
@@ -35,7 +40,7 @@ namespace Shinoa.Services
         /// <returns></returns>
         public async Task<BindingStatus> AddBinding(bool global, ICommandContext context, string badWord)
         {
-            using (var db = new BadWordContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<BadWordContext>())
             {
                 if (global)
                 {
@@ -121,7 +126,7 @@ namespace Shinoa.Services
         /// <returns></returns>
         public async Task<BindingStatus> RemoveBinding(bool global, ICommandContext context, string badWord)
         {
-            using (var db = new BadWordContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<BadWordContext>())
             {
                 if (global)
                 {
@@ -174,7 +179,7 @@ namespace Shinoa.Services
         /// <returns>A dictionary with key of the binding and a indicator of the scope of the binding, and value being the banned words for that binding.</returns>
         public IDictionary<(object entity, bool isGuild), IEnumerable<string>> ListBindings(ICommandContext context)
         {
-            using (var db = new BadWordContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<BadWordContext>())
             {
                 var bindingList = new Dictionary<(object entity, bool isGuild), IEnumerable<string>>();
                 foreach (var server in db.BadWordServerBindings.Include(b => b.BadWords).Where(b => b.ServerId == context.Guild.Id))
@@ -188,7 +193,6 @@ namespace Shinoa.Services
         /// <inheritdoc cref="IService.Init"/>
         void IService.Init(dynamic config, IServiceProvider map)
         {
-            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             client.MessageReceived += Handler;
@@ -221,7 +225,7 @@ namespace Shinoa.Services
             if (!(arg.Channel is ITextChannel guildChannel)) return;
             if (arg.Content.StartsWith($"{(string)Shinoa.Config["global"]["command_prefix"]}badword")) return;
             if (arg.Author.IsBot) return;
-            using (var db = new BadWordContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<BadWordContext>())
             {
                 var toBeDeleted = false;
                 var channelBindings = db.BadWordChannelBindings.Where(b => b.ChannelId == arg.Channel.Id);
@@ -250,7 +254,7 @@ namespace Shinoa.Services
 
         private async Task<bool> RemoveChannelBinding(ITextChannel channel)
         {
-            using (var db = new BadWordContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<BadWordContext>())
             {
                 var bindings = await db.BadWordChannelBindings.Where(b => b.ChannelId == channel.Id).ToListAsync();
                 if (!bindings.Any())
@@ -264,7 +268,7 @@ namespace Shinoa.Services
 
         private async Task<bool> RemoveGuildBinding(IGuild guild)
         {
-            using (var db = new BadWordContext(dbOptions))
+            using (var db = Shinoa.Provider.GetService<BadWordContext>())
             {
                 var bindings = await db.BadWordServerBindings.Where(b => b.ServerId == guild.Id).ToListAsync();
                 if (!bindings.Any())

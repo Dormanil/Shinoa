@@ -5,14 +5,15 @@
     <AssemblyName>Shinoa</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Shinoa</PackageId>
-    <RuntimeIdentifiers>win10-x64;win81-x64;win8-x64;win7-x64;ubuntu.16.04-x64;ubuntu.16.10-x64;debian.8-x64;rhel.7.4-x64;fedora.24-x64;opensuse.42.1-x64;linuxmint.18-x64;osx.10.12-x64</RuntimeIdentifiers>
-    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <RuntimeIdentifiers>win10-x64;win81-x64;win8-x64;ubuntu.16.04-x64;ubuntu.16.10-x64;debian.8-x64;rhel.7.4-x64;fedora.24-x64;opensuse.42.1-x64;linuxmint.18-x64;osx.10.12-x64</RuntimeIdentifiers>
+    <AssetTargetFallback>dnxcore50;portable-net45+win8</AssetTargetFallback>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|AnyCPU'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+    <WarningsAsErrors>NU1605</WarningsAsErrors>
+    <NoWarn>1701;1702;1705;NU1701</NoWarn>
+  </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>latest</LangVersion>
@@ -25,6 +26,10 @@
     <WarningsAsErrors>NU1605</WarningsAsErrors>
     <NoWarn>1701;1702;1705;NU1701</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="GlobalSuppressions2.cs" />
+  </ItemGroup>
   
   <ItemGroup>
     <None Remove="stylecop.json" />
@@ -38,29 +43,20 @@
     <PackageReference Include="BoxKite.Twitter" Version="2.4.0" />
     <PackageReference Include="Discord.Net" Version="1.0.1" />
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.0.0" />
     <PackageReference Include="MoonSharp" Version="2.0.0" />
     <PackageReference Include="MySql.Data.EntityFrameworkCore" Version="8.0.8-dmr" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.0.0-preview2-final" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.0-*" />
     <PackageReference Include="RestEase" Version="1.4.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004" />
-    <PackageReference Include="System.Xml.XDocument" Version="4.3.0" />
     <PackageReference Include="YamlDotNet" Version="4.2.2-pre0425" />
   </ItemGroup>
   
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Update="config.yaml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>
