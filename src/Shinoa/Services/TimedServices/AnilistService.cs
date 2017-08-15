@@ -14,6 +14,9 @@ namespace Shinoa.Services.TimedServices
     using Attributes;
     using Discord;
     using Discord.Commands;
+
+    using Extensions;
+
     using Newtonsoft.Json;
 
     [Config("anilist")]

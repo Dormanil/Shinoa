@@ -12,6 +12,9 @@ namespace Shinoa.Services
     using Databases;
     using Discord;
     using Discord.WebSocket;
+
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
     using static Databases.BotFunctionSpamContext;
 
@@ -83,7 +86,7 @@ namespace Shinoa.Services
                 case string sleepy when sleepy.Trim().TrimPunctuation().ToLower() == "wake me up":
                     await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname ?? m.Author.Username : m.Author.Username)} up inside._");
                     break;
-                case string sleepyDefault when sleepyDefault.Trim().TrimPunctuation().ToLower().StartsWith("wake") && 
+                case string sleepyDefault when sleepyDefault.Trim().TrimPunctuation().ToLower().StartsWith("wake") &&
                         sleepyDefault.Trim().TrimPunctuation().ToLower().EndsWith("up"):
                     var messageArray = m.Content.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
                         .Skip(1)

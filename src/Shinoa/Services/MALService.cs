@@ -16,6 +16,8 @@ namespace Shinoa.Services
     using Attributes;
     using Discord;
 
+    using Extensions;
+
     [Config("mal")]
     public class MalService : IService
     {

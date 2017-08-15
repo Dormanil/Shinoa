@@ -14,6 +14,9 @@ namespace Shinoa.Services
     using Discord;
     using Discord.Commands;
     using Discord.WebSocket;
+
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
     using static Databases.BadWordContext;
 

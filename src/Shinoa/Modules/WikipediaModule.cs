@@ -12,6 +12,9 @@ namespace Shinoa.Modules
     using Attributes;
     using Discord;
     using Discord.Commands;
+
+    using Extensions;
+
     using Microsoft.CSharp.RuntimeBinder;
     using Newtonsoft.Json;
 

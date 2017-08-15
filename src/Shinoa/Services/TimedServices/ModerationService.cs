@@ -16,6 +16,8 @@ namespace Shinoa.Services.TimedServices
     using Discord;
     using Discord.WebSocket;
 
+    using Extensions;
+
     using Microsoft.EntityFrameworkCore;
 
     using static Databases.ModerationContext;
