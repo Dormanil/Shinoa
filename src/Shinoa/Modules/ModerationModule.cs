@@ -14,8 +14,6 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
 
-    using Extensions;
-
     using Services;
     using Services.TimedServices;
 

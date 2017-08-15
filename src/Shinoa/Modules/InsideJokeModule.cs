@@ -13,8 +13,6 @@ namespace Shinoa.Modules
     using Discord;
     using Discord.Commands;
 
-    using Extensions;
-
     /// <summary>
     /// Module containing commands for use on the FDoD server.
     /// </summary>

@@ -9,14 +9,9 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-
     using Databases;
-
     using Discord;
-
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.DependencyInjection;
-
     using static Databases.BlacklistUserContext;
 
     /// <summary>
@@ -24,15 +19,18 @@ namespace Shinoa.Services
     /// </summary>
     public class BlacklistService : IDatabaseService
     {
+        private DbContextOptions dbOptions;
+
         /// <inheritdoc cref="IService.Init"/>
         void IService.Init(dynamic config, IServiceProvider map)
         {
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
         }
 
         /// <inheritdoc cref="IDatabaseService.RemoveBinding"/>
         public async Task<bool> RemoveBinding(IEntity<ulong> guild)
         {
-            using (var db = Shinoa.Provider.GetService<BlacklistUserContext>())
+            using (var db = new BlacklistUserContext(dbOptions))
             {
                 var entities = db.BlacklistUserBindings.Where(b => b.GuildId == guild.Id);
                 if (!entities.Any()) return false;
@@ -51,7 +49,7 @@ namespace Shinoa.Services
         /// <returns></returns>
         public async Task<bool> AddBinding(IGuild guild, IGuildUser user)
         {
-            using (var db = Shinoa.Provider.GetService<BlacklistUserContext>())
+            using (var db = new BlacklistUserContext(dbOptions))
             {
                 if (db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id)) return false;
 
@@ -67,7 +65,7 @@ namespace Shinoa.Services
 
         public async Task<bool> RemoveBinding(IGuild guild, IGuildUser user)
         {
-            using (var db = Shinoa.Provider.GetService<BlacklistUserContext>())
+            using (var db = new BlacklistUserContext(dbOptions))
             {
                 var entity = await db.BlacklistUserBindings.FirstOrDefaultAsync(b => b.GuildId == guild.Id && b.UserId == user.Id);
                 if (entity == null) return false;
@@ -80,8 +78,8 @@ namespace Shinoa.Services
 
         public bool CheckBinding(IGuild guild, IGuildUser user)
         {
-            using (var db = Shinoa.Provider.GetService<BlacklistUserContext>())
-                return db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
+            using (var db = new BlacklistUserContext(dbOptions))
+            return db.BlacklistUserBindings.Any(b => b.GuildId == guild.Id && b.UserId == user.Id);
         }
     }
 }

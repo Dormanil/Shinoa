@@ -17,7 +17,6 @@ namespace Shinoa.Services
     using Discord.WebSocket;
 
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.DependencyInjection;
 
     using TimedServices;
 
@@ -25,11 +24,12 @@ namespace Shinoa.Services
 
     public class ImageSpamService : IDatabaseService
     {
+        private DbContextOptions dbOptions;
         private ModerationService moderationService;
 
         public async Task<bool> AddBinding(IMessageChannel channel)
         {
-            using (var db = Shinoa.Provider.GetService<ImageSpamContext>())
+            using (var db = new ImageSpamContext(dbOptions))
             {
                 if (db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
 
@@ -44,7 +44,7 @@ namespace Shinoa.Services
 
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = Shinoa.Provider.GetService<ImageSpamContext>())
+            using (var db = new ImageSpamContext(dbOptions))
             {
                 var entities = db.ImageSpamBindings.Where(b => b.ChannelId == binding.Id);
                 if (!entities.Any()) return false;
@@ -57,12 +57,13 @@ namespace Shinoa.Services
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            using (var db = Shinoa.Provider.GetService<ImageSpamContext>())
+            using (var db = new ImageSpamContext(dbOptions))
             return db.ImageSpamBindings.Any(b => b.ChannelId == channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
             moderationService = map.GetService(typeof(ModerationService)) as ModerationService ?? throw new ServiceNotFoundException("Moderation Service was not found in service provider.");
 
             var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Discord Client was not found in service provider.");
@@ -73,7 +74,7 @@ namespace Shinoa.Services
         {
             try
             {
-                using (var db = Shinoa.Provider.GetService<ImageSpamContext>())
+                using (var db = new ImageSpamContext(dbOptions))
                 {
                     if (msg.Author is IGuildUser user &&
                         !user.IsBot &&

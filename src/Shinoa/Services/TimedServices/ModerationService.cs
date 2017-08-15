@@ -16,22 +16,20 @@ namespace Shinoa.Services.TimedServices
     using Discord;
     using Discord.WebSocket;
 
-    using Extensions;
-
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.DependencyInjection;
 
     using static Databases.ModerationContext;
 
-    /// <summary>
-    /// Service for moderative tasks.
-    /// </summary>
     public class ModerationService : ITimedService, IDatabaseService
     {
+        private DbContextOptions dbOptions;
+
         /// <inheritdoc />
         public void Init(dynamic config, IServiceProvider map)
         {
-            var client = map.GetService<DiscordSocketClient>() ?? throw new ServiceNotFoundException("Discord Client was not found in service provider.");
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
+
+            var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Discord Client was not found in service provider.");
 
             client.UserJoined += UserJoinedHandler;
             client.UserLeft += UserLeftHandler;
@@ -40,7 +38,7 @@ namespace Shinoa.Services.TimedServices
         /// <inheritdoc />
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 var bindings = db.GuildUserMuteBindings.Where(b => b.GuildId == binding.Id);
                 var roleBindings = db.GuildRoleBindings.Where(b => b.GuildId == binding.Id);
@@ -64,7 +62,7 @@ namespace Shinoa.Services.TimedServices
         /// <inheritdoc />
         public async Task Callback()
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 var expiredMutes = db.GuildUserMuteBindings.Where(b => b.MuteTime <= DateTime.Now);
                 var roleBindings = db.GuildRoleBindings.Where(b => expiredMutes.Any(m => m.GuildId == b.GuildId));
@@ -80,15 +78,9 @@ namespace Shinoa.Services.TimedServices
             }
         }
 
-        /// <summary>
-        /// Adds an <see cref="IRole"/> for a specific <see cref="IGuild"/> to the database.
-        /// </summary>
-        /// <param name="guild"><see cref="IGuild"/> to add to the database.</param>
-        /// <param name="mutedRole"><see cref="IRole"/> to add to the database.</param>
-        /// <returns>A <see cref="Task{TResult}"/> representing the asynchronous operation.</returns>
         public async Task<BindingStatus> AddRole(IGuild guild, IRole mutedRole)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
@@ -112,7 +104,7 @@ namespace Shinoa.Services.TimedServices
 
         public IRole GetRole(IGuild guild)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 return db.GuildRoleBindings.Single(b => b.GuildId == guild.Id).Role;
             }
@@ -120,7 +112,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<BindingStatus> RemoveRole(IGuild guild, IRole role)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
@@ -144,7 +136,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<BindingStatus> AddMute(IGuild guild, IGuildUser user, DateTime? until = null)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
@@ -168,7 +160,7 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<BindingStatus> RemoveMute(IGuild guild, IGuildUser user)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
@@ -189,7 +181,7 @@ namespace Shinoa.Services.TimedServices
 
         private async Task UserJoinedHandler(SocketGuildUser user)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 var bindings = db.GuildUserMuteBindings.Where(b => b.UserId == user.Id);
 
@@ -202,7 +194,7 @@ namespace Shinoa.Services.TimedServices
 
         private async Task UserLeftHandler(SocketGuildUser user)
         {
-            using (var db = Shinoa.Provider.GetService<ModerationContext>())
+            using (var db = new ModerationContext(dbOptions))
             {
                 var bindings = db.GuildUserMuteBindings.Where(b => b.UserId == user.Id && (b.MuteTime == null || b.MuteTime - DateTime.Now > TimeSpan.FromDays(7)));
 

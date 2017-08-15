@@ -17,8 +17,6 @@ namespace Shinoa
     using Discord;
     using Discord.Commands;
 
-    using Extensions;
-
     /// <summary>
     /// Niceties for logging of commands and errors.
     /// </summary>

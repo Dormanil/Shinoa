@@ -13,14 +13,9 @@ namespace Shinoa.Modules
     using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-
     using Attributes;
-
     using Discord;
     using Discord.Commands;
-
-    using Extensions;
-
     using HtmlAgilityPack;
 
     /// <summary>

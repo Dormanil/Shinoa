@@ -22,6 +22,14 @@ namespace Shinoa.Databases
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.HasDefaultSchema("moderation");
+
+            modelBuilder.Entity<GuildUserMuteBinding>()
+                .HasKey(b => new { b.GuildIdString, b.UserIdString });
+        }
+
         /// <summary>
         /// Gets or sets the <see cref="DbSet{TEntity}"/> for guild to role bindings.
         /// </summary>
@@ -31,14 +39,6 @@ namespace Shinoa.Databases
         /// Gets or sets the <see cref="DbSet{TEntity}"/> for guild to user mute bindings.
         /// </summary>
         public DbSet<GuildUserMuteBinding> GuildUserMuteBindings { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.HasDefaultSchema("moderation");
-
-            modelBuilder.Entity<GuildUserMuteBinding>()
-                .HasKey(b => new { b.GuildIdString, b.UserIdString });
-        }
 
         public class GuildRoleBinding
         {

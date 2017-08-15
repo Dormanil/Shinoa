@@ -8,17 +8,12 @@ namespace Shinoa.Services.TimedServices
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net.Http;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-
     using Attributes;
-
     using Discord;
-
-    using Extensions;
-
+    using Discord.Commands;
     using Newtonsoft.Json;
 
     [Config("anilist")]
@@ -87,7 +82,7 @@ namespace Shinoa.Services.TimedServices
                 var responseText = await (await httpClient.GetAsync($"{query}?access_token={accessToken}")).Content.ReadAsStringAsync();
                 dynamic responseObject = JsonConvert.DeserializeObject(responseText);
 
-                var firstResult = responseObject[0];
+                dynamic firstResult = responseObject[0];
 
                 var result = new AnimeResult
                 {
@@ -184,7 +179,9 @@ namespace Shinoa.Services.TimedServices
                 Synonyms.RemoveAll(s => s == string.Empty);
                 if (Synonyms.Count > 0)
                 {
-                    var synonymsString = Synonyms.Aggregate(string.Empty, (current, synonym) => current + synonym + ", ").TrimEnd(',', ' ');
+                    var synonymsString = string.Empty;
+                    foreach (var synonym in Synonyms) synonymsString += synonym + ", ";
+                    synonymsString = synonymsString.TrimEnd(',', ' ');
                     embed.AddField(f => f.WithName("Synonyms").WithValue(synonymsString));
                 }
 
@@ -203,7 +200,9 @@ namespace Shinoa.Services.TimedServices
                 Genres.RemoveAll(s => s == string.Empty);
                 if (Genres.Count > 0)
                 {
-                    var genresString = Genres.Aggregate(string.Empty, (current, genre) => current + genre + ", ").TrimEnd(',', ' ');
+                    var genresString = string.Empty;
+                    foreach (var genre in Genres) genresString += genre + ", ";
+                    genresString = genresString.TrimEnd(',', ' ');
                     embed.AddField(f => f.WithName("Genres").WithValue(genresString));
                 }
 

@@ -9,24 +9,20 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-
     using Databases;
-
     using Discord;
     using Discord.WebSocket;
-
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.DependencyInjection;
-
     using static Databases.JoinPartServerContext;
 
     public class JoinPartService : IDatabaseService
     {
+        private DbContextOptions dbOptions;
         private DiscordSocketClient client;
 
         public async Task<bool> AddBinding(IGuild guild, IMessageChannel channel, bool move = false)
         {
-            using (var db = Shinoa.Provider.GetService<JoinPartServerContext>())
+            using (var db = new JoinPartServerContext(dbOptions))
             {
                 var binding = new JoinPartServerBinding
                 {
@@ -47,7 +43,7 @@ namespace Shinoa.Services
 
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = Shinoa.Provider.GetService<JoinPartServerContext>())
+            using (var db = new JoinPartServerContext(dbOptions))
             {
                 var entities = db.JoinPartServerBindings.Where(b => b.ChannelId == binding.Id);
 
@@ -61,6 +57,8 @@ namespace Shinoa.Services
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options were not found in service provider.");
+
             client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
 
             client.UserJoined += async user =>
@@ -86,7 +84,7 @@ namespace Shinoa.Services
 
         private async Task<IMessageChannel> GetGreetingChannel(IGuild guild)
         {
-            using (var db = Shinoa.Provider.GetService<JoinPartServerContext>())
+            using (var db = new JoinPartServerContext(dbOptions))
             {
                 var server = await db.JoinPartServerBindings.FirstOrDefaultAsync(srv => srv.ServerId == guild.Id);
                 if (server == default(JoinPartServerBinding)) return null;

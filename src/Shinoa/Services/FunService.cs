@@ -9,24 +9,19 @@ namespace Shinoa.Services
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-
     using Databases;
-
     using Discord;
     using Discord.WebSocket;
-
-    using Extensions;
-
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.DependencyInjection;
-
     using static Databases.BotFunctionSpamContext;
 
     public class FunService : IDatabaseService
     {
+        private DbContextOptions dbOptions;
+
         public async Task<bool> AddBinding(IMessageChannel channel)
         {
-            using (var db = Shinoa.Provider.GetService<BotFunctionSpamContext>())
+            using (var db = new BotFunctionSpamContext(dbOptions))
             {
                 if (db.BotFunctionSpamBindings.Any(b => b.ChannelId == channel.Id)) return false;
 
@@ -41,7 +36,7 @@ namespace Shinoa.Services
 
         public async Task<bool> RemoveBinding(IEntity<ulong> binding)
         {
-            using (var db = Shinoa.Provider.GetService<BotFunctionSpamContext>())
+            using (var db = new BotFunctionSpamContext(dbOptions))
             {
                 var entities = db.BotFunctionSpamBindings.Where(b => b.ChannelId == binding.Id);
                 if (!entities.Any()) return false;
@@ -54,12 +49,14 @@ namespace Shinoa.Services
 
         public bool CheckBinding(IMessageChannel channel)
         {
-            using (var db = Shinoa.Provider.GetService<BotFunctionSpamContext>())
+            using (var db = new BotFunctionSpamContext(dbOptions))
             return db.BotFunctionSpamBindings.All(b => b.ChannelId != channel.Id);
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
         {
+            dbOptions = map.GetService(typeof(DbContextOptions)) as DbContextOptions ?? throw new ServiceNotFoundException("Database Options not found in service provider.");
+
             var client = map.GetService(typeof(DiscordSocketClient)) as DiscordSocketClient ?? throw new ServiceNotFoundException("Database context was not found in service provider.");
             client.MessageReceived += MessageReceivedHandler;
         }
@@ -86,7 +83,7 @@ namespace Shinoa.Services
                 case string sleepy when sleepy.Trim().TrimPunctuation().ToLower() == "wake me up":
                     await m.Channel.SendMessageAsync($"_Wakes {(m.Author is IGuildUser author ? author.Nickname ?? m.Author.Username : m.Author.Username)} up inside._");
                     break;
-                case string sleepyDefault when sleepyDefault.Trim().TrimPunctuation().ToLower().StartsWith("wake") &&
+                case string sleepyDefault when sleepyDefault.Trim().TrimPunctuation().ToLower().StartsWith("wake") && 
                         sleepyDefault.Trim().TrimPunctuation().ToLower().EndsWith("up"):
                     var messageArray = m.Content.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries)
                         .Skip(1)

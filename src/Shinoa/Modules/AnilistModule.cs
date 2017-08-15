@@ -7,13 +7,8 @@
 namespace Shinoa.Modules
 {
     using System.Threading.Tasks;
-
     using Attributes;
-
     using Discord.Commands;
-
-    using Extensions;
-
     using Services.TimedServices;
 
     /// <summary>

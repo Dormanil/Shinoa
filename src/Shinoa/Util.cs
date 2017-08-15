@@ -4,7 +4,7 @@
 // Licensed under the MIT license.
 // </copyright>
 
-namespace Shinoa.Extensions
+namespace Shinoa
 {
     using System;
     using System.Collections.Generic;
@@ -128,7 +128,7 @@ namespace Shinoa.Extensions
 
         public static IEnumerable<string> TrimPunctuation(this IEnumerable<string> value)
         {
-            return value.Select<string, string>(word => word.TrimPunctuation());
+            return value.Select(word => word.TrimPunctuation());
         }
 
         public static Task<IUserMessage> ReplyEmbedAsync(
