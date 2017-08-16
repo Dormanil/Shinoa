@@ -44,7 +44,6 @@ namespace Shinoa.Modules
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Ban(IUser user, int pruneDays = 0, [Remainder] string reason = null)
-        public async Task Ban(IUser user, int pruneDays = 0, [Remainder] string reason = null)
         {
             if (Context.Guild == null) return;
             var delTask = Context.Message.DeleteAsync();
