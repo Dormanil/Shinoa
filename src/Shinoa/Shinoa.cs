@@ -21,7 +21,6 @@ namespace Shinoa
     using Discord.WebSocket;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.DependencyInjection;
-    using MySQL.Data.EntityFrameworkCore.Extensions;
     using Services;
     using Services.TimedServices;
     using YamlDotNet.Serialization;
@@ -208,7 +207,7 @@ namespace Shinoa
                         optionsBuilder.UseSqlServer(connectString);
                         break;
                     case DatabaseProvider.MySQL:
-                        optionsBuilder.UseMySQL(connectString);
+                        optionsBuilder.UseMySql(connectString);
                         break;
                     case DatabaseProvider.InMemory:
                         optionsBuilder.UseInMemoryDatabase($"{Guid.NewGuid()}");
