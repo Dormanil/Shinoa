@@ -85,7 +85,7 @@ namespace Shinoa.Modules
         [Command("mute")]
         [Alias("gag")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.MuteMembers)]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Mute(IGuildUser user, int amount = 0, string unitName = "")
         {
             var gagString = Context.Message.Content.Contains("gag") && !user.Nickname.Contains("gag")
@@ -135,7 +135,7 @@ namespace Shinoa.Modules
         [Command("unmute")]
         [Alias("ungag")]
         [RequireContext(ContextType.Guild)]
-        [RequireUserPermission(GuildPermission.MuteMembers)]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Unmute(IGuildUser user)
         {
             var gagString = Context.Message.Content.Contains("ungag") && !user.Nickname.Contains("ungag")
