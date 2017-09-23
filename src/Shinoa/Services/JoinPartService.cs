@@ -45,7 +45,7 @@ namespace Shinoa.Services
         {
             using (var db = new JoinPartServerContext(dbOptions))
             {
-                var entities = db.JoinPartServerBindings.Where(b => b.ChannelId == binding.Id);
+                var entities = db.JoinPartServerBindings.Where(b => b.ServerId == binding.Id);
 
                 if (!entities.Any()) return false;
 
