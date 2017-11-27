@@ -48,35 +48,35 @@ namespace Shinoa.Databases
             public string RoleIdString { get; set; }
 
             [NotMapped]
-            internal ulong? GuildId
+            public ulong GuildId
             {
-                get => ulong.TryParse(GuildIdString, out ulong id) ? id : null as ulong?;
+                get => ulong.Parse(GuildIdString);
 
-                set => GuildIdString = $"{value}";
+                set => GuildIdString = value.ToString();
             }
 
             [NotMapped]
-            internal ulong? RoleId
+            public ulong RoleId
             {
-                get => ulong.TryParse(RoleIdString, out ulong id) ? id : null as ulong?;
+                get => ulong.Parse(RoleIdString);
 
-                set => RoleIdString = $"{value}";
+                set => RoleIdString = value.ToString();
             }
 
             [NotMapped]
-            internal IGuild Guild
+            public IGuild Guild
             {
-                get => Shinoa.Client.GetGuild(GuildId ?? 0ul);
+                get => Shinoa.Client.GetGuild(GuildId);
 
-                set => GuildIdString = $"{value.Id}";
+                set => GuildIdString = value.Id.ToString();
             }
 
             [NotMapped]
-            internal IRole Role
+            public IRole Role
             {
-                get => Guild?.GetRole(RoleId ?? 0ul);
+                get => Guild?.GetRole(RoleId);
 
-                set => RoleIdString = $"{value.Id}";
+                set => RoleIdString = value.Id.ToString();
             }
         }
 
@@ -89,35 +89,35 @@ namespace Shinoa.Databases
             public DateTime? MuteTime { get; set; }
 
             [NotMapped]
-            internal ulong? GuildId
+            public ulong GuildId
             {
-                get => ulong.TryParse(GuildIdString, out ulong id) ? id : null as ulong?;
+                get => ulong.Parse(GuildIdString);
 
-                set => GuildIdString = $"{value}";
+                set => GuildIdString = value.ToString();
             }
 
             [NotMapped]
-            internal ulong? UserId
+            public ulong UserId
             {
-                get => ulong.TryParse(UserIdString, out ulong id) ? id : null as ulong?;
+                get => ulong.Parse(UserIdString);
 
-                set => UserIdString = $"{value}";
+                set => UserIdString = value.ToString();
             }
 
             [NotMapped]
-            internal IGuild Guild
+            public IGuild Guild
             {
-                get => Shinoa.Client.GetGuild(GuildId ?? 0ul);
+                get => Shinoa.Client.GetGuild(GuildId);
 
-                set => GuildIdString = $"{value.Id}";
+                set => GuildIdString = value.Id.ToString();
             }
 
             [NotMapped]
-            internal IGuildUser User
+            public IGuildUser User
             {
-                get => Guild?.GetUserAsync(UserId ?? 0ul).Result;
+                get => Guild?.GetUserAsync(UserId).Result;
 
-                set => UserIdString = $"{value.Id}";
+                set => UserIdString = value.Id.ToString();
             }
         }
     }
