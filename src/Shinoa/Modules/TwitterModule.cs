@@ -42,10 +42,10 @@ namespace Shinoa.Modules
                 case BindingStatus.Error:
                     await ReplyAsync($"Could not access @{twitterName}. Does the handle exist?");
                     break;
-                case BindingStatus.AlreadyExists:
+                case BindingStatus.PreconditionFailed:
                     await ReplyAsync($"Notifications for @{twitterName} are already bound to this channel (#{Context.Channel.Name}).");
                     break;
-                case BindingStatus.Added:
+                case BindingStatus.Success:
                     await ReplyAsync($"Notifications for @{twitterName} have been bound to this channel (#{Context.Channel.Name}).");
                     break;
             }

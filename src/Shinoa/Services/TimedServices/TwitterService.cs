@@ -42,7 +42,7 @@ namespace Shinoa.Services.TimedServices
                     LatestPost = DateTime.UtcNow,
                 };
 
-                if (db.TwitterChannelBindings.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return BindingStatus.AlreadyExists;
+                if (db.TwitterChannelBindings.Any(b => b.ChannelId == channel.Id && b.TwitterBinding.TwitterUsername == twitterBinding.TwitterUsername)) return BindingStatus.PreconditionFailed;
 
                 db.TwitterChannelBindings.Add(new TwitterChannelBinding
                 {
@@ -51,7 +51,7 @@ namespace Shinoa.Services.TimedServices
                 });
 
                 await db.SaveChangesAsync();
-                return BindingStatus.Added;
+                return BindingStatus.Success;
             }
         }
 

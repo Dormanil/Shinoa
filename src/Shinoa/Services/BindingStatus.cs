@@ -12,9 +12,7 @@ namespace Shinoa.Services
     public enum BindingStatus
     {
         Error,
-        AlreadyExists,
-        NotExisting = AlreadyExists,
-        Added,
-        Removed = Added,
+        PreconditionFailed,
+        Success,
     }
 }

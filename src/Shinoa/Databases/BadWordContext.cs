@@ -103,10 +103,10 @@ namespace Shinoa.Databases
         /// </summary>
         public class BadWordServerBinding
         {
-            [Key]
             /// <summary>
             /// Gets or sets the server ID string.
             /// </summary>
+            [Key]
             public string ServerIdString { get; set; }
 
             /// <summary>
@@ -135,10 +135,10 @@ namespace Shinoa.Databases
             /// </summary>
             public BadWordServerBinding Server { get; set; }
 
-            [ForeignKey("Server")]
             /// <summary>
             /// Gets or sets the server ID string.
             /// </summary>
+            [ForeignKey("Server")]
             public string ServerIdString { get; set; }
 
             /// <summary>

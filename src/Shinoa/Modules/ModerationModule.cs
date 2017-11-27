@@ -146,8 +146,7 @@ namespace Shinoa.Modules
                 case BindingStatus.Error:
                     await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
                     return;
-                case BindingStatus.NotExisting:
-                case BindingStatus.Removed:
+                case BindingStatus.PreconditionFailed:
                 default:
                     break;
             }
@@ -199,10 +198,10 @@ namespace Shinoa.Modules
                     case BindingStatus.Error:
                         await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
                         return;
-                    case BindingStatus.AlreadyExists:
+                    case BindingStatus.PreconditionFailed:
                         await this.ReplyEmbedAsync("The user is already muted. Aborting...", Color.Red);
                         return;
-                    case BindingStatus.Added:
+                    case BindingStatus.Success:
                     default:
                         break;
                 }
@@ -275,10 +274,9 @@ namespace Shinoa.Modules
                 case BindingStatus.Error:
                     await this.ReplyEmbedAsync($"An unexpected error unmuting {user.Username}#{user.Discriminator} has occured. Aborting...", Color.Red);
                     return;
-                case BindingStatus.NotExisting:
+                case BindingStatus.PreconditionFailed:
                     await this.ReplyEmbedAsync($"The user is not muted. Aborting...", Color.Red);
                     return;
-                case BindingStatus.Removed:
                 default:
                     break;
             }
@@ -588,10 +586,10 @@ namespace Shinoa.Modules
                 {
                     switch (await Service.AddBinding(false, Context, badWord.RemovePunctuation()))
                     {
-                        case BindingStatus.AlreadyExists:
+                        case BindingStatus.PreconditionFailed:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are already blocked in this channel.");
                             break;
-                        case BindingStatus.Added:
+                        case BindingStatus.Success:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are now blocked in this channel.");
                             break;
                         case BindingStatus.Error:
@@ -612,10 +610,10 @@ namespace Shinoa.Modules
                 {
                     switch (await Service.AddBinding(true, Context, badWord.RemovePunctuation()))
                     {
-                        case BindingStatus.AlreadyExists:
+                        case BindingStatus.PreconditionFailed:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are already blocked on this server.");
                             break;
-                        case BindingStatus.Added:
+                        case BindingStatus.Success:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are now blocked on this server.");
                             break;
                         case BindingStatus.Error:
@@ -648,10 +646,10 @@ namespace Shinoa.Modules
                 {
                     switch (await Service.RemoveBinding(false, Context, badWord.RemovePunctuation()))
                     {
-                        case BindingStatus.NotExisting:
+                        case BindingStatus.PreconditionFailed:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it were not blocked in this channel.");
                             break;
-                        case BindingStatus.Removed:
+                        case BindingStatus.Success:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are now no longer blocked in this channel.");
                             break;
                         case BindingStatus.Error:
@@ -672,10 +670,10 @@ namespace Shinoa.Modules
                 {
                     switch (await Service.RemoveBinding(true, Context, badWord.RemovePunctuation()))
                     {
-                        case BindingStatus.NotExisting:
+                        case BindingStatus.PreconditionFailed:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it were not blocked on this server.");
                             break;
-                        case BindingStatus.Removed:
+                        case BindingStatus.Success:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are now no longer blocked on this server.");
                             break;
                         case BindingStatus.Error:

@@ -39,11 +39,11 @@ namespace Shinoa.Modules
 
             switch (await Service.AddBinding(subredditName, Context.Channel))
             {
-                case BindingStatus.Added:
+                case BindingStatus.Success:
                     await ReplyAsync(
                         $"Notifications for /r/{subredditName} have been bound to this channel (#{Context.Channel.Name}).");
                     break;
-                case BindingStatus.AlreadyExists:
+                case BindingStatus.PreconditionFailed:
                     await ReplyAsync(
                         $"Notifications for /r/{subredditName} are already bound to this channel (#{Context.Channel.Name}).");
                     break;

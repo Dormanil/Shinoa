@@ -22,6 +22,16 @@ namespace Shinoa.Databases
         {
         }
 
+        /// <summary>
+        /// Gets or sets the <see cref="DbSet{TEntity}"/> for guild to role bindings.
+        /// </summary>
+        public DbSet<GuildBinding> GuildBindings { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="DbSet{TEntity}"/> for guild to user mute bindings.
+        /// </summary>
+        public DbSet<GuildUserMuteBinding> GuildUserMuteBindings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("moderation");
@@ -30,17 +40,7 @@ namespace Shinoa.Databases
                 .HasKey(b => new { b.GuildIdString, b.UserIdString });
         }
 
-        /// <summary>
-        /// Gets or sets the <see cref="DbSet{TEntity}"/> for guild to role bindings.
-        /// </summary>
-        public DbSet<GuildRoleBinding> GuildRoleBindings { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="DbSet{TEntity}"/> for guild to user mute bindings.
-        /// </summary>
-        public DbSet<GuildUserMuteBinding> GuildUserMuteBindings { get; set; }
-
-        public class GuildRoleBinding
+        public class GuildBinding
         {
             [Key]
             public string GuildIdString { get; set; }
@@ -82,11 +82,14 @@ namespace Shinoa.Databases
 
         public class GuildUserMuteBinding
         {
+            [ForeignKey("GuildIdString")]
+            public GuildBinding GuildBinding { get; set; }
+
             public string GuildIdString { get; set; }
 
             public string UserIdString { get; set; }
 
-            public DateTime? MuteTime { get; set; }
+            public DateTime? MutedUntil { get; set; }
 
             [NotMapped]
             public ulong GuildId

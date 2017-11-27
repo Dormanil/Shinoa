@@ -47,7 +47,7 @@ namespace Shinoa.Services.TimedServices
                     LatestPost = DateTime.UtcNow,
                 };
 
-                if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return BindingStatus.AlreadyExists;
+                if (db.RedditChannelBindings.Any(b => b.ChannelId == channel.Id && b.Subreddit.SubredditName == subreddit.SubredditName)) return BindingStatus.PreconditionFailed;
 
                 db.RedditChannelBindings.Add(new RedditChannelBinding
                 {
@@ -56,7 +56,7 @@ namespace Shinoa.Services.TimedServices
                 });
 
                 await db.SaveChangesAsync();
-                return BindingStatus.Added;
+                return BindingStatus.Success;
             }
         }
 
