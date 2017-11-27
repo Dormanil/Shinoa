@@ -10,8 +10,6 @@ namespace Shinoa.Databases.Migrations
     using System.IO;
     using Microsoft.EntityFrameworkCore;
 
-    using MySQL.Data.EntityFrameworkCore.Extensions;
-
     /// <summary>
     /// A factory for creating migrations.
     /// </summary>
@@ -41,7 +39,7 @@ namespace Shinoa.Databases.Migrations
                     optionsBuilder.UseNpgsql(connectionString);
                     break;
                 case DatabaseProvider.MySQL:
-                    optionsBuilder.UseMySQL(connectionString);
+                    optionsBuilder.UseMySql(connectionString);
                     break;
                 case DatabaseProvider.InMemory:
                     optionsBuilder.UseInMemoryDatabase($"{Guid.NewGuid()}");

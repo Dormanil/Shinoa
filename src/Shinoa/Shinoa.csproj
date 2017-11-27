@@ -37,18 +37,17 @@
 
   <ItemGroup>
     <PackageReference Include="BoxKite.Twitter" Version="2.4.0" />
-    <PackageReference Include="Discord.Net" Version="1.0.1" />
+    <PackageReference Include="Discord.Net" Version="1.0.2" />
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.0.0" />
     <PackageReference Include="MoonSharp" Version="2.0.0" />
-    <PackageReference Include="MySql.Data.EntityFrameworkCore" Version="8.0.8-dmr" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.0-*" />
-    <PackageReference Include="RestEase" Version="1.4.2" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.0.0" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.0-*" />
+    <PackageReference Include="RestEase" Version="1.4.3" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004" />
-    <PackageReference Include="System.Xml.XDocument" Version="4.3.0" />
     <PackageReference Include="YamlDotNet" Version="4.2.2-pre0425" />
   </ItemGroup>
   
