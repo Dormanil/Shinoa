@@ -351,15 +351,12 @@ namespace Shinoa
                         responseMessage = "You are not allowed to execute this command.";
                         break;
                     case CommandError.UnknownCommand:
-                        break;
                     case CommandError.ObjectNotFound:
-                        break;
                     case CommandError.MultipleMatches:
+                    case null:
                         break;
                     case CommandError.Exception:
                         responseMessage = "An exception occurred.";
-                        break;
-                    case null:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -412,7 +409,9 @@ namespace Shinoa
                         await LogError(e.ToString());
                     }
 
-                    var instance = (IService)serviceDesc.ImplementationInstance;
+                    var instance = serviceDesc.ImplementationInstance as IService;
+                    if(instance == null) continue;
+
                     try
                     {
                         instance.Init(config, provider);
@@ -421,8 +420,7 @@ namespace Shinoa
                     {
                         await LogError($"Initialization of service \"{service.Name}\" failed.");
                         await LogError(e.ToString());
-                        var descriptor = new ServiceDescriptor(service, instance);
-                        Map.Remove(descriptor);
+                        Map.Remove(serviceDesc);
                     }
 
                     if (instance is ITimedService timedService)

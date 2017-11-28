@@ -48,7 +48,7 @@ namespace Shinoa.Services.TimedServices
 
             var responseString = await (await client.PostAsync("https://anilist.co/api/auth/access_token", postContent)).Content.ReadAsStringAsync();
             dynamic responseObject = JsonConvert.DeserializeObject(responseString);
-            accessToken = responseObject.access_token;
+            accessToken = (string)responseObject["access_token"];
         }
 
         void IService.Init(dynamic config, IServiceProvider map)
