@@ -83,76 +83,98 @@ namespace Shinoa.Modules
             await this.ReplyEmbedAsync($"User {user.Username}#{user.Discriminator} has been kicked by {Context.User.Mention}.");
         }
 
-        [Command("initMuteRole")]
-        [RequireUserPermission(GuildPermission.ManageRoles)]
+        [Command("enablemute")]
+        [RequireUserPermission(GuildPermission.ManageRoles | GuildPermission.ManageChannels)]
         public async Task InitMuteRole([Remainder] string roleName = "Muted")
         {
-            if (Service.GetRole(Context.Guild) is IRole role)
+            if (await Service.GetRole(Context.Guild) != null)
             {
-                await this.ReplyEmbedAsync($"This server already has a role to mute users registered, `{role.Name}`. Did you perchance mean to update the role?", Color.Red);
+                await this.ReplyEmbedAsync("This server already has a role to mute users registered. Did you perhaps mean to update the role?", Color.Red);
                 return;
             }
 
-            await CreateMuteRole(roleName);
+            var delTask = Context.Message.DeleteAsync();
+            var role = await CreateMuteRole(roleName);
+            switch (await Service.AddBinding(role))
+            {
+                case BindingStatus.Success:
+                    await this.ReplyEmbedAsync($"{roleName} role has been set up successfully.", Color.Green);
+                    break;
+                case BindingStatus.PreconditionFailed:
+                    await role.DeleteAsync();
+                    await this.ReplyEmbedAsync($"There already is a mute role registered for this server. Aborting...", Color.Red);
+                    break;
+                case BindingStatus.Error:
+                    await role.DeleteAsync();
+                    await this.ReplyEmbedAsync($"An unexpected error occured while creating the mute role. Aborting...", Color.Red);
+                    break;
+            }
+            await delTask;
         }
 
-        [Command("updateMuteRole")]
+        [Command("setmuterole")]
+        [RequireUserPermission(GuildPermission.ManageRoles)]
+        public async Task SetMuteRole(IRole role)
+        {
+            // Helper to work around copy-pasting because no case fallthrough
+            bool error = false;
+
+            switch (await Service.UpdateBinding(role))
+            {
+                case BindingStatus.Success:
+                    await this.ReplyEmbedAsync($"Set {role.Name} as the muted role for {Context.Guild.Name}.");
+                    break;
+                case BindingStatus.PreconditionFailed:
+                    if (await Service.AddBinding(role) != BindingStatus.Success) error = true;
+                    break;
+                case BindingStatus.Error:
+                    error = true;
+                    break;
+            }
+
+            if (error)
+            {
+                await this.ReplyEmbedAsync("An unexpected error occured trying to update the bindings. Aborting...", Color.Red);
+            }
+        }
+
+        [Command("renamemuterole")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task UpdateMuteRole([Remainder] string roleName = "Muted")
         {
-            var role = Service.GetRole(Context.Guild) as IRole;
+            var role = await Service.GetRole(Context.Guild);
             if (role == null)
             {
-                await this.ReplyEmbedAsync($"This server has no role to mute users registered yet. Registering new role instead...", Color.Orange);
+                await this.ReplyEmbedAsync("This server has no role to mute users registered yet. Registering new role instead...", Color.Orange);
                 await InitMuteRole(roleName);
                 return;
             }
 
-            if (role.Name == roleName)
-            {
-                await this.ReplyEmbedAsync($"A mute-role with the name `{roleName}` exists already. Nothing to update.", Color.Red);
-                return;
-            }
-
-            switch (await Service.RemoveRole(Context.Guild, role))
-            {
-                case BindingStatus.Error:
-                    await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
-                    return;
-                case BindingStatus.NotExisting:
-                case BindingStatus.Removed:
-                    break;
-                default:
-                    break;
-            }
-
-            await role.DeleteAsync();
-            await CreateMuteRole(roleName);
+            await role.ModifyAsync(r => r.Name = roleName);
+            await this.ReplyEmbedAsync($"Renamed mute role to {roleName}.", Color.Green);
         }
 
-        [Command("updateMuteRole")]
+        [Command("disablemute")]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task RemoveMuteRole()
         {
-            var role = Service.GetRole(Context.Guild);
+            var role = await Service.GetRole(Context.Guild);
             if (role == null)
             {
                 await this.ReplyEmbedAsync("This server has no role to mute users registered yet. Nothing to remove.", Color.Red);
                 return;
             }
 
-            switch (await Service.RemoveRole(Context.Guild, role))
+            switch (await Service.RemoveRole(Context.Guild))
             {
                 case BindingStatus.Error:
                     await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
                     return;
-                case BindingStatus.PreconditionFailed:
-                default:
+                case BindingStatus.Success:
+                    await role.DeleteAsync();
+                    await this.ReplyEmbedAsync("The mute role has been removed successfully.", Color.Green);
                     break;
             }
-
-            await role.DeleteAsync();
-            await this.ReplyEmbedAsync("The mute-role has been removed successfully.", Color.Green);
         }
 
         /// <summary>
@@ -163,23 +185,20 @@ namespace Shinoa.Modules
         /// <param name="unitName">The name of the unit.</param>
         /// <returns></returns>
         [Command("mute")]
-        [Alias("gag")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Mute(IGuildUser user, int amount = 0, string unitName = "")
         {
-            var gagString = Context.Message.Content.Contains("gag") && !user.Nickname.Contains("gag")
-                ? "gagged"
-                : "muted";
+            var gagString = "muted";
 
             var delTask = Context.Message.DeleteAsync();
 
-            var mutedRole = Service.GetRole(Context.Guild);
+            var mutedRole = await Service.GetRole(Context.Guild);
             if (mutedRole == null)
             {
                 await this.ReplyEmbedAsync("This server has no role to mute users registered yet. Registering default role...", Color.Orange);
                 await InitMuteRole();
-                mutedRole = Service.GetRole(Context.Guild) ?? throw new Exception();
+                mutedRole = await Service.GetRole(Context.Guild) ?? throw new Exception();
             }
 
             var duration = TimeSpan.Zero;
@@ -191,64 +210,40 @@ namespace Shinoa.Modules
             {
             }
 
-            if (duration == TimeSpan.Zero)
-            {
-                switch (await Service.AddMute(Context.Guild, user))
-                {
-                    case BindingStatus.Error:
-                        await this.ReplyEmbedAsync("An unexpected error removing the old role has occured. Aborting...", Color.Red);
-                        return;
-                    case BindingStatus.PreconditionFailed:
-                        await this.ReplyEmbedAsync("The user is already muted. Aborting...", Color.Red);
-                        return;
-                    case BindingStatus.Success:
-                    default:
-                        break;
-                }
-
-                await user.AddRoleAsync(mutedRole);
-                await delTask;
-                await this.ReplyEmbedAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
-                return;
-            }
-
             if (duration < TimeSpan.Zero)
             {
                 await this.ReplyEmbedAsync($"User {user.Username}#{user.Discriminator} has not been {gagString}, since the duration of the {(gagString == "gagged" ? "gag" : "mute")} was negative.");
                 return;
             }
 
-            if (duration > TimeSpan.FromSeconds(30))
+            if (duration == TimeSpan.Zero || duration > TimeSpan.FromSeconds(30))
             {
-                switch (await Service.AddMute(Context.Guild, user, DateTime.Now + duration))
+                switch (await Service.AddMute(user, (duration == TimeSpan.Zero) ? null : new DateTime?(DateTime.UtcNow + duration)))
                 {
                     case BindingStatus.Error:
-                        await this.ReplyEmbedAsync($"An unexpected error muting {user.Username}#{user.Discriminator} has occured. Aborting...", Color.Red);
+                        await this.ReplyEmbedAsync("An unexpected error has occured while adding the mute. Aborting...", Color.Red);
                         return;
-                    case BindingStatus.AlreadyExists:
+                    case BindingStatus.PreconditionFailed:
                         await this.ReplyEmbedAsync("The user is already muted. Aborting...", Color.Red);
                         return;
-                    case BindingStatus.Added:
-                    default:
-                        break;
                 }
             }
 
-            await user.AddRoleAsync(mutedRole);
-            await delTask;
-            await this.ReplyEmbedAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention} for {amount} {unitName}.");
-
-            if (duration <= TimeSpan.FromSeconds(30))
+            if (duration > TimeSpan.Zero && duration <= TimeSpan.FromSeconds(30))
             {
-                var autoUnmuteThread = new Thread(new ModerationService.AutoUnmuteService
+                var autoUnmuteThread = new Thread(() => new ModerationService.AutoUnmuteService
                 {
                     Channel = Context.Channel as ITextChannel,
                     Role = mutedRole,
                     TimeSpan = duration,
                     User = user,
-                }.AutoUnmute);
+                }.AutoUnmute().Wait());
                 autoUnmuteThread.Start();
             }
+
+            var durationString = duration > TimeSpan.Zero ? $" for {amount} {unitName}" : string.Empty;
+            await delTask;
+            await this.ReplyEmbedAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}{durationString}.", Color.Green);
         }
 
         /// <summary>
@@ -257,19 +252,16 @@ namespace Shinoa.Modules
         /// <param name="user">The user in question.</param>
         /// <returns></returns>
         [Command("unmute")]
-        [Alias("ungag")]
         [RequireContext(ContextType.Guild)]
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task Unmute(IGuildUser user)
         {
-            var gagString = Context.Message.Content.Contains("ungag") && !user.Nickname.Contains("ungag")
-                ? "ungagged"
-                : "unmuted";
+            var gagString = "unmuted";
 
             var delTask = Context.Message.DeleteAsync();
-            var mutedRole = Service.GetRole(Context.Guild) ?? throw new Exception();
+            var mutedRole = await Service.GetRole(Context.Guild) ?? throw new Exception();
 
-            switch (await Service.RemoveMute(Context.Guild, user))
+            switch (await Service.RemoveMute(user))
             {
                 case BindingStatus.Error:
                     await this.ReplyEmbedAsync($"An unexpected error unmuting {user.Username}#{user.Discriminator} has occured. Aborting...", Color.Red);
@@ -277,34 +269,29 @@ namespace Shinoa.Modules
                 case BindingStatus.PreconditionFailed:
                     await this.ReplyEmbedAsync($"The user is not muted. Aborting...", Color.Red);
                     return;
-                default:
+                case BindingStatus.Success:
+                    await delTask;
+                    await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
                     break;
             }
-
-            await user.RemoveRoleAsync(mutedRole);
-            await delTask;
-            await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
         }
 
-        private async Task CreateMuteRole(string roleName)
+        private async Task<IRole> CreateMuteRole(string roleName)
         {
-            IRole mutedRole;
-            try
+            var mutedRole = await Context.Guild.CreateRoleAsync(roleName, GuildPermissions.None, Color.DarkRed, true);
+            var position = Context.Guild.Roles
+                               .OrderByDescending(role => role.Position)
+                               .First(role => role.Members.Contains(Context.Guild.CurrentUser)).Position;
+            await mutedRole.ModifyAsync(prop => prop.Position = position);
+
+            var overwrite = new OverwritePermissions(sendMessages: PermValue.Deny);
+
+            foreach (var channel in Context.Guild.Channels)
             {
-                mutedRole = Context.Guild.Roles.First(guildRole => guildRole.Name == roleName);
-            }
-            catch (InvalidOperationException)
-            {
-                var permissions = Context.Guild.EveryoneRole.Permissions.Modify(readMessages: false);
-                var position = Context.Guild.Roles.Where(botRole => botRole.Members.Contains(Context.Guild.CurrentUser))
-                                   .OrderBy(botRole => botRole.Position).First().Position + 1;
-                mutedRole = await Context.Guild.CreateRoleAsync(roleName, permissions, Color.DarkRed);
-                await mutedRole.ModifyAsync(prop => prop.Position = position);
+                await channel.AddPermissionOverwriteAsync(mutedRole, overwrite);
             }
 
-            await Service.AddRole(Context.Guild, mutedRole);
-            await Context.Message.DeleteAsync();
-            await this.ReplyEmbedAsync($"{roleName} role has been set up successfully.", Color.Green);
+            return mutedRole;
         }
 
         /// <summary>
@@ -365,15 +352,14 @@ namespace Shinoa.Modules
                 public async Task On()
                 {
                     await this.ReplyEmbedAsync("Sending to all channels has been restricted.", new Color(244, 67, 54));
-                    Context.Guild.Channels.ForEach(async channel =>
+                    foreach (var channel in Context.Guild.Channels)
                     {
-                        var newPerms =
-                            channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)
+                        var newPerms = channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)
                                 ?.Modify(sendMessages: PermValue.Deny) ??
                             default(OverwritePermissions).Modify(sendMessages: PermValue.Deny);
                         await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole, newPerms);
                         await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions(sendMessages: PermValue.Allow));
-                    });
+                    }
                 }
 
                 /// <summary>
@@ -385,15 +371,14 @@ namespace Shinoa.Modules
                 [RequireUserPermission(GuildPermission.ManageChannels)]
                 public async Task Off()
                 {
-                    Context.Guild.Channels.ForEach(async channel =>
+                    foreach (var channel in Context.Guild.Channels)
                     {
                         await channel.AddPermissionOverwriteAsync(Context.User, default);
-                        var newPerms =
-                            channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)
+                        var newPerms = channel.GetPermissionOverwrite(channel.Guild.EveryoneRole)
                                 ?.Modify(sendMessages: PermValue.Inherit) ??
-                            default(OverwritePermissions).Modify(sendMessages: PermValue.Inherit);
+                                default(OverwritePermissions).Modify(sendMessages: PermValue.Inherit);
                         await channel.AddPermissionOverwriteAsync(channel.Guild.EveryoneRole, newPerms);
-                    });
+                    }
 
                     await this.ReplyEmbedAsync("Sending to all channels has been unrestricted.", new Color(139, 195, 74));
                 }
@@ -652,7 +637,6 @@ namespace Shinoa.Modules
                         case BindingStatus.Success:
                             await ReplyAsync($"Badword `{badWord}` and messages containing it are now no longer blocked in this channel.");
                             break;
-                        case BindingStatus.Error:
                         default:
                             throw new Exception($"{(string)Shinoa.Config["global"]["command_prefix"]}badword remove command failed due to an unknown error.");
                     }

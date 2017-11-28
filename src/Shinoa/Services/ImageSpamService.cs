@@ -78,8 +78,8 @@ namespace Shinoa.Services
                 {
                     if (msg.Author is IGuildUser user &&
                         !user.IsBot &&
-                        !db.ImageSpamBindings.Any(b => b.ChannelId == msg.Channel.Id) &&
-                        msg.Attachments.Count > 0)
+                        await db.ImageSpamBindings.FindAsync(msg.Channel.Id.ToString()) == null &&
+                        (msg.Attachments.Count > 0 || msg.Embeds.Count > 0))
                     {
                         var messages = await msg.Channel.GetMessagesAsync(limit: 50).Flatten();
                         var imagesCounter = (from message in messages.ToList().OrderByDescending(o => o.Timestamp)
@@ -90,15 +90,9 @@ namespace Shinoa.Services
                         if (imagesCounter > 3)
                         {
                             await msg.DeleteAsync();
-                            await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preventively muted.");
+                            await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preemptively muted for 5 minutes.");
 
-                            var mutedRole = moderationService.GetRole(user.Guild);
-
-                            await user.AddRoleAsync(mutedRole);
-                            await moderationService.AddMute(
-                                user.Guild,
-                                user,
-                                DateTime.Now + TimeSpan.FromMinutes(5));
+                            await moderationService.AddMute(user, DateTime.UtcNow + TimeSpan.FromMinutes(5));
                         }
                     }
                 }

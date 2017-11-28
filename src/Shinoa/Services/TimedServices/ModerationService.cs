@@ -42,21 +42,11 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new ModerationContext(dbOptions))
             {
-                var bindings = db.GuildUserMuteBindings.Where(b => b.GuildId == binding.Id);
-                var roleBindings = db.GuildRoleBindings.Where(b => b.GuildId == binding.Id);
+                var guildBinding = await db.GuildBindings.FindAsync(binding.Id.ToString());
 
-                if (!(bindings.Any() || roleBindings.Any()))
-                    return false;
+                if (guildBinding == null) return false;
 
-                try
-                {
-                    await roleBindings.Single().Role.DeleteAsync();
-                }
-                catch (InvalidOperationException)
-                {
-                    return false;
-                }
-
+                await guildBinding.Role.DeleteAsync();
                 return true;
             }
         }
@@ -66,13 +56,12 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new ModerationContext(dbOptions))
             {
-                var expiredMutes = db.GuildUserMuteBindings.Where(b => b.MuteTime <= DateTime.Now);
-                var roleBindings = db.GuildRoleBindings.Where(b => expiredMutes.Any(m => m.GuildId == b.GuildId));
+                var expiredMutes = db.GuildUserMuteBindings.Include(m => m.GuildBinding)
+                    .Where(b => b.MutedUntil <= DateTime.UtcNow);
 
                 await expiredMutes.ForEachAsync(async b =>
                     {
-                        var role = (await roleBindings.SingleOrDefaultAsync(binding => b.GuildId == binding.GuildId)).Role;
-                        await b.User.RemoveRoleAsync(role);
+                        await b.User.RemoveRoleAsync(b.GuildBinding.Role);
                     });
 
                 db.GuildUserMuteBindings.RemoveRange(expiredMutes);
@@ -80,54 +69,22 @@ namespace Shinoa.Services.TimedServices
             }
         }
 
-        public async Task<BindingStatus> AddRole(IGuild guild, IRole mutedRole)
+        public async Task<BindingStatus> AddBinding(IRole role)
         {
             using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
-                    if (await db.GuildRoleBindings.AnyAsync(b => b.GuildId == guild.Id && b.RoleId == mutedRole.Id))
-                        return BindingStatus.AlreadyExists;
-                    db.GuildRoleBindings.Add(new GuildRoleBinding
+                    if (await db.GuildBindings.FindAsync(role.Guild.Id.ToString()) != null)
+                        return BindingStatus.PreconditionFailed;
+
+                    db.GuildBindings.Add(new GuildBinding
                     {
-                        Guild = guild,
-                        Role = mutedRole,
-                    });
-
-                    await db.SaveChangesAsync();
-                    return BindingStatus.Added;
-                }
-                catch (Exception)
-                {
-                    return BindingStatus.Error;
-                }
-            }
-        }
-
-        public IRole GetRole(IGuild guild)
-        {
-            using (var db = new ModerationContext(dbOptions))
-            {
-                return db.GuildRoleBindings.Single(b => b.GuildId == guild.Id).Role;
-            }
-        }
-
-        public async Task<BindingStatus> RemoveRole(IGuild guild, IRole role)
-        {
-            using (var db = new ModerationContext(dbOptions))
-            {
-                try
-                {
-                    if (await db.GuildRoleBindings.AnyAsync(b => b.GuildId == guild.Id && b.RoleId == role.Id))
-                        return BindingStatus.NotExisting;
-                    db.GuildRoleBindings.Remove(new GuildRoleBinding
-                    {
-                        Guild = guild,
+                        Guild = role.Guild,
                         Role = role,
                     });
-
                     await db.SaveChangesAsync();
-                    return BindingStatus.Removed;
+                    return BindingStatus.Success;
                 }
                 catch (Exception)
                 {
@@ -136,22 +93,77 @@ namespace Shinoa.Services.TimedServices
             }
         }
 
-        public async Task<BindingStatus> AddMute(IGuild guild, IGuildUser user, DateTime? until = null)
+        public async Task<BindingStatus> UpdateBinding(IRole role)
         {
             using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
-                    if (await db.GuildUserMuteBindings.AnyAsync(b => b.GuildId == guild.Id && b.UserId == user.Id))
-                        return BindingStatus.AlreadyExists;
-                    db.GuildUserMuteBindings.Add(new GuildUserMuteBinding
+                    var binding = await db.GuildBindings.FindAsync(role.Guild.Id.ToString());
+                    if (binding == null) return BindingStatus.PreconditionFailed;
+
+                    binding.Role = role;
+                    db.GuildBindings.Update(binding);
+                    await db.SaveChangesAsync();
+                    return BindingStatus.Success;
+                }
+                catch (Exception)
+                {
+                    return BindingStatus.Error;
+                }
+            }
+        }
+
+        public async Task<IRole> GetRole(IGuild guild)
+        {
+            using (var db = new ModerationContext(dbOptions))
+            {
+                return (await db.GuildBindings.FindAsync(guild.Id.ToString()))?.Role;
+            }
+        }
+
+        public async Task<BindingStatus> RemoveRole(IGuild guild)
+        {
+            using (var db = new ModerationContext(dbOptions))
+            {
+                try
+                {
+                    var guildBinding = await db.GuildBindings.FindAsync(guild.Id.ToString());
+                    if (guildBinding == null)
+                        return BindingStatus.PreconditionFailed;
+
+                    db.GuildBindings.Remove(guildBinding);
+                    await db.SaveChangesAsync();
+                    return BindingStatus.Success;
+                }
+                catch (Exception)
+                {
+                    return BindingStatus.Error;
+                }
+            }
+        }
+
+        public async Task<BindingStatus> AddMute(IGuildUser user, DateTime? until = null)
+        {
+            using (var db = new ModerationContext(dbOptions))
+            {
+                try
+                {
+                    if (await db.GuildUserMuteBindings.FindAsync(user.Guild.Id.ToString(), user.Id.ToString()) != null)
+                        return BindingStatus.PreconditionFailed;
+
+                    var mute = db.GuildUserMuteBindings.Add(new GuildUserMuteBinding
                     {
-                        Guild = guild,
-                        MuteTime = until,
+                        Guild = user.Guild,
+                        MutedUntil = until,
                         User = user,
                     });
                     await db.SaveChangesAsync();
-                    return BindingStatus.Added;
+
+                    await mute.Reference(m => m.GuildBinding).LoadAsync();
+
+                    await user.AddRoleAsync(mute.Entity.GuildBinding.Role);
+                    return BindingStatus.Success;
                 }
                 catch (Exception)
                 {
@@ -160,19 +172,23 @@ namespace Shinoa.Services.TimedServices
             }
         }
 
-        public async Task<BindingStatus> RemoveMute(IGuild guild, IGuildUser user)
+        public async Task<BindingStatus> RemoveMute(IGuildUser user)
         {
             using (var db = new ModerationContext(dbOptions))
             {
                 try
                 {
-                    var binding = db.GuildUserMuteBindings.Where(b => b.GuildId == guild.Id && b.UserId == user.Id);
-                    if (await binding.AnyAsync(b => b.GuildId == guild.Id && b.UserId == user.Id))
-                        return BindingStatus.NotExisting;
+                    var binding = await db.GuildUserMuteBindings.FindAsync(user.Guild.Id.ToString(), user.Id.ToString());
+                    if (binding == null) return BindingStatus.PreconditionFailed;
 
-                    db.GuildUserMuteBindings.Remove(binding.Single());
+                    await db.Entry(binding).Reference(m => m.GuildBinding).LoadAsync();
+                    var role = binding.GuildBinding.Role;
+
+                    db.GuildUserMuteBindings.Remove(binding);
                     await db.SaveChangesAsync();
-                    return BindingStatus.Added;
+
+                    await user.RemoveRoleAsync(role);
+                    return BindingStatus.Success;
                 }
                 catch (Exception)
                 {
@@ -185,12 +201,11 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new ModerationContext(dbOptions))
             {
-                var bindings = db.GuildUserMuteBindings.Where(b => b.UserId == user.Id);
+                var binding = await db.GuildUserMuteBindings.FindAsync(user.Guild.Id.ToString(), user.Id.ToString());
+                if (binding == null) return;
 
-                if (!await bindings.AnyAsync()) return;
-
-                var guilds = db.GuildRoleBindings.Where(g => bindings.Any(b => b.GuildId == g.GuildId));
-                await bindings.ForEachAsync(async b => await (b.User?.AddRoleAsync(guilds.Single(g => b.GuildId == g.GuildId).Role) ?? Task.CompletedTask));
+                await db.Entry(binding).Reference(m => m.GuildBinding).LoadAsync();
+                await binding.User.AddRoleAsync(binding.GuildBinding.Role);
             }
         }
 
@@ -198,13 +213,12 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new ModerationContext(dbOptions))
             {
-                var bindings = db.GuildUserMuteBindings.Where(b => b.UserId == user.Id && (b.MuteTime == null || b.MuteTime - DateTime.Now > TimeSpan.FromDays(7)));
+                var binding = await db.GuildUserMuteBindings.FindAsync(user.Guild.Id.ToString(), user.Id.ToString());
+                if (binding == null || (binding.MutedUntil.HasValue &&
+                                        binding.MutedUntil - DateTime.UtcNow < TimeSpan.FromDays(7))) return;
 
-                if (!await bindings.AnyAsync()) return;
-
-                bindings = bindings.AsTracking();
-
-                await bindings.ForEachAsync(b => b.MuteTime = DateTime.Now + TimeSpan.FromDays(7));
+                binding.MutedUntil = DateTime.UtcNow + TimeSpan.FromDays(7);
+                db.GuildUserMuteBindings.Update(binding);
                 await db.SaveChangesAsync();
             }
         }
@@ -219,11 +233,11 @@ namespace Shinoa.Services.TimedServices
 
             public TimeSpan TimeSpan { get; set; }
 
-            public async void AutoUnmute()
+            public async Task AutoUnmute()
             {
-                Thread.Sleep(TimeSpan);
+                await Task.Delay(TimeSpan);
                 await User.RemoveRoleAsync(Role);
-                await Channel.SendEmbedAsync($"User <@{User.Id}> has been unmuted automatically.");
+                await Channel.SendEmbedAsync($"User {User.Mention} has been unmuted automatically.");
             }
         }
     }

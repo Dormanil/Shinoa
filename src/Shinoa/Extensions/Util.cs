@@ -21,7 +21,6 @@ namespace Shinoa.Extensions
     public static class Util
     {
         private static readonly Regex Punctuation = new Regex("\\p{P}+");
-        private static readonly EmbedFooterBuilder EmbedFooter = new EmbedFooterBuilder { Text = Shinoa.VersionString };
 
         public static Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, Embed embed)
         {
@@ -140,7 +139,6 @@ namespace Shinoa.Extensions
             {
                 Color = color,
                 Description = description,
-                Footer = EmbedFooter,
             });
         }
 
@@ -153,7 +151,6 @@ namespace Shinoa.Extensions
             {
                 Color = color,
                 Description = description,
-                Footer = EmbedFooter,
             });
         }
     }
