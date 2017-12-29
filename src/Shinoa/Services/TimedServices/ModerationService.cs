@@ -86,8 +86,9 @@ namespace Shinoa.Services.TimedServices
                     await db.SaveChangesAsync();
                     return BindingStatus.Success;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    await Logging.LogError(e.ToString());
                     return BindingStatus.Error;
                 }
             }
@@ -107,8 +108,9 @@ namespace Shinoa.Services.TimedServices
                     await db.SaveChangesAsync();
                     return BindingStatus.Success;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    await Logging.LogError(e.ToString());
                     return BindingStatus.Error;
                 }
             }
@@ -136,8 +138,9 @@ namespace Shinoa.Services.TimedServices
                     await db.SaveChangesAsync();
                     return BindingStatus.Success;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    await Logging.LogError(e.ToString());
                     return BindingStatus.Error;
                 }
             }
@@ -165,8 +168,9 @@ namespace Shinoa.Services.TimedServices
                     await user.AddRoleAsync(mute.Entity.GuildBinding.Role);
                     return BindingStatus.Success;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    await Logging.LogError(e.ToString());
                     return BindingStatus.Error;
                 }
             }
@@ -190,8 +194,9 @@ namespace Shinoa.Services.TimedServices
                     await user.RemoveRoleAsync(role);
                     return BindingStatus.Success;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    await Logging.LogError(e.ToString());
                     return BindingStatus.Error;
                 }
             }
