@@ -271,7 +271,7 @@ namespace Shinoa.Modules
                     return;
                 case BindingStatus.Success:
                     await delTask;
-                    await ReplyAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
+                    await this.ReplyEmbedAsync($"User {user.Mention} has been {gagString} by {Context.User.Mention}.");
                     break;
             }
         }
