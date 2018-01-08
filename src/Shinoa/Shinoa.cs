@@ -382,11 +382,18 @@ namespace Shinoa
             };
             Client.Ready += async () =>
             {
+                var firstRuns = new Dictionary<Type, bool>();
+
                 foreach (var service in services)
                 {
-                    if (Map.Any(d => d.ServiceType == service)) continue;
+                    if (Map.Any(d => d.ServiceType == service))
+                    {
+                        firstRuns[service] = false;
+                        continue;
+                    }
                     var instance = (IService)Activator.CreateInstance(service);
                     Map.AddSingleton(service, instance);
+                    firstRuns[service] = true;
                 }
 
                 provider = Map.BuildServiceProvider();
@@ -412,23 +419,26 @@ namespace Shinoa
                     var instance = serviceDesc.ImplementationInstance as IService;
                     if(instance == null) continue;
 
-                    try
+                    if(firstRuns.TryGetValue(service, out var firstRun) && firstRun)
                     {
-                        instance.Init(config, provider);
-                    }
-                    catch (Exception e)
-                    {
-                        await LogError($"Initialization of service \"{service.Name}\" failed.");
-                        await LogError(e.ToString());
-                        Map.Remove(serviceDesc);
-                    }
+                        try
+                        {
+                            instance.Init(config, provider);
+                            firstRuns[service] = false;
+                        }
+                        catch (Exception e)
+                        {
+                            await LogError($"Initialization of service \"{service.Name}\" failed.");
+                            await LogError(e.ToString());
+                            Map.Remove(serviceDesc);
+                            provider = Map.BuildServiceProvider();
+                        }
 
-                    if (instance is ITimedService timedService)
-                    {
-                        Callbacks.TryAdd(service, timedService.Callback);
-                        await Log($"Service \"{service.Name}\" added to callbacks");
+                        if (instance is ITimedService timedService && Callbacks.TryAdd(service, timedService.Callback))
+                        {
+                                await Log($"Service \"{service.Name}\" added to callbacks");
+                        }
                     }
-
                     await Log($"Loaded service \"{service.Name}\"");
                 }
 
