@@ -28,14 +28,14 @@ namespace Shinoa.Modules
     {
         private static readonly Dictionary<string, long> TimeUnits = new Dictionary<string, long>
         {
-            { "second",    1000 },
-            { "seconds",   1000 },
-            { "minute",    1000 * 60 },
-            { "minutes",   1000 * 60 },
-            { "hour",      1000 * 60 * 60 },
-            { "hours",     1000 * 60 * 60 },
-            { "day",       1000 * 60 * 60 * 24 },
-            { "days",      1000 * 60 * 60 * 24 },
+            { "second",    1 },
+            { "seconds",   1 },
+            { "minute",    1 * 60 },
+            { "minutes",   1 * 60 },
+            { "hour",      1 * 60 * 60 },
+            { "hours",     1 * 60 * 60 },
+            { "day",       1 * 60 * 60 * 24 },
+            { "days",      1 * 60 * 60 * 24 },
         };
 
         public ModerationService Service { get; set; }
