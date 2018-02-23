@@ -93,7 +93,6 @@ namespace Shinoa.Modules
                 return;
             }
 
-            var delTask = Context.Message.DeleteAsync();
             var role = await CreateMuteRole(roleName);
             switch (await Service.AddBinding(role))
             {
@@ -109,7 +108,6 @@ namespace Shinoa.Modules
                     await this.ReplyEmbedAsync($"An unexpected error occured while creating the mute role. Aborting...", Color.Red);
                     break;
             }
-            await delTask;
         }
 
         [Command("setmuterole")]
