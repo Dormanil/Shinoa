@@ -9,7 +9,6 @@ namespace Shinoa.Extensions
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
-    using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
 
@@ -21,7 +20,7 @@ namespace Shinoa.Extensions
 
     public static class TwitterFixes
     {
-        public static async Task<TwitterResponseCollection<Tweet>> GetUserTimeline(this ITwitterSession session, string screenName = "", bool extended = true, long userId = 0, long sinceId = 0, long maxId = 0, int count = 200, bool excludeReplies = true, bool includeRetweets = true)
+        public static async Task<IEnumerable<Tweet>> GetUserTimeline(this ITwitterSession session, string screenName = "", bool extended = true, long userId = 0, long sinceId = 0, long maxId = 0, int count = 200, bool excludeReplies = true, bool includeRetweets = true)
         {
             if (!extended)
                 return await session.GetUserTimeline(screenName, userId, sinceId, maxId, count, excludeReplies, includeRetweets);
@@ -30,19 +29,9 @@ namespace Shinoa.Extensions
             parameters.Create(include_entities: true, include_rts: true, count: count, since_id: sinceId, max_id: maxId, screen_name: screenName);
             parameters.Add("tweet_mode", "extended");
 
-            return await session.GetAsync(TwitterApi.Resolve("/1.1/statuses/user_timeline.json"), parameters).ContinueWith(c => c.MapToMany<FullTextTweet>().Cast<FullTextTweet, Tweet>());
-        }
-
-        public static TwitterResponseCollection<T> Cast<U, T>(this TwitterResponseCollection<U> twitterResponseCollection)
-            where T : Tweet
-            where U : T
-        {
-            var casted = new TwitterResponseCollection<T>();
-
-            foreach (U tweet in twitterResponseCollection)
-                casted.Add(tweet as T);
-
-            return casted;
+            var responseTask = session.GetAsync(TwitterApi.Resolve("/1.1/statuses/user_timeline.json"), parameters);
+            var collection = await responseTask.MapToMany<FullTextTweet>();
+            return collection;
         }
 
         internal static void Create(
@@ -198,21 +187,21 @@ namespace Shinoa.Extensions
             }
         }
 
-        internal static TwitterResponseCollection<T> MapToMany<T>(this Task<HttpResponseMessage> task)
+        internal static async Task<TwitterResponseCollection<T>> MapToMany<T>(this Task<HttpResponseMessage> task)
         {
             if (task.IsFaulted || task.IsCanceled)
             {
                 return new TwitterResponseCollection<T> { twitterFaulted = true, twitterControlMessage = MapHTTPResponses(task) };
             }
 
-            var result = task.Result;
+            var result = await task;
             if (!result.IsSuccessStatusCode)
             {
                 return new TwitterResponseCollection<T> { twitterFaulted = true, twitterControlMessage = MapHTTPResponses(task) };
             }
 
-            var content = result.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<TwitterResponseCollection<T>>(content.Result);
+            var content = await result.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<TwitterResponseCollection<T>>(content);
         }
 
         internal static TwitterControlMessage MapHTTPResponses(this Task<HttpResponseMessage> m)
@@ -299,15 +288,9 @@ namespace Shinoa.Extensions
             [JsonProperty("full_text")]
             public new string RawText
             {
-                get
-                {
-                    return base.RawText;
-                }
+                get => base.RawText;
 
-                set
-                {
-                    base.RawText = value;
-                }
+                set => base.RawText = value;
             }
         }
     }
