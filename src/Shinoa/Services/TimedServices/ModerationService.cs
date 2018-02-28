@@ -35,6 +35,7 @@ namespace Shinoa.Services.TimedServices
 
             client.UserJoined += UserJoinedHandler;
             client.UserLeft += UserLeftHandler;
+            client.GuildMemberUpdated += GuildMemberUpdatedHandler;
         }
 
         /// <inheritdoc />
@@ -225,6 +226,24 @@ namespace Shinoa.Services.TimedServices
                 binding.MutedUntil = DateTime.UtcNow + TimeSpan.FromDays(7);
                 db.GuildUserMuteBindings.Update(binding);
                 await db.SaveChangesAsync();
+            }
+        }
+
+        private async Task GuildMemberUpdatedHandler(SocketGuildUser userOld, SocketGuildUser userNew)
+        {
+            using (var db = new ModerationContext(dbOptions))
+            {
+                var binding = await db.GuildUserMuteBindings.FindAsync(userOld.Guild.Id.ToString(), userOld.Id.ToString());
+                if (binding == null) return;
+
+                await db.Entry(binding).Reference(m => m.GuildBinding).LoadAsync();
+                var comparer = new EntityEqualityComparer();
+                var muteRoleRemoved = userOld.Roles.Except(userNew.Roles, comparer).Contains(binding.GuildBinding.Role, comparer);
+                if (muteRoleRemoved)
+                {
+                    db.Remove(binding);
+                    await db.SaveChangesAsync();
+                }
             }
         }
 
