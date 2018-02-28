@@ -233,17 +233,28 @@ namespace Shinoa.Services.TimedServices
         {
             using (var db = new ModerationContext(dbOptions))
             {
-                var binding = await db.GuildUserMuteBindings.FindAsync(userOld.Guild.Id.ToString(), userOld.Id.ToString());
-                if (binding == null) return;
-
-                await db.Entry(binding).Reference(m => m.GuildBinding).LoadAsync();
+                var guildBinding = await db.GuildBindings.FindAsync(userOld.Guild.Id.ToString());
                 var comparer = new EntityEqualityComparer();
-                var muteRoleRemoved = userOld.Roles.Except(userNew.Roles, comparer).Contains(binding.GuildBinding.Role, comparer);
-                if (muteRoleRemoved)
+                
+                var muteRoleRemoved = userOld.Roles.Except(userNew.Roles, comparer).Contains(guildBinding.Role, comparer);
+                var binding = await db.GuildUserMuteBindings.FindAsync(userOld.Guild.Id.ToString(), userOld.Id.ToString());
+                if (muteRoleRemoved && binding != null)
                 {
                     db.Remove(binding);
-                    await db.SaveChangesAsync();
                 }
+
+                var muteRoleAdded = userNew.Roles.Except(userOld.Roles, comparer).Contains(guildBinding.Role, comparer);
+                if (muteRoleAdded && binding == null) // Check if binding exists, otherwise double create
+                {
+                    binding = new GuildUserMuteBinding
+                    {
+                        Guild = userNew.Guild,
+                        User = userNew
+                    };
+                    await db.AddAsync(binding);
+                }
+
+                if (muteRoleRemoved || muteRoleAdded) await db.SaveChangesAsync();
             }
         }
 
