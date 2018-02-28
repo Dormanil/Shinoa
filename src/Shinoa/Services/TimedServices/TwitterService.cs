@@ -120,7 +120,7 @@ namespace Shinoa.Services.TimedServices
             {
                 foreach (var user in db.TwitterBindings.Include(b => b.ChannelBindings))
                 {
-                    var response = await twitterSession.GetUserTimeline(user.TwitterUsername);
+                    var response = await twitterSession.GetUserTimeline(user.TwitterUsername, extended: true);
                     var newestCreationTime = response.FirstOrDefault()?.Time.DateTime ?? DateTime.UtcNow;
                     var postStack = new Stack<Embed>();
 
