@@ -63,6 +63,8 @@ namespace Shinoa.Services.TimedServices
                 await expiredMutes.ForEachAsync(async b =>
                     {
                         await (b.User?.RemoveRoleAsync(b.GuildBinding.Role) ?? Task.CompletedTask);
+                        await (b.Channel?.SendEmbedAsync($"User {b.User?.Mention} has been unmuted automatically.") ??
+                               Task.CompletedTask);
                     });
 
                 db.GuildUserMuteBindings.RemoveRange(expiredMutes);
@@ -147,7 +149,26 @@ namespace Shinoa.Services.TimedServices
             }
         }
 
-        public async Task<BindingStatus> AddMute(IGuildUser user, DateTime? until = null)
+        public async Task<bool> AddShortMute(IGuildUser user)
+        {
+            using (var db = new ModerationContext(dbOptions))
+            {
+                try
+                {
+                    var role = (await db.GuildBindings.FindAsync(user.Guild.Id.ToString())).Role;
+                    
+                    await user.AddRoleAsync(role);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    await Logging.LogError(e.ToString());
+                    return false;
+                }
+            }
+        }
+
+        public async Task<BindingStatus> AddMute(IGuildUser user, ITextChannel channel, DateTime? until = null)
         {
             using (var db = new ModerationContext(dbOptions))
             {
@@ -161,6 +182,7 @@ namespace Shinoa.Services.TimedServices
                         Guild = user.Guild,
                         MutedUntil = until,
                         User = user,
+                        Channel = channel,
                     });
                     await db.SaveChangesAsync();
 

@@ -90,6 +90,8 @@ namespace Shinoa.Databases
             public string UserIdString { get; set; }
 
             public DateTime? MutedUntil { get; set; }
+            
+            public string ChannelIdString { get; set; }
 
             [NotMapped]
             public ulong GuildId
@@ -108,6 +110,14 @@ namespace Shinoa.Databases
             }
 
             [NotMapped]
+            public ulong ChannelId
+            {
+                get => ulong.Parse(ChannelIdString);
+
+                set => ChannelIdString = value.ToString();
+            }
+
+            [NotMapped]
             public IGuild Guild
             {
                 get => Shinoa.Client.GetGuild(GuildId);
@@ -121,6 +131,14 @@ namespace Shinoa.Databases
                 get => Guild?.GetUserAsync(UserId).Result;
 
                 set => UserIdString = value.Id.ToString();
+            }
+
+            [NotMapped]
+            public ITextChannel Channel
+            {
+                get => Guild?.GetTextChannelAsync(ChannelId)?.Result;
+
+                set => ChannelIdString = value.Id.ToString();
             }
         }
     }

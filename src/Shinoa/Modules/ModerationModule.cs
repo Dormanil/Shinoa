@@ -114,25 +114,17 @@ namespace Shinoa.Modules
         [RequireUserPermission(GuildPermission.ManageRoles)]
         public async Task SetMuteRole(IRole role)
         {
-            // Helper to work around copy-pasting because no case fallthrough
-            bool error = false;
-
             switch (await Service.UpdateBinding(role))
             {
                 case BindingStatus.Success:
                     await this.ReplyEmbedAsync($"Set {role.Name} as the muted role for {Context.Guild.Name}.");
                     break;
                 case BindingStatus.PreconditionFailed:
-                    if (await Service.AddBinding(role) != BindingStatus.Success) error = true;
+                    if (await Service.AddBinding(role) != BindingStatus.Success) goto case BindingStatus.Error;
                     break;
                 case BindingStatus.Error:
-                    error = true;
+                    await this.ReplyEmbedAsync("An unexpected error occured trying to update the bindings. Aborting...", Color.Red);
                     break;
-            }
-
-            if (error)
-            {
-                await this.ReplyEmbedAsync("An unexpected error occured trying to update the bindings. Aborting...", Color.Red);
             }
         }
 
@@ -216,7 +208,7 @@ namespace Shinoa.Modules
 
             if (duration == TimeSpan.Zero || duration > TimeSpan.FromSeconds(30))
             {
-                switch (await Service.AddMute(user, (duration == TimeSpan.Zero) ? null : new DateTime?(DateTime.UtcNow + duration)))
+                switch (await Service.AddMute(user, Context.Channel as ITextChannel, duration == TimeSpan.Zero ? null : new DateTime?(DateTime.UtcNow + duration)))
                 {
                     case BindingStatus.Error:
                         await this.ReplyEmbedAsync("An unexpected error has occured while adding the mute. Aborting...", Color.Red);
@@ -229,7 +221,14 @@ namespace Shinoa.Modules
 
             if (duration > TimeSpan.Zero && duration <= TimeSpan.FromSeconds(30))
             {
-                var autoUnmuteThread = new Thread(() => new ModerationService.AutoUnmuteService
+                // Actually mute people if the mute is short.
+                if (!await Service.AddShortMute(user))
+                {
+                    await this.ReplyEmbedAsync("An unexpected error has occured while adding the mute. Aborting...", Color.Red);
+                    return;
+                }
+
+            var autoUnmuteThread = new Thread(() => new ModerationService.AutoUnmuteService
                 {
                     Channel = Context.Channel as ITextChannel,
                     Role = mutedRole,
