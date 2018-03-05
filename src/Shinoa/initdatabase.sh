@@ -1,6 +1,6 @@
 #!/bin/bash
 timestamp() {
-  date +"%y-%m-%d_%H-%M-%S"
+  date +"%Y-%m-%d_%H-%M-%S"
 }
 
 echo Databases/*Context.cs |
