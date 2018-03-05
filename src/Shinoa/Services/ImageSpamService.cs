@@ -92,7 +92,7 @@ namespace Shinoa.Services
                             await msg.DeleteAsync();
                             await msg.Channel.SendMessageAsync($"{user.Mention} Your message has been removed for being image spam. You have been preemptively muted for 5 minutes.");
 
-                            await moderationService.AddMute(user, DateTime.UtcNow + TimeSpan.FromMinutes(5));
+                            await moderationService.AddMute(user, msg.Channel as ITextChannel, DateTime.UtcNow + TimeSpan.FromMinutes(5));
                         }
                     }
                 }

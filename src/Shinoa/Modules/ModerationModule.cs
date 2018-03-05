@@ -228,13 +228,13 @@ namespace Shinoa.Modules
                     return;
                 }
 
-            var autoUnmuteThread = new Thread(() => new ModerationService.AutoUnmuteService
-                {
-                    Channel = Context.Channel as ITextChannel,
-                    Role = mutedRole,
-                    TimeSpan = duration,
-                    User = user,
-                }.AutoUnmute().Wait());
+                var autoUnmuteThread = new Thread(() => new ModerationService.AutoUnmuteService
+                    {
+                        Channel = Context.Channel as ITextChannel,
+                        Role = mutedRole,
+                        TimeSpan = duration,
+                        User = user,
+                    }.AutoUnmute().Wait());
                 autoUnmuteThread.Start();
             }
 

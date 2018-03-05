@@ -62,9 +62,12 @@ namespace Shinoa.Services.TimedServices
 
                 await expiredMutes.ForEachAsync(async b =>
                     {
-                        await (b.User?.RemoveRoleAsync(b.GuildBinding.Role) ?? Task.CompletedTask);
-                        await (b.Channel?.SendEmbedAsync($"User {b.User?.Mention} has been unmuted automatically.") ??
+                        if (b.User == null) return;
+                        
+                        await b.User.RemoveRoleAsync(b.GuildBinding.Role);
+                        await (b.Channel?.SendEmbedAsync($"User {b.User.Mention} has been unmuted automatically.") ??
                                Task.CompletedTask);
+
                     });
 
                 db.GuildUserMuteBindings.RemoveRange(expiredMutes);
