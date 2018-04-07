@@ -11,8 +11,8 @@ namespace Shinoa.Extensions
     
     public class EntityEqualityComparer : IEqualityComparer<ISnowflakeEntity>
     {
-        public bool Equals(ISnowflakeEntity left, ISnowflakeEntity right) => left.Id == right.Id;
+        public bool Equals(ISnowflakeEntity left, ISnowflakeEntity right) => left?.Id == right?.Id;
 
-        public int GetHashCode(ISnowflakeEntity obj) => (int)(obj.Id % int.MaxValue);
+        public int GetHashCode(ISnowflakeEntity obj) => (int)((obj?.Id ?? 0) % int.MaxValue);
     }
 }
