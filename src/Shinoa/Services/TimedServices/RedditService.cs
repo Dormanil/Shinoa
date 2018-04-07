@@ -38,12 +38,15 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<BindingStatus> AddBinding(string subredditName, IMessageChannel channel)
         {
+            subredditName = subredditName.ToLower();
+
             if (!(await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, subredditName))).IsSuccessStatusCode) return BindingStatus.Error;
             using (var db = new RedditContext(dbOptions))
             {
-                var subreddit = new RedditBinding
+                var subreddit = await db.RedditBindings.FirstOrDefaultAsync(b => b.SubredditName == subredditName)
+                    ?? new RedditBinding
                 {
-                    SubredditName = subredditName.ToLower(),
+                    SubredditName = subredditName,
                     LatestPost = DateTime.UtcNow,
                 };
 

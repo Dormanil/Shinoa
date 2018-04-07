@@ -33,12 +33,15 @@ namespace Shinoa.Services.TimedServices
 
         public async Task<BindingStatus> AddBinding(string username, IMessageChannel channel)
         {
+            username = username.ToLower();
+
             if (string.IsNullOrEmpty((await twitterSession.GetUserProfile(username)).Name)) return BindingStatus.Error;
             using (var db = new TwitterContext(dbOptions))
             {
-                var twitterBinding = new TwitterBinding
+                var twitterBinding = await db.TwitterBindings.FirstOrDefaultAsync(b => b.TwitterUsername == username)
+                    ?? new TwitterBinding
                 {
-                    TwitterUsername = username.ToLower(),
+                    TwitterUsername = username,
                     LatestPost = DateTime.UtcNow,
                 };
 
