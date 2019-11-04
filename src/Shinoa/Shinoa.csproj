@@ -47,7 +47,7 @@
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.0-*" />
     <PackageReference Include="RestEase" Version="1.4.3" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta004" />
-    <PackageReference Include="YamlDotNet" Version="4.2.2-pre0425" />
+    <PackageReference Include="YamlDotNet" Version="5.0.0" />
   </ItemGroup>
   
   <ItemGroup>
